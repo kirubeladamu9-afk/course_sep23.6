@@ -903,16 +903,12 @@ const stemSubtypes = new Set(['math.graph', 'math.equation_solver', 'math.calcul
 
 const isPlainObject = (value) => Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 const stemGradeBands = new Set(['grade_1_3', 'grade_4_6', 'grade_7_9', 'grade_10_12'])
-const stemGradeBandScopes = {
-  'math.number_line': new Set(['grade_1_3']),
-  'math.counting_visualizer': new Set(['grade_1_3']),
-  'math.shape_matcher': new Set(['grade_1_3']),
-  'math.fraction_visualizer': new Set(['grade_4_6']),
-}
+const stemGradeBandScopes = {}
 const hasValidStemLab = (lesson) => {
   const gradeBand = lesson?.config?.gradeBand
+  const grade = lesson?.config?.grade
   const scope = stemGradeBandScopes[lesson?.subtype]
-  return lesson?.type === 'stem_lab' && lesson.stemLabPublished === true && typeof lesson.subtype === 'string' && stemSubtypes.has(lesson.subtype) && isPlainObject(lesson.config) && lesson.config.version === 1 && (!gradeBand || (stemGradeBands.has(gradeBand) && (!scope || scope.has(gradeBand)))) && typeof lesson.config.instructions === 'string' && lesson.config.instructions.trim()
+  return lesson?.type === 'stem_lab' && lesson.stemLabPublished === true && typeof lesson.subtype === 'string' && stemSubtypes.has(lesson.subtype) && isPlainObject(lesson.config) && lesson.config.version === 1 && (!gradeBand || (stemGradeBands.has(gradeBand) && (!scope || scope.has(gradeBand)))) && (!grade || (Number.isInteger(grade) && grade >= 1 && grade <= 12)) && typeof lesson.config.instructions === 'string' && lesson.config.instructions.trim()
 }
 
 const getEnrollmentProgress = (modules, lessonProgress) => {

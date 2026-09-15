@@ -38,11 +38,7 @@ const validThreeD = (config: StemLabConfig) => { const item = config as StemThre
 const validPunnett = (config: StemLabConfig) => { const item = config as StemPunnettConfig; return Boolean(item.instructions.trim() && /^[A-Za-z]{2}$/.test(item.parentOne) && /^[A-Za-z]{2}$/.test(item.parentTwo) && item.dominantTrait.trim() && item.recessiveTrait.trim()) }
 const validClassification = (config: StemLabConfig) => { const item = config as StemClassificationConfig; return Boolean(item.instructions.trim() && item.categories.length >= 2 && item.items.length && item.items.every((entry) => entry.label.trim() && item.categories.includes(entry.category))) }
 
-const gradeBandsFor = (subject: StemSubject, tool: StemTool): StemGradeBand[] => {
-  if (subject === 'math' && ['number_line', 'counting_visualizer', 'shape_matcher'].includes(tool)) return ['grade_1_3']
-  if (subject === 'math' && tool === 'fraction_visualizer') return ['grade_4_6']
-  return ['grade_7_9', 'grade_10_12']
-}
+const gradeBandsFor = (_subject: StemSubject, _tool: StemTool): StemGradeBand[] => ['grade_1_3', 'grade_4_6', 'grade_7_9', 'grade_10_12']
 
 const definition = (subject: StemSubject, tool: StemTool, label: string, icon: ReactNode, Builder: StemToolDefinition['Builder'], Player: StemToolDefinition['Player'], mode: StemToolDefinition['mode'], defaultConfig: StemLabConfig, isConfigured: StemToolDefinition['isConfigured']): StemToolDefinition => {
   const gradeBands = gradeBandsFor(subject, tool)

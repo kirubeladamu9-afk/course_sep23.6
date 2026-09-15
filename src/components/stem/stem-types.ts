@@ -44,6 +44,8 @@ export type StemBaseConfig = {
   instructions: string
   /** Optional for compatibility with STEM configs persisted before grade bands were added. */
   gradeBand?: StemGradeBand
+  /** Optional exact grade used by the curriculum pattern browser. */
+  grade?: number
 }
 
 export type StemEmbedConfig = StemBaseConfig & {
