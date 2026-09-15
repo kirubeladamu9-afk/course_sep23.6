@@ -87,6 +87,7 @@ import { type AdminCourse, type AdminLesson, type AdminTutor, type AdminUser, ty
 import InteractiveHotspotEditor from './interactive-hotspot-editor'
 import { StemLabEditor as StemLabActivityEditor } from '@/components/stem/stem-lab'
 import { STEM_GRADE_BAND_LABELS, STEM_SUBJECT_LABELS, STEM_SUBJECTS, type StemSubject } from '@/components/stem/stem-types'
+import { defaultStemLabConfig, getStemToolsForSubject } from '@/components/stem/stem-lab-registry'
 
 const drawerWidth = 272
 
@@ -335,6 +336,49 @@ export const CourseEditor: FC<{ course: AdminCourse; onChange: (course: AdminCou
     if (lessonPanel?.lesson.id === lessonId) setLessonPanel(null)
   }
 
+  const addCompleteStemCurriculum = () => {
+    const existingSubtypes = new Set(course.modules.flatMap((module) => module.lessons).filter((lesson) => lesson.type === 'stem_lab').map((lesson) => lesson.subtype))
+    const nextLessonId = Math.max(0, ...course.modules.flatMap((module) => module.lessons.map((lesson) => lesson.id)))
+    let lessonId = nextLessonId
+    let moduleId = Math.max(0, ...course.modules.map((module) => module.id))
+    let addedLessons = 0
+    const nextModules = [...course.modules]
+
+    STEM_SUBJECTS.forEach((subject) => {
+      const tools = getStemToolsForSubject(subject)
+      const missingTools = tools.filter((tool) => !existingSubtypes.has(tool.subtype))
+      if (!missingTools.length) return
+      const subjectModuleIndex = nextModules.findIndex((module) => module.title === `${STEM_SUBJECT_LABELS[subject]} STEM Labs`)
+      const subjectModule = subjectModuleIndex >= 0 ? nextModules[subjectModuleIndex] : { id: ++moduleId, title: `${STEM_SUBJECT_LABELS[subject]} STEM Labs`, lessons: [] }
+      const newLessons = missingTools.map((tool) => {
+        const config = defaultStemLabConfig(subject, tool.tool)
+        return {
+          id: ++lessonId,
+          title: `${STEM_SUBJECT_LABELS[subject]} · ${tool.label}`,
+          type: 'stem_lab' as const,
+          duration: null,
+          resources: [],
+          subtype: tool.subtype,
+          config,
+          stemLabPublished: true,
+        }
+      })
+      const updatedModule = { ...subjectModule, lessons: [...subjectModule.lessons, ...newLessons] }
+      if (subjectModuleIndex >= 0) nextModules[subjectModuleIndex] = updatedModule
+      else nextModules.push(updatedModule)
+      newLessons.forEach((lesson) => existingSubtypes.add(lesson.subtype))
+      addedLessons += newLessons.length
+    })
+
+    if (!addedLessons) {
+      toast.add({ title: 'STEM curriculum is complete', description: 'All available STEM Lab lessons are already in this course.', type: 'info' })
+      return
+    }
+    onChange({ ...course, modules: nextModules })
+    setExpandedModuleIds(nextModules.map((module) => module.id))
+    toast.add({ title: 'STEM curriculum added', description: `${addedLessons} subject lessons are ready to save.`, type: 'success' })
+  }
+
   const saveLesson = () => {
     if (!lessonPanel) return
     const existingLessons = course.modules.flatMap((module) => module.lessons)
@@ -444,7 +488,10 @@ export const CourseEditor: FC<{ course: AdminCourse; onChange: (course: AdminCou
       </CourseEditorSection>}
       <Divider sx={{ my: 3 }} />
       <CourseEditorSection expanded={expandedSections.includes('curriculum')} onToggle={() => toggleSection('curriculum')} title="Course curriculum" description={`${course.modules.length} ${course.modules.length === 1 ? 'section' : 'sections'} · ${course.title || 'Untitled course'}`}>
-          <Typography color="text.secondary" variant="body2" sx={{ mb: 2 }}>Drag modules to reorder. Lessons can be reordered within their module.</Typography>
+          <Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ xs: 'stretch', sm: 'center' }} justifyContent="space-between" spacing={1.5} sx={{ mb: 2 }}>
+            <Typography color="text.secondary" variant="body2">Drag modules to reorder. Lessons can be reordered within their module.</Typography>
+            <Button label="Add all STEM Lab lessons" size="small" variant="outlined" onClick={addCompleteStemCurriculum} />
+          </Stack>
           <Stack spacing={1.5}>
         {course.modules.length === 0 && !isAddingModule && <Box sx={{ p: 4, textAlign: 'center', border: 1, borderColor: 'divider', borderStyle: 'dashed', borderRadius: 1 }}><Typography color="text.secondary" sx={{ mb: 1 }}>This course has no modules yet.</Typography><Button label="Add your first module" size="small" onClick={() => setIsAddingModule(true)} /></Box>}
         {course.modules.map((module) => {
