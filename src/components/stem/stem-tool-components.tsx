@@ -495,9 +495,46 @@ const moleculeAtoms = (formula: string) => {
   return atoms
 }
 
+type MoleculeBond = [number, number]
+
+const hasMoleculeBond = (bonds: MoleculeBond[], first: number, second: number) => bonds.some(([from, to]) => (from === first && to === second) || (from === second && to === first))
+const moleculeIndices = (atoms: string[], element: string) => atoms.flatMap((atom, index) => atom === element ? [index] : [])
+
+const matchesMoleculeStructure = (formula: string, atoms: string[], bonds: MoleculeBond[]) => {
+  const normalized = formula.replace(/\s+/g, '')
+  if (normalized === 'H2O') {
+    const hydrogens = moleculeIndices(atoms, 'H')
+    const oxygens = moleculeIndices(atoms, 'O')
+    if (hydrogens.length !== 2 || oxygens.length !== 1 || bonds.length !== 2) return false
+    const oxygen = oxygens[0]
+    return hydrogens.every((hydrogen) => hasMoleculeBond(bonds, hydrogen, oxygen)) && bonds.every(([from, to]) => {
+      const oxygenEndpoint = from === oxygen || to === oxygen
+      const otherEndpoint = from === oxygen ? to : from
+      return oxygenEndpoint && hydrogens.includes(otherEndpoint)
+    })
+  }
+  if (normalized === 'CO2') {
+    const carbons = moleculeIndices(atoms, 'C')
+    const oxygens = moleculeIndices(atoms, 'O')
+    if (carbons.length !== 1 || oxygens.length !== 2 || bonds.length !== 2) return false
+    const carbon = carbons[0]
+    return oxygens.every((oxygen) => hasMoleculeBond(bonds, carbon, oxygen)) && bonds.every(([from, to]) => from === carbon || to === carbon)
+  }
+  if (normalized === 'CH4' || normalized === 'NH3') {
+    const centerElement = normalized === 'CH4' ? 'C' : 'N'
+    const hydrogenCount = normalized === 'CH4' ? 4 : 3
+    const centers = moleculeIndices(atoms, centerElement)
+    const hydrogens = moleculeIndices(atoms, 'H')
+    if (centers.length !== 1 || hydrogens.length !== hydrogenCount || bonds.length !== hydrogenCount) return false
+    const center = centers[0]
+    return hydrogens.every((hydrogen) => hasMoleculeBond(bonds, center, hydrogen)) && bonds.every(([from, to]) => from === center || to === center)
+  }
+  return false
+}
+
 export const MoleculeBuilder: FC<StemToolBuilderProps> = ({ config, onConfigChange }) => {
   const item = config as StemMoleculeConfig
-  return <Stack spacing={2}>{baseFields(item, onConfigChange)}<TextField fullWidth required label="Target molecular formula" value={item.targetFormula} onChange={(event) => onConfigChange({ ...item, targetFormula: event.target.value })} helperText="Use a standard formula such as H2O, CO2, CH4, or NH3." /><Typography variant="caption" color={moleculeAtoms(item.targetFormula) ? 'success.main' : 'warning.main'}>{moleculeAtoms(item.targetFormula) ? 'Formula is ready for the 2D structure editor.' : 'Enter a valid molecular formula before publishing.'}</Typography></Stack>
+  return <Stack spacing={2}>{baseFields(item, onConfigChange)}<TextField fullWidth required label="Target molecular formula" value={item.targetFormula} onChange={(event) => onConfigChange({ ...item, targetFormula: event.target.value })} helperText="Supported structures: H2O, CO2, CH4, or NH3." /><Typography variant="caption" color={['H2O', 'CO2', 'CH4', 'NH3'].includes(item.targetFormula.replace(/\s+/g, '')) ? 'success.main' : 'warning.main'}>{['H2O', 'CO2', 'CH4', 'NH3'].includes(item.targetFormula.replace(/\s+/g, '')) ? 'Formula is ready for the 2D structure editor.' : 'Use one of the supported formulas before publishing.'}</Typography></Stack>
 }
 
 export const MoleculePlayer: FC<StemToolPlayerProps> = ({ config, onComplete }) => {
@@ -519,7 +556,7 @@ export const MoleculePlayer: FC<StemToolPlayerProps> = ({ config, onComplete }) 
   }
   const check = () => {
     const correctCounts = Object.keys(target).every((element) => atomCount[element] === target[element]) && Object.keys(atomCount).every((element) => target[element] === atomCount[element])
-    const correct = correctCounts && atoms.length === targetTotal && bonds.length >= Math.max(0, targetTotal - 1)
+    const correct = correctCounts && atoms.length === targetTotal && matchesMoleculeStructure(item.targetFormula, atoms, bonds)
     setStatus(correct ? 'correct' : 'incorrect')
     if (correct) onComplete({ targetFormula: item.targetFormula, atoms, bonds })
   }
