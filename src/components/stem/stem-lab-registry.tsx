@@ -44,7 +44,10 @@ const gradeBandsFor = (subject: StemSubject, tool: StemTool): StemGradeBand[] =>
   return ['grade_7_9', 'grade_10_12']
 }
 
-const definition = (subject: StemSubject, tool: StemTool, label: string, icon: ReactNode, Builder: StemToolDefinition['Builder'], Player: StemToolDefinition['Player'], mode: StemToolDefinition['mode'], defaultConfig: StemLabConfig, isConfigured: StemToolDefinition['isConfigured']): StemToolDefinition => ({ subject, tool, subtype: `${subject}.${tool}` as StemSubtype, label, icon, gradeBands: gradeBandsFor(subject, tool), Builder, Player, mode, defaultConfig, isConfigured })
+const definition = (subject: StemSubject, tool: StemTool, label: string, icon: ReactNode, Builder: StemToolDefinition['Builder'], Player: StemToolDefinition['Player'], mode: StemToolDefinition['mode'], defaultConfig: StemLabConfig, isConfigured: StemToolDefinition['isConfigured']): StemToolDefinition => {
+  const gradeBands = gradeBandsFor(subject, tool)
+  return { subject, tool, subtype: `${subject}.${tool}` as StemSubtype, label, icon, gradeBands, Builder, Player, mode, defaultConfig: defaultConfig.gradeBand ? defaultConfig : { ...defaultConfig, gradeBand: gradeBands[0] }, isConfigured }
+}
 
 export const STEM_LAB_REGISTRY: StemToolDefinition[] = [
   definition('math', 'graph', 'Graph', <ShowChartOutlinedIcon />, GraphBuilder, GraphPlayer, 'build', { version: 1, gradeBand: 'grade_7_9', topic: 'Functions', instructions: 'Plot the function, inspect its behavior, and record the requested value.', expression: 'x^2', targetX: 2 }, validGraph),

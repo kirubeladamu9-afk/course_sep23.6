@@ -87,7 +87,7 @@ import { type AdminCourse, type AdminLesson, type AdminTutor, type AdminUser, ty
 import InteractiveHotspotEditor from './interactive-hotspot-editor'
 import { StemLabEditor as StemLabActivityEditor } from '@/components/stem/stem-lab'
 import { STEM_GRADE_BAND_LABELS, STEM_SUBJECT_LABELS, STEM_SUBJECTS, type StemSubject } from '@/components/stem/stem-types'
-import { defaultStemLabConfig, getStemToolsForSubject } from '@/components/stem/stem-lab-registry'
+import { defaultStemLabConfig, getStemToolBySubtype, getStemToolsForSubject } from '@/components/stem/stem-lab-registry'
 
 const drawerWidth = 272
 
@@ -815,7 +815,7 @@ const StemLabsPage: FC = () => {
           subject: STEM_SUBJECTS.includes(subject as StemSubject) ? subject as StemSubject : undefined,
           subtype: lesson.subtype,
           topic: lesson.config?.topic,
-          gradeBand: lesson.config?.gradeBand,
+          gradeBand: lesson.config?.gradeBand ?? getStemToolBySubtype(lesson.subtype)?.defaultConfig.gradeBand,
           published: Boolean(lesson.stemLabPublished),
         }
       }))))
