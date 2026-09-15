@@ -228,7 +228,7 @@ export type StemToolDefinition = {
 }
 
 export const STEM_SUBJECT_LABELS: Record<StemSubject, string> = {
-  math: 'Math',
+  math: 'Mathematics',
   physics: 'Physics',
   chemistry: 'Chemistry',
   biology: 'Biology',
