@@ -112,6 +112,7 @@ export type StemLabEnvironmentConfig = StemBaseConfig & {
   scenario: LabScenario
   activity: 'virtual_lab' | 'experiment'
   steps: string[]
+  observationKeywords?: string[]
 }
 
 export type StemCircuitConfig = StemBaseConfig & {
