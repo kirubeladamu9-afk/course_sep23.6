@@ -86,7 +86,7 @@ import Footer from '@/components/footer/footer'
 import { type AdminCourse, type AdminLesson, type AdminTutor, type AdminUser, type LessonType } from './admin-data'
 import InteractiveHotspotEditor from './interactive-hotspot-editor'
 import { StemLabEditor as StemLabActivityEditor } from '@/components/stem/stem-lab'
-import { STEM_GRADE_BAND_LABELS, STEM_SUBJECT_LABELS } from '@/components/stem/stem-types'
+import { STEM_GRADE_BAND_LABELS, STEM_SUBJECT_LABELS, STEM_SUBJECTS, type StemSubject } from '@/components/stem/stem-types'
 
 const drawerWidth = 272
 
@@ -744,7 +744,7 @@ type CourseEditorPageProps =
   | { mode: 'new'; courseId?: never }
   | { mode: 'edit'; courseId: number }
 
-type StemLabSummary = { id: string; title: string; courseId: number; courseTitle: string; moduleTitle: string; subtype?: string; published: boolean }
+type StemLabSummary = { id: string; title: string; courseId: number; courseTitle: string; moduleTitle: string; subject?: StemSubject; subtype?: string; topic?: string; gradeBand?: string; published: boolean }
 
 const formatStemLabTool = (subtype?: string) => subtype ? subtype.split('.').map((part) => part.split('_').map((word) => word[0].toUpperCase() + word.slice(1)).join(' ')).join(' · ') : 'Not configured'
 
@@ -757,7 +757,21 @@ const StemLabsPage: FC = () => {
     setIsLoading(true)
     try {
       const courses = await getAdminCourses()
-      setLabs(courses.flatMap((course) => course.modules.flatMap((module) => module.lessons.filter((lesson) => lesson.type === 'stem_lab').map((lesson) => ({ id: `${course.id}-${module.id}-${lesson.id}`, title: lesson.title, courseId: course.id, courseTitle: course.title, moduleTitle: module.title, subtype: lesson.subtype, published: Boolean(lesson.stemLabPublished) })))))
+      setLabs(courses.flatMap((course) => course.modules.flatMap((module) => module.lessons.filter((lesson) => lesson.type === 'stem_lab').map((lesson) => {
+        const subject = lesson.subtype?.split('.')[0]
+        return {
+          id: `${course.id}-${module.id}-${lesson.id}`,
+          title: lesson.title,
+          courseId: course.id,
+          courseTitle: course.title,
+          moduleTitle: module.title,
+          subject: STEM_SUBJECTS.includes(subject as StemSubject) ? subject as StemSubject : undefined,
+          subtype: lesson.subtype,
+          topic: lesson.config?.topic,
+          gradeBand: lesson.config?.gradeBand,
+          published: Boolean(lesson.stemLabPublished),
+        }
+      }))))
       setLoadError(null)
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : 'Unable to load STEM Labs.')
@@ -768,11 +782,36 @@ const StemLabsPage: FC = () => {
 
   useEffect(() => { void loadLabs() }, [])
 
+  const labsBySubject = useMemo(() => STEM_SUBJECTS.reduce<Record<StemSubject, StemLabSummary[]>>((groups, subject) => {
+    groups[subject] = labs.filter((lab) => lab.subject === subject)
+    return groups
+  }, { math: [], physics: [], chemistry: [], biology: [] }), [labs])
+  const publishedCount = labs.filter((lab) => lab.published).length
+  const configuredSubjectCount = STEM_SUBJECTS.filter((subject) => labsBySubject[subject].length > 0).length
+
   return <>
-    <PageHeading title="STEM Labs" description="Review and launch reusable STEM learning activities across your courses." action={<Button label="New STEM Lab" onClick={() => navigateTo('/admin/courses/new')} disabled={isLoading} />} />
-    {isLoading ? <AdminLoadingState label="Loading STEM Labs" /> : loadError ? <Paper elevation={0} sx={{ p: 4, border: 1, borderColor: 'divider' }}><Typography color="error" sx={{ mb: 2 }}>{loadError}</Typography><Button label="Retry" onClick={() => void loadLabs()} /></Paper> : labs.length === 0 ? <Paper elevation={0} sx={{ p: { xs: 3, md: 5 }, textAlign: 'center', border: 1, borderColor: 'divider' }}><ScienceOutlinedIcon color="primary" sx={{ fontSize: 42, mb: 1 }} /><Typography variant="h6" sx={{ mb: 0.75 }}>No STEM Labs yet</Typography><Typography color="text.secondary" sx={{ mb: 2.5 }}>Create a course, then add a STEM Lab lesson to configure, preview, and publish an activity.</Typography><Button label="Create course" onClick={() => navigateTo('/admin/courses/new')} /></Paper> : <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))', xl: 'repeat(3, minmax(0, 1fr))' }, gap: 2 }}>
-      {labs.map((lab) => <Paper key={lab.id} elevation={0} sx={{ p: 2.5, border: 1, borderColor: 'divider', display: 'flex', flexDirection: 'column', gap: 2 }}><Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1}><Box sx={{ minWidth: 0 }}><Typography variant="overline" color="primary.main" sx={{ fontWeight: 800 }}>{formatStemLabTool(lab.subtype)}</Typography><Typography variant="h6" noWrap>{lab.title}</Typography></Box><Chip size="small" color={lab.published ? 'success' : 'warning'} label={lab.published ? 'Published' : 'Draft'} /></Stack><Box><Typography variant="body2" color="text.secondary">{lab.courseTitle}</Typography><Typography variant="caption" color="text.secondary">{lab.moduleTitle}</Typography></Box><Button label="Open authoring" variant="outlined" onClick={() => navigateTo(`/admin/courses/${lab.courseId}/edit`)} /></Paper>)}
-    </Box>}
+    <PageHeading title="STEM Labs" description="Review STEM Lab lessons across every subject in your courses." action={<Button label="New STEM Lab" onClick={() => navigateTo('/admin/courses/new')} disabled={isLoading} />} />
+    {isLoading ? <AdminLoadingState label="Loading STEM Labs" /> : loadError ? <Paper elevation={0} sx={{ p: 4, border: 1, borderColor: 'divider' }}><Typography color="error" sx={{ mb: 2 }}>{loadError}</Typography><Button label="Retry" onClick={() => void loadLabs()} /></Paper> : <>
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 3 }}>
+        <StatCard label="STEM Lab lessons" value={String(labs.length)} detail="Across all courses" icon={<ScienceOutlinedIcon />} />
+        <StatCard label="Subjects covered" value={`${configuredSubjectCount}/${STEM_SUBJECTS.length}`} detail="Math, Physics, Chemistry, Biology" icon={<SchoolOutlinedIcon />} />
+        <StatCard label="Published lessons" value={String(publishedCount)} detail={`${labs.length - publishedCount} draft${labs.length - publishedCount === 1 ? '' : 's'} to review`} icon={<CheckCircleOutlineIcon />} />
+      </Stack>
+      <Typography variant="h5" sx={{ mb: 1 }}>Lessons by subject</Typography>
+      <Typography color="text.secondary" sx={{ mb: 2.5 }}>See the activity type, topic, grade band, and publishing status for each subject.</Typography>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, minmax(0, 1fr))' }, gap: 2 }}>
+        {STEM_SUBJECTS.map((subject) => {
+          const subjectLabs = labsBySubject[subject]
+          return <Paper key={subject} elevation={0} sx={{ p: { xs: 2, md: 2.5 }, border: 1, borderColor: 'divider' }}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1} sx={{ mb: 2 }}>
+              <Stack direction="row" alignItems="center" spacing={1}><ScienceOutlinedIcon color="primary" /><Typography variant="h6">{STEM_SUBJECT_LABELS[subject]}</Typography></Stack>
+              <Chip size="small" label={`${subjectLabs.length} lesson${subjectLabs.length === 1 ? '' : 's'}`} color={subjectLabs.length ? 'primary' : 'default'} variant={subjectLabs.length ? 'filled' : 'outlined'} />
+            </Stack>
+            {subjectLabs.length === 0 ? <Box sx={{ py: 2, px: 1.5, borderRadius: 1, backgroundColor: 'action.hover' }}><Typography variant="body2" color="text.secondary">No {STEM_SUBJECT_LABELS[subject]} STEM Lab lessons yet.</Typography><Box sx={{ mt: 1 }}><Button label={`Add ${STEM_SUBJECT_LABELS[subject]} lesson`} size="small" variant="text" onClick={() => navigateTo('/admin/courses/new')} /></Box></Box> : <Stack spacing={1.5}>{subjectLabs.map((lab) => <Box key={lab.id} sx={{ p: 1.5, border: 1, borderColor: 'divider', borderRadius: 1.5 }}><Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1}><Box sx={{ minWidth: 0 }}><Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{lab.title}</Typography><Typography variant="body2" color="text.secondary">{formatStemLabTool(lab.subtype).split(' · ').slice(1).join(' · ') || 'Not configured'}</Typography></Box><Chip size="small" color={lab.published ? 'success' : 'warning'} label={lab.published ? 'Published' : 'Draft'} /></Stack><Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 1 }}><Chip size="small" variant="outlined" label={lab.courseTitle} /><Chip size="small" variant="outlined" label={lab.topic || 'Topic not set'} />{lab.gradeBand && <Chip size="small" variant="outlined" label={STEM_GRADE_BAND_LABELS[lab.gradeBand as keyof typeof STEM_GRADE_BAND_LABELS] || lab.gradeBand} />}</Stack><Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>{lab.moduleTitle}</Typography><Box sx={{ mt: 0.5 }}><Button label="Open authoring" size="small" variant="text" onClick={() => navigateTo(`/admin/courses/${lab.courseId}/edit`)} /></Box></Box>)}</Stack>}
+          </Paper>
+        })}
+      </Box>
+    </>}
   </>
 }
 
