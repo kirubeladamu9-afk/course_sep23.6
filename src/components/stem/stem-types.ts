@@ -128,6 +128,9 @@ export type StemMoleculeConfig = StemBaseConfig & {
   targetFormula: string
 }
 
+export const MOLECULE_TARGET_FORMULAS = ['H2O', 'CO2', 'CH4', 'NH3'] as const
+export type MoleculeTargetFormula = typeof MOLECULE_TARGET_FORMULAS[number]
+
 export type StemChemicalEquationConfig = StemBaseConfig & {
   equation: string
 }

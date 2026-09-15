@@ -58,7 +58,8 @@ import type {
   StemToolBuilderProps,
   StemToolPlayerProps,
 } from './stem-types'
-import { STEM_SHAPES } from './stem-types'
+import { MOLECULE_TARGET_FORMULAS, STEM_SHAPES } from './stem-types'
+import type { MoleculeTargetFormula } from './stem-types'
 
 export { solveLinearEquation } from './stem-engines'
 
@@ -496,6 +497,28 @@ const moleculeAtoms = (formula: string) => {
 }
 
 type MoleculeBond = [number, number]
+type MoleculeFact = { formula: MoleculeTargetFormula; geometry: string; structuralReason: string; realWorldProperty?: string }
+
+const MOLECULE_CPK_COLORS: Record<string, { fill: string; text: string; border: string }> = {
+  H: { fill: '#f5f5f5', text: '#212121', border: '#757575' },
+  C: { fill: '#212121', text: '#ffffff', border: '#212121' },
+  N: { fill: '#1976d2', text: '#ffffff', border: '#0d47a1' },
+  O: { fill: '#d32f2f', text: '#ffffff', border: '#8e0000' },
+  Cl: { fill: '#388e3c', text: '#ffffff', border: '#1b5e20' },
+  S: { fill: '#fbc02d', text: '#212121', border: '#f57f17' },
+  P: { fill: '#ef6c00', text: '#ffffff', border: '#e65100' },
+}
+
+// Keep this complete with MOLECULE_TARGET_FORMULAS whenever a target is added.
+const moleculeFacts: Record<MoleculeTargetFormula, MoleculeFact> = {
+  H2O: { formula: 'H2O', geometry: 'Bent', structuralReason: 'Two O–H bonds are pushed into a bent shape by oxygen’s two lone pairs.', realWorldProperty: 'Water molecules form hydrogen bonds.' },
+  CO2: { formula: 'CO2', geometry: 'Linear', structuralReason: 'The carbon atom has two bonding regions and no lone pair, so the O–C–O angle is 180°.', realWorldProperty: 'Carbon dioxide is a greenhouse gas.' },
+  CH4: { formula: 'CH4', geometry: 'Tetrahedral', structuralReason: 'Four C–H bonding pairs spread out evenly around carbon.', realWorldProperty: 'Methane is the main component of natural gas.' },
+  NH3: { formula: 'NH3', geometry: 'Trigonal pyramidal', structuralReason: 'Three N–H bonds are shaped by a lone pair on nitrogen.', realWorldProperty: 'Ammonia is a pungent, basic gas.' },
+}
+
+const moleculeColor = (element: string) => MOLECULE_CPK_COLORS[element] ?? { fill: '#616161', text: '#ffffff', border: '#424242' }
+const isSupportedMoleculeFormula = (formula: string): formula is MoleculeTargetFormula => MOLECULE_TARGET_FORMULAS.includes(formula.replace(/\s+/g, '') as MoleculeTargetFormula)
 
 const hasMoleculeBond = (bonds: MoleculeBond[], first: number, second: number) => bonds.some(([from, to]) => (from === first && to === second) || (from === second && to === first))
 const moleculeIndices = (atoms: string[], element: string) => atoms.flatMap((atom, index) => atom === element ? [index] : [])
@@ -534,7 +557,8 @@ const matchesMoleculeStructure = (formula: string, atoms: string[], bonds: Molec
 
 export const MoleculeBuilder: FC<StemToolBuilderProps> = ({ config, onConfigChange }) => {
   const item = config as StemMoleculeConfig
-  return <Stack spacing={2}>{baseFields(item, onConfigChange)}<TextField fullWidth required label="Target molecular formula" value={item.targetFormula} onChange={(event) => onConfigChange({ ...item, targetFormula: event.target.value })} helperText="Supported structures: H2O, CO2, CH4, or NH3." /><Typography variant="caption" color={['H2O', 'CO2', 'CH4', 'NH3'].includes(item.targetFormula.replace(/\s+/g, '')) ? 'success.main' : 'warning.main'}>{['H2O', 'CO2', 'CH4', 'NH3'].includes(item.targetFormula.replace(/\s+/g, '')) ? 'Formula is ready for the 2D structure editor.' : 'Use one of the supported formulas before publishing.'}</Typography></Stack>
+  const supported = isSupportedMoleculeFormula(item.targetFormula)
+  return <Stack spacing={2}>{baseFields(item, onConfigChange)}<TextField fullWidth required label="Target molecular formula" value={item.targetFormula} onChange={(event) => onConfigChange({ ...item, targetFormula: event.target.value })} helperText="Supported structures: H2O, CO2, CH4, or NH3." /><Typography variant="caption" color={supported ? 'success.main' : 'warning.main'}>{supported ? 'Formula is ready for the 2D structure editor.' : 'Use one of the supported formulas before publishing.'}</Typography></Stack>
 }
 
 export const MoleculePlayer: FC<StemToolPlayerProps> = ({ config, onComplete }) => {
@@ -561,7 +585,8 @@ export const MoleculePlayer: FC<StemToolPlayerProps> = ({ config, onComplete }) 
     if (correct) onComplete({ targetFormula: item.targetFormula, atoms, bonds })
   }
   const position = (index: number) => { const angle = (Math.PI * 2 * index) / Math.max(atoms.length, 1) - Math.PI / 2; return { x: 180 + Math.cos(angle) * 105, y: 150 + Math.sin(angle) * 90 } }
-  return <Stack spacing={1.5}><Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap">{['H', 'C', 'N', 'O', 'Cl', 'S', 'P'].map((element) => <Button key={element} size="small" variant={selectedElement === element ? 'contained' : 'outlined'} onClick={() => setSelectedElement(element)}>{element}</Button>)}<Button size="small" variant="contained" disabled={atoms.length >= targetTotal + 4} onClick={() => { setAtoms((current) => [...current, selectedElement]); setStatus(null) }}>Add atom</Button></Stack><Typography variant="caption" color="text.secondary">Select two atoms in the editor to create a bond. Target: {item.targetFormula}.</Typography><Box component="svg" viewBox="0 0 360 300" role="img" aria-label="2D molecule editor" sx={{ width: '100%', maxWidth: 420, alignSelf: 'center', border: 1, borderColor: 'divider', borderRadius: 1.5, backgroundColor: 'background.default' }}>{bonds.map(([from, to], index) => { const start = position(from); const end = position(to); return <line key={`${from}-${to}-${index}`} x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke="currentColor" strokeWidth="4" /> })}{atoms.map((atom, index) => { const point = position(index); return <g key={`${atom}-${index}`} onClick={() => clickAtom(index)} style={{ cursor: 'pointer' }}><circle cx={point.x} cy={point.y} r="25" fill="currentColor" opacity={bondStart === index ? 1 : 0.78} /><text x={point.x} y={point.y + 6} textAnchor="middle" fontWeight="700" fill="white">{atom}</text></g> })}</Box><Typography variant="body2">Built: {Object.entries(atomCount).map(([element, count]) => `${element}${count > 1 ? count : ''}`).join('') || 'No atoms'} · {bonds.length} bond{bonds.length === 1 ? '' : 's'}</Typography><Stack direction="row" spacing={1}><Button variant="contained" disabled={!atoms.length} onClick={check}>Check structure</Button><Button variant="outlined" onClick={() => { setAtoms([]); setBonds([]); setBondStart(null); setStatus(null) }}>Clear</Button></Stack><StatusText status={status} correct="Molecular formula and connected 2D structure are correct." incorrect="Match every target atom count and connect the structure with bonds before recording it." /></Stack>
+  const fact = status === 'correct' && isSupportedMoleculeFormula(item.targetFormula) ? moleculeFacts[item.targetFormula.replace(/\s+/g, '') as MoleculeTargetFormula] : undefined
+  return <Stack spacing={1.5}><Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap">{['H', 'C', 'N', 'O', 'Cl', 'S', 'P'].map((element) => { const color = moleculeColor(element); return <Button key={element} size="small" variant={selectedElement === element ? 'contained' : 'outlined'} onClick={() => setSelectedElement(element)} sx={{ backgroundColor: color.fill, color: color.text, borderColor: color.border, '&:hover': { backgroundColor: color.fill, borderColor: color.border } }}>{element}</Button> })}<Button size="small" variant="contained" disabled={atoms.length >= targetTotal + 4} onClick={() => { setAtoms((current) => [...current, selectedElement]); setStatus(null) }}>Add atom</Button></Stack><Typography variant="caption" color="text.secondary">Select two atoms in the editor to create a bond. Target: {item.targetFormula}.</Typography><Box component="svg" viewBox="0 0 360 300" role="img" aria-label="2D molecule editor" sx={{ width: '100%', maxWidth: 420, alignSelf: 'center', border: 1, borderColor: 'divider', borderRadius: 1.5, backgroundColor: 'background.default' }}>{bonds.map(([from, to], index) => { const start = position(from); const end = position(to); return <line key={`${from}-${to}-${index}`} x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke="currentColor" strokeWidth="4" /> })}{atoms.map((atom, index) => { const point = position(index); return <g key={`${atom}-${index}`} onClick={() => clickAtom(index)} style={{ cursor: 'pointer' }}><circle cx={point.x} cy={point.y} r="25" fill={moleculeColor(atom).fill} stroke={moleculeColor(atom).border} strokeWidth="2" opacity={bondStart === index ? 1 : 0.78} /><text x={point.x} y={point.y + 6} textAnchor="middle" fontWeight="700" fill={moleculeColor(atom).text}>{atom}</text></g> })}</Box><Typography variant="body2">Built: {Object.entries(atomCount).map(([element, count]) => `${element}${count > 1 ? count : ''}`).join('') || 'No atoms'} · {bonds.length} bond{bonds.length === 1 ? '' : 's'}</Typography><Stack direction="row" spacing={1}><Button variant="contained" disabled={!atoms.length} onClick={check}>Check structure</Button><Button variant="outlined" onClick={() => { setAtoms([]); setBonds([]); setBondStart(null); setStatus(null) }}>Clear</Button></Stack><StatusText status={status} correct="Molecular formula and connected 2D structure are correct." incorrect="Match every target atom count and connect the structure with bonds before recording it." />{fact && <Paper variant="outlined" sx={{ p: 1.5 }}><Typography variant="subtitle2">{fact.formula} · {fact.geometry}</Typography><Typography variant="body2" color="text.secondary">{fact.structuralReason}</Typography>{fact.realWorldProperty && <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{fact.realWorldProperty}</Typography>}</Paper>}</Stack>
 }
 
 const atomsFor = (formula: string) => {
