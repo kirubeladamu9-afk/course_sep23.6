@@ -60,6 +60,7 @@ import TranslateOutlinedIcon from '@mui/icons-material/TranslateOutlined'
 import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline'
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline'
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined'
+import ScienceOutlinedIcon from '@mui/icons-material/ScienceOutlined'
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
 import PaymentsOutlinedIcon from '@mui/icons-material/PaymentsOutlined'
 import InsertLinkOutlinedIcon from '@mui/icons-material/InsertLinkOutlined'
@@ -85,6 +86,7 @@ import Footer from '@/components/footer/footer'
 import { type AdminCourse, type AdminLesson, type AdminTutor, type AdminUser, type LessonType } from './admin-data'
 import InteractiveHotspotEditor from './interactive-hotspot-editor'
 import { StemLabEditor as StemLabActivityEditor } from '@/components/stem/stem-lab'
+import { STEM_GRADE_BAND_LABELS, STEM_SUBJECT_LABELS } from '@/components/stem/stem-types'
 
 const drawerWidth = 272
 
@@ -586,13 +588,13 @@ const WeakAreasPanel: FC<{ weakAreas: AdminWeakArea[] }> = ({ weakAreas }) => <P
   <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={1} sx={{ mb: 2 }}>
     <Box>
       <Typography component="h2" variant="h6">Topics needing attention</Typography>
-      <Typography color="text.secondary" variant="body2">Topics below 60% accuracy across completed quiz and practice responses.</Typography>
+      <Typography color="text.secondary" variant="body2">Topics below 60% accuracy across quiz, practice, and STEM Lab responses.</Typography>
     </Box>
     <Chip size="small" color={weakAreas.length ? 'warning' : 'success'} label={weakAreas.length ? `${weakAreas.length} weak topic${weakAreas.length === 1 ? '' : 's'}` : 'No weak topics'} />
   </Stack>
-  {weakAreas.length === 0 ? <Typography color="text.secondary" variant="body2">Topic performance is on track. Weak areas will appear here as learner responses are recorded.</Typography> : <Stack spacing={1.25}>{weakAreas.map((area) => <Box key={area.topic} sx={{ p: 1.5, borderRadius: 1.5, backgroundColor: (theme) => alpha(theme.palette.warning.main, theme.palette.mode === 'dark' ? 0.16 : 0.08) }}>
+  {weakAreas.length === 0 ? <Typography color="text.secondary" variant="body2">Topic performance is on track. Weak areas will appear here as learner responses are recorded.</Typography> : <Stack spacing={1.25}>{weakAreas.map((area) => <Box key={`${area.subject ?? ''}-${area.gradeBand ?? ''}-${area.topic}`} sx={{ p: 1.5, borderRadius: 1.5, backgroundColor: (theme) => alpha(theme.palette.warning.main, theme.palette.mode === 'dark' ? 0.16 : 0.08) }}>
     <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={1} sx={{ mb: 1 }}>
-      <Typography sx={{ fontWeight: 700 }}>{area.topic}</Typography>
+      <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap" alignItems="center"><Typography sx={{ fontWeight: 700 }}>{area.topic}</Typography>{area.subject && <Chip size="small" variant="outlined" label={STEM_SUBJECT_LABELS[area.subject as keyof typeof STEM_SUBJECT_LABELS] ?? area.subject} />}{area.gradeBand && <Chip size="small" variant="outlined" label={STEM_GRADE_BAND_LABELS[area.gradeBand as keyof typeof STEM_GRADE_BAND_LABELS] ?? area.gradeBand} />}</Stack>
       <Chip size="small" color="warning" label={`${area.accuracy}% accuracy`} sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }} />
     </Stack>
     <LinearProgress color="warning" variant="determinate" value={area.accuracy} aria-label={`${area.topic}: ${area.accuracy}% accuracy`} sx={{ height: 7, borderRadius: 4, mb: 0.75 }} />

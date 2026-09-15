@@ -381,6 +381,24 @@ const initializeDatabase = async () => {
       PRIMARY KEY (enrollment_id, lesson_id)
     )
   `
+  await ensureColumns('student_lesson_progress', {
+    stem_result: 'JSONB',
+  })
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS stem_activity_attempts (
+      id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+      enrollment_id BIGINT NOT NULL REFERENCES enrollments(id) ON DELETE CASCADE,
+      lesson_id BIGINT NOT NULL,
+      subject TEXT NOT NULL,
+      grade_band TEXT NOT NULL,
+      topic TEXT NOT NULL,
+      correct BOOLEAN NOT NULL,
+      result_values JSONB NOT NULL DEFAULT '{}'::jsonb,
+      attempted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `
+  await sql`CREATE INDEX IF NOT EXISTS stem_activity_attempts_enrollment_idx ON stem_activity_attempts(enrollment_id, attempted_at DESC)`
 
   await sql`
     CREATE TABLE IF NOT EXISTS class_attendance (
@@ -881,10 +899,21 @@ const sanitizeCourseForLearner = (course) => course ? {
 
 const parseEnrollmentId = (value) => /^\d+$/.test(value) ? Number(value) : null
 const maxEngagementSeconds = 60
-const stemSubtypes = new Set(['math.graph', 'math.equation_solver', 'math.calculator', 'math.geometry_builder', 'physics.graph', 'physics.simulation', 'physics.formula_solver', 'physics.experiment', 'physics.virtual_lab', 'physics.circuit_builder', 'chemistry.formula_solver', 'chemistry.periodic_table', 'chemistry.molecule_builder', 'chemistry.chemical_equation', 'chemistry.simulation', 'chemistry.virtual_lab', 'chemistry.experiment', 'biology.interactive_diagram', 'biology.three_d_explorer', 'biology.virtual_lab', 'biology.simulation', 'biology.genetics_punnett_square', 'biology.classification_builder', 'biology.experiment'])
+const stemSubtypes = new Set(['math.graph', 'math.equation_solver', 'math.calculator', 'math.geometry_builder', 'math.number_line', 'math.counting_visualizer', 'math.shape_matcher', 'math.fraction_visualizer', 'physics.graph', 'physics.simulation', 'physics.formula_solver', 'physics.experiment', 'physics.virtual_lab', 'physics.circuit_builder', 'chemistry.formula_solver', 'chemistry.periodic_table', 'chemistry.molecule_builder', 'chemistry.chemical_equation', 'chemistry.simulation', 'chemistry.virtual_lab', 'chemistry.experiment', 'biology.interactive_diagram', 'biology.three_d_explorer', 'biology.virtual_lab', 'biology.simulation', 'biology.genetics_punnett_square', 'biology.classification_builder', 'biology.experiment'])
 
 const isPlainObject = (value) => Boolean(value) && typeof value === 'object' && !Array.isArray(value)
-const hasValidStemLab = (lesson) => lesson?.type === 'stem_lab' && lesson.stemLabPublished === true && typeof lesson.subtype === 'string' && stemSubtypes.has(lesson.subtype) && isPlainObject(lesson.config) && lesson.config.version === 1 && typeof lesson.config.instructions === 'string' && lesson.config.instructions.trim()
+const stemGradeBands = new Set(['grade_1_3', 'grade_4_6', 'grade_7_9', 'grade_10_12'])
+const stemGradeBandScopes = {
+  'math.number_line': new Set(['grade_1_3']),
+  'math.counting_visualizer': new Set(['grade_1_3']),
+  'math.shape_matcher': new Set(['grade_1_3']),
+  'math.fraction_visualizer': new Set(['grade_4_6']),
+}
+const hasValidStemLab = (lesson) => {
+  const gradeBand = lesson?.config?.gradeBand
+  const scope = stemGradeBandScopes[lesson?.subtype]
+  return lesson?.type === 'stem_lab' && lesson.stemLabPublished === true && typeof lesson.subtype === 'string' && stemSubtypes.has(lesson.subtype) && isPlainObject(lesson.config) && lesson.config.version === 1 && (!gradeBand || (stemGradeBands.has(gradeBand) && (!scope || scope.has(gradeBand)))) && typeof lesson.config.instructions === 'string' && lesson.config.instructions.trim()
+}
 
 const getEnrollmentProgress = (modules, lessonProgress) => {
   const lessons = getCourseLessons(modules).filter((lesson) => lesson.type !== 'practice')
@@ -936,13 +965,15 @@ const getQuestionResults = (modules, attempt) => {
   })
 }
 
-const getTopicPerformance = (modules, quizAttempts, practiceAnswers) => {
+const getTopicPerformance = (modules, quizAttempts, practiceAnswers, stemAttempts = []) => {
   const topics = new Map()
-  const addAnswer = (topic, correct) => {
+  const addAnswer = (topic, correct, metadata = {}) => {
     const label = typeof topic === 'string' ? topic.trim() : ''
     if (!label) return
-    const key = label.toLocaleLowerCase()
-    const current = topics.get(key) ?? { topic: label, correct: 0, total: 0 }
+    const subject = typeof metadata.subject === 'string' ? metadata.subject : undefined
+    const gradeBand = typeof metadata.gradeBand === 'string' ? metadata.gradeBand : undefined
+    const key = `${subject ?? ''}|${gradeBand ?? ''}|${label.toLocaleLowerCase()}`
+    const current = topics.get(key) ?? { topic: label, correct: 0, total: 0, ...(subject ? { subject } : {}), ...(gradeBand ? { gradeBand } : {}) }
     current.correct += correct ? 1 : 0
     current.total += 1
     topics.set(key, current)
@@ -955,6 +986,7 @@ const getTopicPerformance = (modules, quizAttempts, practiceAnswers) => {
     for (const question of questions) addAnswer(question.topic, selectedOptionFromRecord(answers[String(question.id)], question) === question.correctOption)
   }
   for (const answer of Array.isArray(practiceAnswers) ? practiceAnswers : []) addAnswer(answer.topic, answer.correct)
+  for (const attempt of Array.isArray(stemAttempts) ? stemAttempts : []) addAnswer(attempt.topic, attempt.correct, { subject: attempt.subject, gradeBand: attempt.gradeBand })
   return [...topics.values()].map((area) => ({
     ...area,
     accuracy: Math.round((area.correct / area.total) * 100),
@@ -962,7 +994,7 @@ const getTopicPerformance = (modules, quizAttempts, practiceAnswers) => {
   }))
 }
 
-const getWeakAreas = (modules, quizAttempts, practiceAnswers) => getTopicPerformance(modules, quizAttempts, practiceAnswers)
+const getWeakAreas = (modules, quizAttempts, practiceAnswers, stemAttempts = []) => getTopicPerformance(modules, quizAttempts, practiceAnswers, stemAttempts)
   .filter((area) => area.accuracy < 60)
   .sort((first, second) => first.accuracy - second.accuracy || first.topic.localeCompare(second.topic))
 
@@ -971,7 +1003,8 @@ const getAdminWeakAreas = async () => {
     SELECT enrollments.student_id AS "studentId",
            CASE WHEN classes.id IS NULL THEN courses.modules ELSE classes.modules END AS modules,
            quiz_summary."quizAttempts",
-           practice_summary."practiceAnswers"
+           practice_summary."practiceAnswers",
+           stem_summary."stemAttempts"
     FROM enrollments
     INNER JOIN payments ON payments.id = enrollments.payment_id AND payments.status = 'paid'
     LEFT JOIN courses ON courses.id = enrollments.course_id
@@ -986,6 +1019,11 @@ const getAdminWeakAreas = async () => {
       WHERE enrollment_id = enrollments.id
     ) AS quiz_summary ON true
     LEFT JOIN LATERAL (
+      SELECT COALESCE(jsonb_agg(jsonb_build_object('topic', topic, 'correct', correct, 'subject', subject, 'gradeBand', grade_band)), '[]'::jsonb) AS "stemAttempts"
+      FROM stem_activity_attempts
+      WHERE enrollment_id = enrollments.id
+    ) AS stem_summary ON true
+    LEFT JOIN LATERAL (
       SELECT COALESCE(jsonb_agg(jsonb_build_object('topic', topic, 'correct', correct)), '[]'::jsonb) AS "practiceAnswers"
       FROM practice_answers
       WHERE enrollment_id = enrollments.id
@@ -995,10 +1033,10 @@ const getAdminWeakAreas = async () => {
   `
   const topics = new Map()
   for (const record of records) {
-    const areas = getTopicPerformance(deserializeJson(record.modules) ?? [], deserializeJson(record.quizAttempts) ?? [], deserializeJson(record.practiceAnswers) ?? [])
+    const areas = getTopicPerformance(deserializeJson(record.modules) ?? [], deserializeJson(record.quizAttempts) ?? [], deserializeJson(record.practiceAnswers) ?? [], deserializeJson(record.stemAttempts) ?? [])
     for (const area of areas) {
-      const key = area.topic.toLocaleLowerCase()
-      const current = topics.get(key) ?? { topic: area.topic, correct: 0, total: 0, affectedStudentIds: new Set() }
+      const key = `${area.subject ?? ''}|${area.gradeBand ?? ''}|${area.topic.toLocaleLowerCase()}`
+      const current = topics.get(key) ?? { topic: area.topic, correct: 0, total: 0, ...(area.subject ? { subject: area.subject } : {}), ...(area.gradeBand ? { gradeBand: area.gradeBand } : {}), affectedStudentIds: new Set() }
       current.correct += area.correct
       current.total += area.total
       if (area.accuracy < 60) current.affectedStudentIds.add(Number(record.studentId))
@@ -1027,7 +1065,7 @@ const serializeEnrollment = (enrollment) => {
     classSchedule: isPlainObject(deserializeJson(enrollment.classSchedule)) ? deserializeJson(enrollment.classSchedule) : null,
     lessonProgress,
     quizAttempts,
-    weakAreas: getWeakAreas(modules, quizAttempts, practiceAnswers),
+    weakAreas: getWeakAreas(modules, quizAttempts, practiceAnswers, deserializeJson(enrollment.stemAttempts) ?? []),
     completedLessonIds,
     started: Object.keys(lessonProgress).length > 0,
     timeSpentSeconds: Number(enrollment.timeSpentSeconds) || 0,
@@ -1678,6 +1716,7 @@ app.get('/api/enrollments', requireAuthenticated, async (request, response) => {
            lesson_summary."lastActivityAt",
            quiz_summary."quizAttempts",
            practice_summary."practiceAnswers",
+           stem_summary."stemAttempts",
            attendance_summary.attendance,
            session_join_summary."sessionJoinClicks"
     FROM enrollments
@@ -1722,6 +1761,11 @@ app.get('/api/enrollments', requireAuthenticated, async (request, response) => {
       FROM quiz_attempts
       WHERE enrollment_id = enrollments.id
     ) AS quiz_summary ON true
+    LEFT JOIN LATERAL (
+      SELECT COALESCE(jsonb_agg(jsonb_build_object('topic', topic, 'correct', correct, 'subject', subject, 'gradeBand', grade_band)), '[]'::jsonb) AS "stemAttempts"
+      FROM stem_activity_attempts
+      WHERE enrollment_id = enrollments.id
+    ) AS stem_summary ON true
     LEFT JOIN LATERAL (
       SELECT COALESCE(jsonb_agg(jsonb_build_object('topic', topic, 'correct', correct)), '[]'::jsonb) AS "practiceAnswers"
       FROM practice_answers
@@ -1836,6 +1880,32 @@ app.post('/api/enrollments/:enrollmentId/lessons/:lessonId/engagement', requireA
   return response.json(progress.lessonProgress)
 })
 
+app.post('/api/enrollments/:enrollmentId/lessons/:lessonId/stem-attempts', requireAuthenticated, async (request, response) => {
+  const enrollmentId = parseEnrollmentId(request.params.enrollmentId)
+  const lessonId = parseEnrollmentId(request.params.lessonId)
+  const attempt = request.body?.attempt
+  if (enrollmentId === null || lessonId === null || !isPlainObject(attempt)) return response.status(400).json({ message: 'Invalid STEM activity attempt.' })
+
+  const saved = await sql.begin(async (transaction) => {
+    const enrollment = await getOwnedEnrollment(transaction, request.userId, enrollmentId)
+    if (!enrollment) return null
+    const lesson = findCourseLesson(enrollment.modules, lessonId)
+    if (!lesson || lesson.type !== 'stem_lab') return { error: 'STEM Lab lesson not found.' }
+    const [subject] = String(lesson.subtype ?? '').split('.')
+    const gradeBand = lesson.config?.gradeBand ?? 'grade_7_9'
+    if (!hasValidStemLab(lesson) || attempt.subtype !== lesson.subtype || attempt.subject !== subject || attempt.gradeBand !== gradeBand || typeof attempt.correct !== 'boolean' || !isPlainObject(attempt.values)) return { error: 'Invalid STEM activity attempt.' }
+    const [record] = await transaction`
+      INSERT INTO stem_activity_attempts (enrollment_id, lesson_id, subject, grade_band, topic, correct, result_values)
+      VALUES (${enrollmentId}, ${lessonId}, ${subject}, ${gradeBand}, ${lesson.config.topic.trim()}, ${attempt.correct}, ${JSON.stringify(attempt.values)}::jsonb)
+      RETURNING id::INTEGER AS id
+    `
+    return record
+  })
+  if (!saved) return response.status(404).json({ message: 'Course enrollment not found.' })
+  if (saved.error) return response.status(400).json({ message: saved.error })
+  return response.status(201).json(saved)
+})
+
 app.post('/api/enrollments/:enrollmentId/lessons/:lessonId/complete', requireAuthenticated, async (request, response) => {
   const enrollmentId = parseEnrollmentId(request.params.enrollmentId)
   const lessonId = parseEnrollmentId(request.params.lessonId)
@@ -1846,10 +1916,12 @@ app.post('/api/enrollments/:enrollmentId/lessons/:lessonId/complete', requireAut
     if (!enrollment) return null
     const lesson = findCourseLesson(enrollment.modules, lessonId)
     if (!lesson) return { error: 'Lesson not found.' }
+    const stemResult = lesson.type === 'stem_lab' ? request.body?.stemResult : null
 
     if (lesson.type === 'stem_lab') {
-      const result = request.body?.stemResult
-      if (!hasValidStemLab(lesson) || !isPlainObject(result) || result.subtype !== lesson.subtype || !isPlainObject(result.values)) return { error: 'Complete this published STEM Lab activity before marking the lesson complete.' }
+      const [subject] = String(lesson.subtype ?? '').split('.')
+      const gradeBand = lesson.config?.gradeBand ?? 'grade_7_9'
+      if (!hasValidStemLab(lesson) || !isPlainObject(stemResult) || stemResult.subtype !== lesson.subtype || stemResult.subject !== subject || stemResult.gradeBand !== gradeBand || !isPlainObject(stemResult.values)) return { error: 'Complete this published STEM Lab activity before marking the lesson complete.' }
     }
 
     if (lesson.type === 'quiz') {
@@ -1865,10 +1937,11 @@ app.post('/api/enrollments/:enrollmentId/lessons/:lessonId/complete', requireAut
     }
 
     const [lessonProgress] = await transaction`
-      INSERT INTO student_lesson_progress (enrollment_id, lesson_id, completed_at)
-      VALUES (${enrollmentId}, ${lessonId}, NOW())
+      INSERT INTO student_lesson_progress (enrollment_id, lesson_id, completed_at, stem_result)
+      VALUES (${enrollmentId}, ${lessonId}, NOW(), ${stemResult ? JSON.stringify(stemResult) : null}::jsonb)
       ON CONFLICT (enrollment_id, lesson_id) DO UPDATE
       SET completed_at = COALESCE(student_lesson_progress.completed_at, NOW()),
+          stem_result = COALESCE(student_lesson_progress.stem_result, EXCLUDED.stem_result),
           last_accessed_at = NOW()
       RETURNING started_at AS "startedAt",
                 completed_at AS "completedAt",

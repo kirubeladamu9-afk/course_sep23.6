@@ -10,6 +10,10 @@ export type StemTool =
   | 'equation_solver'
   | 'calculator'
   | 'geometry_builder'
+  | 'number_line'
+  | 'counting_visualizer'
+  | 'shape_matcher'
+  | 'fraction_visualizer'
   | 'simulation'
   | 'formula_solver'
   | 'experiment'
@@ -25,10 +29,21 @@ export type StemTool =
 
 export type StemSubtype = `${StemSubject}.${StemTool}`
 
+export type StemGradeBand = 'grade_1_3' | 'grade_4_6' | 'grade_7_9' | 'grade_10_12'
+
+export const STEM_GRADE_BAND_LABELS: Record<StemGradeBand, string> = {
+  grade_1_3: 'Grades 1–3',
+  grade_4_6: 'Grades 4–6',
+  grade_7_9: 'Grades 7–9',
+  grade_10_12: 'Grades 10–12',
+}
+
 export type StemBaseConfig = {
   version: 1
   topic: string
   instructions: string
+  /** Optional for compatibility with STEM configs persisted before grade bands were added. */
+  gradeBand?: StemGradeBand
 }
 
 export type StemEmbedConfig = StemBaseConfig & {
@@ -53,6 +68,27 @@ export type StemCalculatorConfig = StemBaseConfig & {
 
 export type StemGeometryConfig = StemBaseConfig & {
   requiredVertices: 3 | 4
+}
+
+export type StemNumberLineConfig = StemBaseConfig & {
+  startingNumber: number
+  operation: 'addition' | 'subtraction'
+}
+
+export type StemCountingVisualizerConfig = StemBaseConfig & {
+  targetNumber: number
+}
+
+export const STEM_SHAPES = ['circle', 'square', 'triangle', 'rectangle'] as const
+export type StemShape = typeof STEM_SHAPES[number]
+
+export type StemShapeMatcherConfig = StemBaseConfig & {
+  targetShapes: StemShape[]
+}
+
+export type StemFractionVisualizerConfig = StemBaseConfig & {
+  numerator: number
+  denominator: number
 }
 
 export type StemFormulaConfig = StemBaseConfig & {
@@ -130,6 +166,10 @@ export type StemLabConfig =
   | StemLinearEquationConfig
   | StemCalculatorConfig
   | StemGeometryConfig
+  | StemNumberLineConfig
+  | StemCountingVisualizerConfig
+  | StemShapeMatcherConfig
+  | StemFractionVisualizerConfig
   | StemFormulaConfig
   | StemPhysicsSimulationConfig
   | StemChemistrySimulationConfig
@@ -146,7 +186,13 @@ export type StemLabConfig =
 
 export type StemActivityResult = {
   subtype: StemSubtype
+  subject: StemSubject
+  gradeBand: StemGradeBand
   values: Record<string, unknown>
+}
+
+export type StemActivityAttempt = StemActivityResult & {
+  correct: boolean
 }
 
 export type StemToolBuilderProps = {
@@ -158,6 +204,7 @@ export type StemToolBuilderProps = {
 export type StemToolPlayerProps = {
   config: StemLabConfig
   onComplete: (values?: Record<string, unknown>) => void
+  onAttempt?: (values: Record<string, unknown>, correct: boolean) => void
 }
 
 export type StemToolDefinition = {
@@ -166,6 +213,7 @@ export type StemToolDefinition = {
   subtype: StemSubtype
   label: string
   icon: ReactNode
+  gradeBands: StemGradeBand[]
   Builder: ComponentType<StemToolBuilderProps>
   Player: ComponentType<StemToolPlayerProps>
   mode: 'build' | 'embed'

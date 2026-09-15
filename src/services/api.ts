@@ -1,7 +1,7 @@
 import { type AdminCourse, type AdminModule, type AdminTutor, type AdminUser } from '@/components/admin/admin-data'
 import { type Course } from '@/interfaces/course'
 import { type PracticeExam, type PracticeExamWithQuestions, type PracticePurchase, type PracticeQuestion } from '@/components/practice/practice-data'
-import type { StemActivityResult, StemLabConfig, StemSubtype } from '@/components/stem/stem-types'
+import type { StemActivityAttempt, StemActivityResult, StemLabConfig, StemSubtype } from '@/components/stem/stem-types'
 
 export interface AuthUser {
   id: number | string
@@ -49,6 +49,8 @@ export interface PracticeLessonQuestion {
 
 export interface WeakArea {
   topic: string
+  subject?: string
+  gradeBand?: string
   correct: number
   total: number
   accuracy: number
@@ -386,6 +388,8 @@ export type AdminTutorPayload = Pick<AdminTutor, 'name' | 'email' | 'phone' | 'b
 
 export interface AdminWeakArea {
   topic: string
+  subject?: string
+  gradeBand?: string
   correct: number
   total: number
   accuracy: number
@@ -983,6 +987,12 @@ export const saveLessonEngagement = (enrollmentId: number, lessonId: number, val
 export const completeLesson = (enrollmentId: number, lessonId: number, stemResult?: StemActivityResult) => requestLearningProgress<LessonProgress>(`/api/enrollments/${enrollmentId}/lessons/${lessonId}/complete`, {
   method: 'POST',
   ...(stemResult ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ stemResult }) } : {}),
+})
+
+export const recordStemAttempt = (enrollmentId: number, lessonId: number, attempt: StemActivityAttempt) => requestLearningProgress<{ id: number }>(`/api/enrollments/${enrollmentId}/lessons/${lessonId}/stem-attempts`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ attempt }),
 })
 
 export const beginQuizAttempt = (enrollmentId: number, lessonId: number) => requestLearningProgress<QuizAttempt>(`/api/enrollments/${enrollmentId}/lessons/${lessonId}/quiz-attempts`, {

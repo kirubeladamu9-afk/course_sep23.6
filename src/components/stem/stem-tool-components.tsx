@@ -33,6 +33,7 @@ import {
 import type {
   StemBiologySimulationConfig,
   StemCalculatorConfig,
+  StemCountingVisualizerConfig,
   StemChemicalEquationConfig,
   StemChemistrySimulationConfig,
   StemCircuitConfig,
@@ -40,19 +41,24 @@ import type {
   StemDiagramConfig,
   StemEmbedConfig,
   StemFormulaConfig,
+  StemFractionVisualizerConfig,
   StemGeometryConfig,
   StemGraphConfig,
   StemLabConfig,
   StemLabEnvironmentConfig,
   StemLinearEquationConfig,
   StemMoleculeConfig,
+  StemNumberLineConfig,
   StemPeriodicTableConfig,
   StemPhysicsSimulationConfig,
   StemPunnettConfig,
+  StemShape,
+  StemShapeMatcherConfig,
   StemThreeDConfig,
   StemToolBuilderProps,
   StemToolPlayerProps,
 } from './stem-types'
+import { STEM_SHAPES } from './stem-types'
 
 export { solveLinearEquation } from './stem-engines'
 
@@ -136,7 +142,7 @@ export const LinearEquationBuilder: FC<StemToolBuilderProps> = ({ config, onConf
   return <Stack spacing={2}>{baseFields(item, onConfigChange)}<TextField fullWidth required label="Linear equation" value={item.equation} onChange={(event) => onConfigChange({ ...item, equation: event.target.value })} helperText="For example: 2x + 3 = 11. Solver v1 accepts a single linear x variable." /><Typography color={Number.isFinite(result) ? 'success.main' : 'warning.main'}>{Number.isFinite(result) ? `Solution preview: x = ${numberText(result)}` : 'Enter a solvable linear equation before publishing.'}</Typography></Stack>
 }
 
-export const LinearEquationPlayer: FC<StemToolPlayerProps> = ({ config, onComplete }) => {
+export const LinearEquationPlayer: FC<StemToolPlayerProps> = ({ config, onComplete, onAttempt }) => {
   const item = config as StemLinearEquationConfig
   const solution = solveLinearEquation(item.equation)
   const [answer, setAnswer] = useState('')
@@ -145,7 +151,8 @@ export const LinearEquationPlayer: FC<StemToolPlayerProps> = ({ config, onComple
   const check = () => {
     const correct = Number.isFinite(solution) && Math.abs(Number(answer) - solution) < 1e-6
     setStatus(correct ? 'correct' : 'incorrect')
-    if (correct) onComplete({ equation: item.equation, solution })
+    onAttempt?.({ equation: item.equation, answer: Number(answer), solution }, correct)
+    if (correct) onComplete({ equation: item.equation, answer: Number(answer), solution })
   }
   return <Stack spacing={2}><Typography variant="h5">Solve: {item.equation}</Typography><TextField type="number" label="x =" value={answer} onChange={(event) => setAnswer(event.target.value)} inputProps={{ step: 'any' }} /><Button variant="contained" disabled={!answer.trim() || !Number.isFinite(solution)} onClick={check}>Check answer</Button><StatusText status={status} correct="Correct. Your solution has been recorded." incorrect="Not quite. Check each side and try again." /></Stack>
 }
@@ -194,6 +201,136 @@ export const GeometryPlayer: FC<StemToolPlayerProps> = ({ config, onComplete }) 
   const sides = vertices.length > 1 ? vertices.map((point, index) => pointDistance(point, vertices[(index + 1) % vertices.length])) : []
   const angles = vertices.length > 2 ? vertices.map((point, index) => interiorAngle(vertices[(index - 1 + vertices.length) % vertices.length], point, vertices[(index + 1) % vertices.length])) : []
   return <Stack spacing={1.5}><Typography variant="body2" color="text.secondary">Click the grid to place {item.requiredVertices} snapped vertices. Coordinates use one grid unit.</Typography><Box component="svg" viewBox="0 0 400 400" role="img" aria-label="Geometry construction grid" onClick={addVertex} sx={{ width: 'min(100%, 470px)', alignSelf: 'center', border: 1, borderColor: 'divider', borderRadius: 1.5, backgroundColor: 'background.default', cursor: vertices.length < item.requiredVertices ? 'crosshair' : 'default' }}>{Array.from({ length: 11 }, (_, index) => <g key={index}><line x1={index * 40} x2={index * 40} y1="0" y2="400" stroke="currentColor" opacity="0.12" /><line x1="0" x2="400" y1={index * 40} y2={index * 40} stroke="currentColor" opacity="0.12" /></g>)}{vertices.length > 1 && <polygon points={vertices.map(screenPoint).join(' ')} fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeWidth="3" />}{vertices.map((point, index) => <g key={`${point.x}-${point.y}-${index}`}><circle cx={point.x * 40} cy={400 - point.y * 40} r="8" fill="currentColor" /><text x={point.x * 40 + 12} y={400 - point.y * 40 - 10} fontSize="15" fill="currentColor">{String.fromCharCode(65 + index)}</text></g>)}</Box>{vertices.length === item.requiredVertices && <Paper variant="outlined" sx={{ p: 1.5 }}><Stack spacing={0.5}><Typography sx={{ fontWeight: 800 }}>Measurements</Typography><Typography variant="body2">Side lengths: {sides.map(numberText).join(', ')} units</Typography><Typography variant="body2">Interior angles: {angles.map((angle) => `${numberText(angle)}°`).join(', ')}</Typography></Stack></Paper>}<Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}><Button variant="contained" disabled={vertices.length !== item.requiredVertices || recorded} onClick={() => { setRecorded(true); onComplete({ vertices, sideLengths: sides, angles }) }}>{recorded ? 'Construction recorded' : 'Record construction'}</Button><Button variant="outlined" onClick={() => { setVertices([]); setRecorded(false) }}>Clear grid</Button></Stack></Stack>
+}
+
+const shapeLabels: Record<StemShape, string> = { circle: 'Circle', square: 'Square', triangle: 'Triangle', rectangle: 'Rectangle' }
+const shapeSx = (shape: StemShape, selected = false) => ({
+  width: 48,
+  height: 48,
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  backgroundColor: selected ? 'primary.main' : 'action.hover',
+  border: 2,
+  borderColor: selected ? 'primary.dark' : 'divider',
+  borderRadius: shape === 'circle' ? '50%' : shape === 'rectangle' ? 1 : shape === 'square' ? 1 : 0,
+  clipPath: shape === 'triangle' ? 'polygon(50% 0%, 100% 100%, 0% 100%)' : undefined,
+  color: selected ? 'primary.contrastText' : 'text.primary',
+  cursor: 'pointer',
+  '&:hover': { borderColor: 'primary.main' },
+})
+
+export const NumberLineBuilder: FC<StemToolBuilderProps> = ({ config, onConfigChange }) => {
+  const item = config as StemNumberLineConfig
+  return <Stack spacing={2}>{baseFields(item, onConfigChange)}<Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}><TextField fullWidth required type="number" label="Starting number" value={item.startingNumber} onChange={(event) => onConfigChange({ ...item, startingNumber: Number(event.target.value) })} inputProps={{ step: 1 }} /><FormControl fullWidth size="small"><InputLabel>Operation</InputLabel><Select label="Operation" value={item.operation} onChange={(event) => onConfigChange({ ...item, operation: event.target.value as StemNumberLineConfig['operation'] })}><MenuItem value="addition">Addition (+1)</MenuItem><MenuItem value="subtraction">Subtraction (−1)</MenuItem></Select></FormControl></Stack><Typography variant="caption" color="text.secondary">Learners move the marker one step on the number line using the selected operation.</Typography></Stack>
+}
+
+export const NumberLinePlayer: FC<StemToolPlayerProps> = ({ config, onComplete, onAttempt }) => {
+  const item = config as StemNumberLineConfig
+  const startingNumber = Number.isFinite(item.startingNumber) ? Math.round(item.startingNumber) : 0
+  const answer = startingNumber + (item.operation === 'addition' ? 1 : -1)
+  const min = Math.min(startingNumber, answer) - 5
+  const max = Math.max(startingNumber, answer) + 5
+  const [marker, setMarker] = useState(startingNumber)
+  const [dragging, setDragging] = useState(false)
+  const [status, setStatus] = useState<'correct' | 'incorrect' | null>(null)
+  useEffect(() => { setMarker(startingNumber); setDragging(false); setStatus(null) }, [startingNumber, item.operation])
+  const markerFromClientX = (clientX: number, element: SVGSVGElement) => {
+    const bounds = element.getBoundingClientRect()
+    const ratio = Math.max(0, Math.min(1, (clientX - bounds.left) / bounds.width))
+    return Math.round(min + ratio * (max - min))
+  }
+  const moveMarker = (event: React.PointerEvent<SVGSVGElement>) => {
+    if (dragging) setMarker(markerFromClientX(event.clientX, event.currentTarget))
+  }
+  const endDrag = (event: React.PointerEvent<SVGSVGElement>) => {
+    if (!dragging) return
+    setMarker(markerFromClientX(event.clientX, event.currentTarget))
+    setDragging(false)
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId)
+  }
+  const check = () => {
+    const correct = marker === answer
+    setStatus(correct ? 'correct' : 'incorrect')
+    onAttempt?.({ startingNumber, operation: item.operation, answer: marker, correctAnswer: answer }, correct)
+    if (correct) onComplete({ startingNumber, operation: item.operation, answer: marker })
+  }
+  const xFor = (value: number) => 24 + ((value - min) / (max - min)) * 592
+  return <Stack spacing={1.5}><Typography variant="body2" color="text.secondary">Drag the marker to {item.operation === 'addition' ? 'add one' : 'subtract one'} from {startingNumber}.</Typography><Box component="svg" viewBox="0 0 640 150" role="img" aria-label="Interactive number line" onPointerMove={moveMarker} onPointerUp={endDrag} onPointerCancel={endDrag} sx={{ width: '100%', border: 1, borderColor: 'divider', borderRadius: 1.5, backgroundColor: 'background.default', touchAction: 'none', cursor: dragging ? 'grabbing' : 'grab' }} onPointerDown={(event) => { setDragging(true); event.currentTarget.setPointerCapture(event.pointerId); setMarker(markerFromClientX(event.clientX, event.currentTarget)) }}><line x1="24" x2="616" y1="76" y2="76" stroke="currentColor" strokeWidth="3" />{Array.from({ length: max - min + 1 }, (_, index) => min + index).map((value) => <g key={value}><line x1={xFor(value)} x2={xFor(value)} y1="65" y2="87" stroke="currentColor" strokeWidth="2" /><text x={xFor(value)} y="108" textAnchor="middle" fontSize="14" fill="currentColor">{value}</text></g>)}<circle cx={xFor(marker)} cy="76" r="14" fill="currentColor" /><text x={xFor(marker)} y="81" textAnchor="middle" fontSize="12" fill="background.default" fontWeight="700">{marker}</text></Box><Typography variant="body2">Current position: <strong>{marker}</strong></Typography><Stack direction="row" spacing={1}><Button variant="contained" onClick={check}>Check position</Button><Button variant="outlined" startIcon={<RestartAltIcon />} onClick={() => { setMarker(startingNumber); setStatus(null) }}>Reset</Button></Stack><StatusText status={status} correct="Correct. The marker is in the right position." incorrect="Not quite. Move the marker one step in the selected direction." /></Stack>
+}
+
+export const CountingVisualizerBuilder: FC<StemToolBuilderProps> = ({ config, onConfigChange }) => {
+  const item = config as StemCountingVisualizerConfig
+  return <Stack spacing={2}>{baseFields(item, onConfigChange)}<TextField fullWidth required type="number" label="Target number" value={item.targetNumber} onChange={(event) => onConfigChange({ ...item, targetNumber: Number(event.target.value) })} inputProps={{ min: 1, max: 30, step: 1 }} helperText="Choose a whole-number target from 1 to 30." /></Stack>
+}
+
+export const CountingVisualizerPlayer: FC<StemToolPlayerProps> = ({ config, onComplete, onAttempt }) => {
+  const item = config as StemCountingVisualizerConfig
+  const target = Math.max(1, Math.floor(item.targetNumber))
+  const [count, setCount] = useState(0)
+  const [status, setStatus] = useState<'correct' | 'incorrect' | null>(null)
+  useEffect(() => { setCount(0); setStatus(null) }, [item.targetNumber])
+  const addObject = () => {
+    setCount((current) => {
+      const next = current + 1
+      if (next > target) setStatus('incorrect')
+      return next
+    })
+  }
+  const check = () => {
+    const correct = count === target
+    setStatus(correct ? 'correct' : 'incorrect')
+    onAttempt?.({ targetNumber: target, count }, correct)
+    if (correct) onComplete({ targetNumber: target, count })
+  }
+  const reset = () => { setCount(0); setStatus(null) }
+  return <Stack spacing={1.5}><Typography variant="body2" color="text.secondary">Add objects until you have exactly {target}.</Typography><Paper variant="outlined" sx={{ p: 1.5, minHeight: 150, backgroundColor: 'background.default' }}><Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" aria-label={`${count} countable objects`}>{Array.from({ length: count }, (_, index) => <Box key={index} sx={{ width: 28, height: 28, borderRadius: '50%', backgroundColor: 'primary.main', border: 2, borderColor: 'primary.dark' }} />)}</Stack></Paper><Typography variant="h6">Count: {count} / {target}</Typography><Stack direction="row" spacing={1}><Button variant="contained" onClick={addObject} disabled={count > target}>Add object</Button><Button variant="contained" onClick={check} disabled={count > target}>Check count</Button><Button variant="outlined" startIcon={<RestartAltIcon />} onClick={reset}>Reset</Button></Stack><StatusText status={status} correct="Correct. You counted the exact target." incorrect={count > target ? 'That is too many. Reset and count again.' : 'Not quite. Add or remove objects until the count matches the target.'} /></Stack>
+}
+
+export const ShapeMatcherBuilder: FC<StemToolBuilderProps> = ({ config, onConfigChange }) => {
+  const item = config as StemShapeMatcherConfig
+  const toggle = (shape: StemShape) => onConfigChange({ ...item, targetShapes: item.targetShapes.includes(shape) ? item.targetShapes.filter((value) => value !== shape) : [...item.targetShapes, shape] })
+  return <Stack spacing={2}>{baseFields(item, onConfigChange)}<Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Target shapes</Typography><Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">{STEM_SHAPES.map((shape) => <Button key={shape} variant={item.targetShapes.includes(shape) ? 'contained' : 'outlined'} onClick={() => toggle(shape)}>{shapeLabels[shape]}</Button>)}</Stack><Typography variant="caption" color="text.secondary">Select every shape the learner should match.</Typography></Stack>
+}
+
+export const ShapeMatcherPlayer: FC<StemToolPlayerProps> = ({ config, onComplete, onAttempt }) => {
+  const item = config as StemShapeMatcherConfig
+  const [selected, setSelected] = useState<StemShape[]>([])
+  const [status, setStatus] = useState<'correct' | 'incorrect' | null>(null)
+  useEffect(() => { setSelected([]); setStatus(null) }, [item.targetShapes.join(',')])
+  const toggle = (shape: StemShape) => { setSelected((current) => current.includes(shape) ? current.filter((value) => value !== shape) : [...current, shape]); setStatus(null) }
+  const check = () => {
+    const target = new Set(item.targetShapes)
+    const correct = selected.length === target.size && selected.every((shape) => target.has(shape))
+    setStatus(correct ? 'correct' : 'incorrect')
+    onAttempt?.({ targetShapes: item.targetShapes, selectedShapes: selected }, correct)
+    if (correct) onComplete({ targetShapes: item.targetShapes, selectedShapes: selected })
+  }
+  const reset = () => { setSelected([]); setStatus(null) }
+  return <Stack spacing={1.5}><Typography variant="body2" color="text.secondary">Target shapes</Typography><Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" aria-label="Target shapes">{item.targetShapes.map((shape, index) => <Box key={`${shape}-${index}`} component="span" aria-label={shapeLabels[shape]} sx={shapeSx(shape)} />)}</Stack><Typography variant="body2" color="text.secondary">Choose all matching shapes:</Typography><Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">{STEM_SHAPES.map((shape) => <Box key={shape} component="button" type="button" aria-label={shapeLabels[shape]} aria-pressed={selected.includes(shape)} onClick={() => toggle(shape)} sx={shapeSx(shape, selected.includes(shape))}>{shapeLabels[shape]}</Box>)}</Stack><Stack direction="row" spacing={1}><Button variant="contained" onClick={check} disabled={!selected.length}>Check matches</Button><Button variant="outlined" startIcon={<RestartAltIcon />} onClick={reset}>Reset</Button></Stack><StatusText status={status} correct="Correct. Every target shape is matched." incorrect="Not quite. Select exactly the target shapes and try again." /></Stack>
+}
+
+export const FractionVisualizerBuilder: FC<StemToolBuilderProps> = ({ config, onConfigChange }) => {
+  const item = config as StemFractionVisualizerConfig
+  return <Stack spacing={2}>{baseFields(item, onConfigChange)}<Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}><TextField fullWidth required type="number" label="Numerator" value={item.numerator} onChange={(event) => onConfigChange({ ...item, numerator: Number(event.target.value) })} inputProps={{ min: 1, step: 1 }} /><TextField fullWidth required type="number" label="Denominator" value={item.denominator} onChange={(event) => onConfigChange({ ...item, denominator: Number(event.target.value) })} inputProps={{ min: 1, max: 12, step: 1 }} /></Stack><Typography variant="caption" color="text.secondary">Learners select the numerator number of parts from the segmented whole.</Typography></Stack>
+}
+
+export const FractionVisualizerPlayer: FC<StemToolPlayerProps> = ({ config, onComplete, onAttempt }) => {
+  const item = config as StemFractionVisualizerConfig
+  const denominator = Math.max(1, Math.floor(item.denominator))
+  const numerator = Math.max(0, Math.min(denominator, Math.floor(item.numerator)))
+  const [selected, setSelected] = useState<number[]>([])
+  const [status, setStatus] = useState<'correct' | 'incorrect' | null>(null)
+  useEffect(() => { setSelected([]); setStatus(null) }, [item.numerator, item.denominator])
+  const toggle = (part: number) => { setSelected((current) => current.includes(part) ? current.filter((value) => value !== part) : [...current, part]); setStatus(null) }
+  const check = () => {
+    const correct = selected.length === numerator
+    setStatus(correct ? 'correct' : 'incorrect')
+    onAttempt?.({ numerator, denominator, selectedParts: selected }, correct)
+    if (correct) onComplete({ numerator, denominator, selectedParts: selected })
+  }
+  const reset = () => { setSelected([]); setStatus(null) }
+  return <Stack spacing={1.5}><Typography variant="body2" color="text.secondary">Select {numerator} of the {denominator} equal parts to show {numerator}/{denominator}.</Typography><Stack direction="row" spacing={0.5} sx={{ width: '100%' }}>{Array.from({ length: denominator }, (_, index) => <Box key={index} component="button" type="button" aria-label={`Part ${index + 1}`} aria-pressed={selected.includes(index)} onClick={() => toggle(index)} sx={{ flex: 1, minWidth: 0, minHeight: 76, border: 2, borderColor: selected.includes(index) ? 'primary.dark' : 'divider', borderRadius: index === 0 ? '8px 0 0 8px' : index === denominator - 1 ? '0 8px 8px 0' : 0, backgroundColor: selected.includes(index) ? 'primary.main' : 'action.hover', cursor: 'pointer', '&:hover': { backgroundColor: selected.includes(index) ? 'primary.dark' : 'action.selected' } }} />)}</Stack><Typography variant="h6">Selected: {selected.length} / {denominator}</Typography><Stack direction="row" spacing={1}><Button variant="contained" onClick={check}>Check fraction</Button><Button variant="outlined" startIcon={<RestartAltIcon />} onClick={reset}>Reset</Button></Stack><StatusText status={status} correct="Correct. The selected parts show the requested fraction." incorrect="Not quite. Select the numerator number of parts and try again." /></Stack>
 }
 
 const formulaVariables = (formula: string, target: string) => [...new Set((formula.match(/[A-Za-z]+/g) ?? []).filter((name) => name !== target && !['Result', 'sin', 'cos', 'tan', 'sqrt', 'log', 'ln', 'pi'].includes(name)))]
