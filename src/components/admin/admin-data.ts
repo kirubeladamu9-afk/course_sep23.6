@@ -1,4 +1,29 @@
-export type LessonType = 'video' | 'article' | 'interactive' | 'quiz' | 'practice' | 'live'
+export type LessonType = 'video' | 'article' | 'interactive' | 'simulation' | 'quiz' | 'practice' | 'live'
+
+export type SimulationRule = 'pendulum-period' | 'osmosis-movement' | 'linear'
+
+export interface SimulationVariable {
+  id: number
+  label: string
+  min: number
+  max: number
+  step: number
+  defaultValue: number
+  unit: string
+}
+
+export interface SimulationConfig {
+  scenarioName: string
+  overview: string
+  variables: SimulationVariable[]
+  rule: SimulationRule
+  calculation: string
+  outputLabel: string
+  outputUnit: string
+  observationPrompt: string
+  expectedObservation: string
+  acceptedObservations: string[]
+}
 
 export interface InteractiveHotspot {
   id: number
@@ -42,6 +67,7 @@ export interface AdminLesson {
   articleBody?: string
   baseImageUrl?: string
   interactiveHotspots?: InteractiveHotspot[]
+  simulation?: SimulationConfig
   quizQuestions?: QuizQuestion[]
   practiceQuestions?: PracticeQuestion[]
   passThreshold?: number

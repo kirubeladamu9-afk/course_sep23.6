@@ -1,5 +1,6 @@
 import { type AdminCourse, type AdminModule, type AdminTutor, type AdminUser } from '@/components/admin/admin-data'
 import { type Course } from '@/interfaces/course'
+import { type SimulationConfig } from '@/components/admin/admin-data'
 import { type PracticeExam, type PracticeExamWithQuestions, type PracticePurchase, type PracticeQuestion } from '@/components/practice/practice-data'
 
 export interface AuthUser {
@@ -57,7 +58,7 @@ export interface WeakArea {
 interface EnrollmentLesson {
   id: number
   title: string
-  type: 'video' | 'article' | 'interactive' | 'quiz' | 'practice' | 'live'
+  type: 'video' | 'article' | 'interactive' | 'simulation' | 'quiz' | 'practice' | 'live'
   duration: number | null
   videoUrl?: string
   thumbnailUrl?: string
@@ -65,6 +66,7 @@ interface EnrollmentLesson {
   articleBody?: string
   baseImageUrl?: string
   interactiveHotspots?: Array<{ id: number; left: string; top: string; label: string; explanation: string }>
+  simulation?: SimulationConfig
   resources?: Array<{ id: number; name: string; url?: string }>
   quizQuestions?: Array<{ id: number; question: string; options: string[] }>
   practiceQuestions?: PracticeLessonQuestion[]
@@ -701,7 +703,7 @@ export interface AdminClass {
   capacity: number
   schedule: AdminClassSchedule
   meeting_link: string
-  modules: Array<{ id: number; title: string; lessons: Array<{ id: number; title: string; type: 'video' | 'article' | 'quiz' | 'practice' | 'live'; duration: number | null; resources: Array<{ id: number; name: string; url?: string }> }> }>
+  modules: AdminModule[]
   price: number
   status: AdminClassStatus
   published: boolean
