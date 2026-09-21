@@ -70,6 +70,7 @@ export interface AdminLesson {
   simulation?: SimulationConfig
   simulationToolId?: string
   platformEngineId?: string
+  curriculumTopic?: string
   quizQuestions?: QuizQuestion[]
   practiceQuestions?: PracticeQuestion[]
   passThreshold?: number

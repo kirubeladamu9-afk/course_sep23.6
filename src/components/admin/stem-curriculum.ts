@@ -8,7 +8,7 @@ export const STEM_CURRICULUM: Record<string, string[]> = {
   Biology: ['Living & Non-Living Things', 'Parts of Plants', 'Seeds & Germination', 'Animals Around Us', 'Human Body Parts', 'Five Senses', 'Food & Nutrition', 'Healthy Habits', 'Habitats', 'Plant Structure', 'Photosynthesis', 'Animal Classification', 'Life Cycles', 'Cells', 'Human Body Systems', 'Ecosystems', 'Food Chains', 'Cell Structure', 'Microscopes', 'Plant Reproduction', 'Respiration', 'Circulation', 'Biodiversity', 'Cell Biology', 'Biological Molecules', 'Enzymes', 'Cell Division', 'Genetics', 'Molecular Biology', 'Plant Physiology', 'Animal Physiology', 'Reproduction', 'Microbiology', 'Ecology', 'Evolution', 'Molecular Genetics', 'DNA & RNA', 'Biotechnology', 'Human Reproduction', 'Immunology', 'Population Biology', 'Conservation Biology'],
 }
 
-const engineForTopic = (subject: string, topic: string): PlatformEngineId => {
+export const engineForTopic = (subject: string, topic: string): PlatformEngineId => {
   const value = topic.toLowerCase()
   if (subject === 'Mathematics') {
     if (/number|addition|subtraction|fraction|integer|counting/.test(value)) return 'number-line'

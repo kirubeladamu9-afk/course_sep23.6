@@ -15,12 +15,24 @@ import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined'
 import { type FC, useMemo, useState } from 'react'
 import { type AdminLesson } from './admin-data'
 import { STEM_TOOL_LIBRARY, type StemToolDefinition } from '@/components/stem-lab/stem-tool-library'
-import { PLATFORM_ENGINES, type PlatformEngineDefinition, type PlatformEngineId } from '@/components/stem-lab/platform-engine-library'
+import { engineForTopic, STEM_CURRICULUM } from './stem-curriculum'
+import { type PlatformEngineId } from '@/components/stem-lab/platform-engine-library'
 import { PlatformEnginePreview } from '@/components/stem-lab/platform-engine-previews'
 
-const subjects = ['All', 'Math', 'Physics', 'Chemistry', 'Biology'] as const
+const subjects = ['All', 'Mathematics', 'Physics', 'Chemistry', 'Biology'] as const
 type SubjectFilter = typeof subjects[number]
-type EngineOption = { key: string; name: string; description: string; subject: string; category: string; platform?: PlatformEngineDefinition; simulation?: StemToolDefinition }
+const stages = ['All', 'Foundation', 'Core', 'Advanced', 'Applied lab'] as const
+type StageFilter = typeof stages[number]
+
+type TopicOption = {
+  key: string
+  title: string
+  description: string
+  subject: Exclude<SubjectFilter, 'All'>
+  stage: Exclude<StageFilter, 'All'>
+  platformEngineId: PlatformEngineId
+  simulation?: StemToolDefinition
+}
 
 type PlatformEngineLessonPickerProps = {
   lesson: AdminLesson
@@ -28,36 +40,57 @@ type PlatformEngineLessonPickerProps = {
   onSave: () => void
 }
 
+const subjectDescription: Record<Exclude<SubjectFilter, 'All'>, string> = {
+  Mathematics: 'Build confidence through visual problem solving and guided practice.',
+  Physics: 'Explore forces, motion, energy, and the world around us.',
+  Chemistry: 'Investigate matter, reactions, structure, and safe virtual experiments.',
+  Biology: 'Discover living systems, structures, processes, and evidence.',
+}
+
+const topicOptions = (): TopicOption[] => {
+  const topics = Object.entries(STEM_CURRICULUM).flatMap(([subject, titles]) => titles.map((title, index) => ({
+    key: `${subject.toLowerCase()}-${index + 1}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+    title,
+    description: subjectDescription[subject as Exclude<SubjectFilter, 'All'>],
+    subject: subject as Exclude<SubjectFilter, 'All'>,
+    stage: index < Math.ceil(titles.length / 3) ? 'Foundation' as const : index < Math.ceil((titles.length * 2) / 3) ? 'Core' as const : 'Advanced' as const,
+    platformEngineId: engineForTopic(subject, title),
+  })))
+  const labs: Array<{ subject: Exclude<SubjectFilter, 'All'>; title: string; toolId: string }> = [
+    { subject: 'Physics', title: 'Pendulum Experiment', toolId: 'pendulum-lab' },
+    { subject: 'Physics', title: 'Projectile Motion', toolId: 'projectile-motion-lab' },
+    { subject: 'Chemistry', title: 'Acids & Bases', toolId: 'neutralization-lab' },
+    { subject: 'Biology', title: 'Osmosis', toolId: 'osmosis-lab' },
+  ]
+  return [...topics, ...labs.map((lab) => {
+    const simulation = STEM_TOOL_LIBRARY.find((tool) => tool.id === lab.toolId)
+    return { key: `lab-${lab.toolId}`, title: lab.title, description: simulation?.description ?? subjectDescription[lab.subject], subject: lab.subject, stage: 'Applied lab' as const, platformEngineId: lab.subject === 'Chemistry' || lab.title === 'Osmosis' ? 'virtual-lab' as const : 'physics' as const, simulation }
+  })]
+}
+
 const PlatformEngineLessonPicker: FC<PlatformEngineLessonPickerProps> = ({ lesson, updateLessonDraft, onSave }) => {
   const [subject, setSubject] = useState<SubjectFilter>('All')
-  const [category, setCategory] = useState('All')
+  const [stage, setStage] = useState<StageFilter>('All')
   const [search, setSearch] = useState('')
-  const selectedKey = lesson.platformEngineId ?? lesson.simulationToolId ?? null
-  const options = useMemo<EngineOption[]>(() => [
-    ...PLATFORM_ENGINES.map((engine) => ({ key: engine.id, name: engine.name, description: engine.description, subject: engine.subjects[0], category: 'Core engine', platform: engine })),
-    ...STEM_TOOL_LIBRARY.map((tool) => ({ key: tool.id, name: tool.name, description: tool.description, subject: tool.subject, category: 'Configured lab', simulation: tool })),
-  ], [])
-  const filteredOptions = options.filter((option) => (subject === 'All' || option.subject === subject) && (category === 'All' || option.category === category) && `${option.name} ${option.description}`.toLowerCase().includes(search.trim().toLowerCase()))
+  const options = useMemo(topicOptions, [])
+  const selectedKey = lesson.curriculumTopic ?? null
+  const filteredOptions = options.filter((option) => (subject === 'All' || option.subject === subject) && (stage === 'All' || option.stage === stage) && `${option.title} ${option.subject} ${option.description}`.toLowerCase().includes(search.trim().toLowerCase()))
   const selectedOption = options.find((option) => option.key === selectedKey)
-  const selectOption = (option: EngineOption) => {
-    if (option.platform) updateLessonDraft({ ...lesson, platformEngineId: option.platform.id, simulationToolId: option.platform.id, simulation: undefined })
-    if (option.simulation) updateLessonDraft({ ...lesson, platformEngineId: undefined, simulationToolId: option.simulation.id, simulation: option.simulation.config })
-  }
-  const selectedPlatformId = selectedOption?.platform?.id as PlatformEngineId | undefined
+  const selectTopic = (option: TopicOption) => updateLessonDraft({ ...lesson, title: lesson.title.startsWith('New ') ? option.title : lesson.title, curriculumTopic: option.key, platformEngineId: option.platformEngineId, simulationToolId: option.simulation?.id ?? option.platformEngineId, simulation: option.simulation?.config })
 
   if (selectedOption) return <Stack spacing={2}>
-    <Button variant="text" startIcon={<ArrowBackIcon />} onClick={() => updateLessonDraft({ ...lesson, platformEngineId: undefined, simulationToolId: '' })} sx={{ alignSelf: 'flex-start' }}>Back to engine library</Button>
-    <Paper elevation={0} sx={{ p: 2, border: 1, borderColor: 'primary.main', backgroundColor: 'action.selected' }}><Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={1}><Box><Typography variant="h6">{selectedOption.name}</Typography><Typography variant="body2" color="text.secondary">{selectedOption.description}</Typography></Box><Chip label={selectedOption.category} color="primary" /></Stack></Paper>
-    {selectedPlatformId && <PlatformEnginePreview engineId={selectedPlatformId} />}
-    {selectedOption.simulation && <Paper elevation={0} sx={{ p: 2, border: 1, borderColor: 'divider' }}><Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Configured lab ready</Typography><Typography variant="body2" color="text.secondary">{selectedOption.simulation.config.overview}</Typography><Typography variant="body2" sx={{ mt: 1, fontFamily: 'monospace' }}>{selectedOption.simulation.config.calculation}</Typography></Paper>}
-    <Button variant="contained" startIcon={<SaveOutlinedIcon />} onClick={onSave} disabled={!lesson.title.trim()}>Save engine as lesson</Button>
+    <Button variant="text" startIcon={<ArrowBackIcon />} onClick={() => updateLessonDraft({ ...lesson, curriculumTopic: undefined, platformEngineId: undefined, simulationToolId: '', simulation: undefined })} sx={{ alignSelf: 'flex-start' }}>Back to topic library</Button>
+    <Paper elevation={0} sx={{ p: 2, border: 1, borderColor: 'primary.main', backgroundColor: 'action.selected' }}><Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={1}><Box><Typography variant="overline" color="primary.main" sx={{ fontWeight: 800 }}>Curriculum topic</Typography><Typography variant="h6">{selectedOption.title}</Typography><Typography variant="body2" color="text.secondary">{selectedOption.description}</Typography></Box><Stack direction="row" spacing={.75}><Chip label={selectedOption.subject} color="primary" /><Chip label={selectedOption.stage} variant="outlined" /></Stack></Stack></Paper>
+    <PlatformEnginePreview engineId={selectedOption.platformEngineId} />
+    {selectedOption.simulation && <Paper elevation={0} sx={{ p: 2, border: 1, borderColor: 'divider' }}><Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Guided activity ready</Typography><Typography variant="body2" color="text.secondary">{selectedOption.simulation.config.overview}</Typography></Paper>}
+    <Button variant="contained" startIcon={<SaveOutlinedIcon />} onClick={onSave} disabled={!lesson.title.trim()}>Save topic as lesson</Button>
   </Stack>
 
   return <Stack spacing={1.5}>
-    <Box><Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Choose a platform-owned engine</Typography><Typography variant="body2" color="text.secondary">Select a fixed engine for this module. The platform owns the interaction; you only choose which curriculum engine this lesson uses.</Typography></Box>
-    <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.25}><TextField fullWidth size="small" label="Search engines" value={search} onChange={(event) => setSearch(event.target.value)} /><FormControl size="small" sx={{ minWidth: 150 }}><InputLabel>Subject</InputLabel><Select label="Subject" value={subject} onChange={(event) => setSubject(event.target.value as SubjectFilter)}>{subjects.map((value) => <MenuItem key={value} value={value}>{value === 'All' ? 'All subjects' : value}</MenuItem>)}</Select></FormControl><FormControl size="small" sx={{ minWidth: 170 }}><InputLabel>Type</InputLabel><Select label="Type" value={category} onChange={(event) => setCategory(event.target.value)}><MenuItem value="All">All types</MenuItem><MenuItem value="Core engine">Core engines</MenuItem><MenuItem value="Configured lab">Configured labs</MenuItem></Select></FormControl></Stack>
-    <Grid container spacing={1.25}>{filteredOptions.map((option) => <Grid item xs={12} sm={6} key={option.key}><Box component="button" type="button" onClick={() => selectOption(option)} sx={{ width: '100%', minHeight: 132, p: 1.5, textAlign: 'left', border: 1, borderColor: 'divider', borderRadius: 2, backgroundColor: 'background.paper', color: 'text.primary', cursor: 'pointer', font: 'inherit', '&:hover': { borderColor: 'primary.main', backgroundColor: 'action.hover' } }}><Stack spacing={.75}><Stack direction="row" justifyContent="space-between" spacing={1}><Typography sx={{ fontWeight: 700 }}>{option.name}</Typography><Chip size="small" label={option.subject} /></Stack><Typography variant="body2" color="text.secondary">{option.description}</Typography><Typography variant="caption" color="primary.main">{option.category}</Typography></Stack></Box></Grid>)}</Grid>
-    {!filteredOptions.length && <Typography color="text.secondary" sx={{ py: 2 }}>No platform engines match these filters.</Typography>}
+    <Box><Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Choose a curriculum topic</Typography><Typography variant="body2" color="text.secondary">Pick the topic students will learn. The platform automatically attaches the right interactive activity.</Typography></Box>
+    <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.25}><TextField fullWidth size="small" label="Search topics" value={search} onChange={(event) => setSearch(event.target.value)} /><FormControl size="small" sx={{ minWidth: 160 }}><InputLabel>Subject</InputLabel><Select label="Subject" value={subject} onChange={(event) => setSubject(event.target.value as SubjectFilter)}>{subjects.map((value) => <MenuItem key={value} value={value}>{value === 'All' ? 'All subjects' : value}</MenuItem>)}</Select></FormControl><FormControl size="small" sx={{ minWidth: 150 }}><InputLabel>Stage</InputLabel><Select label="Stage" value={stage} onChange={(event) => setStage(event.target.value as StageFilter)}>{stages.map((value) => <MenuItem key={value} value={value}>{value === 'All' ? 'All stages' : value}</MenuItem>)}</Select></FormControl></Stack>
+    <Grid container spacing={1.25}>{filteredOptions.map((option) => <Grid item xs={12} sm={6} key={option.key}><Box component="button" type="button" onClick={() => selectTopic(option)} sx={{ width: '100%', minHeight: 132, p: 1.5, textAlign: 'left', border: 1, borderColor: 'divider', borderRadius: 2, backgroundColor: 'background.paper', color: 'text.primary', cursor: 'pointer', font: 'inherit', '&:hover': { borderColor: 'primary.main', backgroundColor: 'action.hover', transform: 'translateY(-2px)' }, transition: 'transform .18s ease, border-color .18s ease' }}><Stack spacing={.75}><Stack direction="row" justifyContent="space-between" spacing={1}><Typography sx={{ fontWeight: 700 }}>{option.title}</Typography><Chip size="small" label={option.subject} /></Stack><Typography variant="body2" color="text.secondary">{option.description}</Typography><Typography variant="caption" color="primary.main">{option.stage}</Typography></Stack></Box></Grid>)}</Grid>
+    {!filteredOptions.length && <Typography color="text.secondary" sx={{ py: 2 }}>No curriculum topics match these filters.</Typography>}
   </Stack>
 }
 
