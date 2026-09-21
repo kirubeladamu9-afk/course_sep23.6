@@ -15,7 +15,7 @@ import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined'
 import { type FC, useMemo, useState } from 'react'
 import { type AdminLesson } from './admin-data'
 import { STEM_TOOL_LIBRARY, type StemToolDefinition } from '@/components/stem-lab/stem-tool-library'
-import { engineForTopic, STEM_CURRICULUM } from './stem-curriculum'
+import { engineForTopic, getMathTopic, STEM_CURRICULUM } from './stem-curriculum'
 import { type PlatformEngineId } from '@/components/stem-lab/platform-engine-library'
 import { PlatformEnginePreview } from '@/components/stem-lab/platform-engine-previews'
 
@@ -32,6 +32,7 @@ type TopicOption = {
   stage: Exclude<StageFilter, 'All'>
   platformEngineId: PlatformEngineId
   simulation?: StemToolDefinition
+  activity?: ReturnType<typeof getMathTopic>
 }
 
 type PlatformEngineLessonPickerProps = {
@@ -41,7 +42,7 @@ type PlatformEngineLessonPickerProps = {
 }
 
 const subjectDescription: Record<Exclude<SubjectFilter, 'All'>, string> = {
-  Mathematics: 'Build confidence through visual problem solving and guided practice.',
+  Mathematics: 'Explore mathematics through specific, validated interactive challenges.',
   Physics: 'Explore forces, motion, energy, and the world around us.',
   Chemistry: 'Investigate matter, reactions, structure, and safe virtual experiments.',
   Biology: 'Discover living systems, structures, processes, and evidence.',
@@ -51,10 +52,11 @@ const topicOptions = (): TopicOption[] => {
   const topics = Object.entries(STEM_CURRICULUM).flatMap(([subject, titles]) => titles.map((title, index) => ({
     key: `${subject.toLowerCase()}-${index + 1}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
     title,
-    description: subjectDescription[subject as Exclude<SubjectFilter, 'All'>],
+    description: subject === 'Mathematics' ? getMathTopic(title)?.description ?? subjectDescription[subject as Exclude<SubjectFilter, 'All'>] : subjectDescription[subject as Exclude<SubjectFilter, 'All'>],
     subject: subject as Exclude<SubjectFilter, 'All'>,
-    stage: index < Math.ceil(titles.length / 3) ? 'Foundation' as const : index < Math.ceil((titles.length * 2) / 3) ? 'Core' as const : 'Advanced' as const,
+    stage: subject === 'Mathematics' ? getMathTopic(title)?.tier ?? 'Foundation' : index < Math.ceil(titles.length / 3) ? 'Foundation' as const : index < Math.ceil((titles.length * 2) / 3) ? 'Core' as const : 'Advanced' as const,
     platformEngineId: engineForTopic(subject, title),
+    activity: subject === 'Mathematics' ? getMathTopic(title) : undefined,
   })))
   const labs: Array<{ subject: Exclude<SubjectFilter, 'All'>; title: string; toolId: string }> = [
     { subject: 'Physics', title: 'Pendulum Experiment', toolId: 'pendulum-lab' },
@@ -81,7 +83,8 @@ const PlatformEngineLessonPicker: FC<PlatformEngineLessonPickerProps> = ({ lesso
   if (selectedOption) return <Stack spacing={2}>
     <Button variant="text" startIcon={<ArrowBackIcon />} onClick={() => updateLessonDraft({ ...lesson, curriculumTopic: undefined, platformEngineId: undefined, simulationToolId: '', simulation: undefined })} sx={{ alignSelf: 'flex-start' }}>Back to topic library</Button>
     <Paper elevation={0} sx={{ p: 2, border: 1, borderColor: 'primary.main', backgroundColor: 'action.selected' }}><Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={1}><Box><Typography variant="overline" color="primary.main" sx={{ fontWeight: 800 }}>Curriculum topic</Typography><Typography variant="h6">{selectedOption.title}</Typography><Typography variant="body2" color="text.secondary">{selectedOption.description}</Typography></Box><Stack direction="row" spacing={.75}><Chip label={selectedOption.subject} color="primary" /><Chip label={selectedOption.stage} variant="outlined" /></Stack></Stack></Paper>
-    <PlatformEnginePreview engineId={selectedOption.platformEngineId} />
+    <PlatformEnginePreview engineId={selectedOption.platformEngineId} mathTopic={selectedOption.activity} />
+    {selectedOption.activity && <Paper elevation={0} sx={{ p: 2, border: 1, borderColor: 'divider' }}><Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{selectedOption.activity.activity}</Typography><Typography variant="body2" color="text.secondary">{selectedOption.activity.activityDescription}</Typography></Paper>}
     {selectedOption.simulation && <Paper elevation={0} sx={{ p: 2, border: 1, borderColor: 'divider' }}><Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Guided activity ready</Typography><Typography variant="body2" color="text.secondary">{selectedOption.simulation.config.overview}</Typography></Paper>}
     <Button variant="contained" startIcon={<SaveOutlinedIcon />} onClick={onSave} disabled={!lesson.title.trim()}>Save topic as lesson</Button>
   </Stack>

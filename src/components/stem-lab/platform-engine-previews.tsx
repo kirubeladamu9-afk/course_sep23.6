@@ -12,6 +12,7 @@ import { type FC, type ReactNode, useState } from 'react'
 import DragDropEngine from './drag-drop-engine'
 import MatchingEngine from './matching-engine'
 import { type PlatformEngineId } from './platform-engine-library'
+import { type MathTopic } from '@/components/admin/stem-curriculum'
 
 export type EnginePreviewProps = { onComplete?: () => void }
 
@@ -109,7 +110,28 @@ const PredictionExperimentEngine: FC<EnginePreviewProps> = ({ onComplete }) => {
   return <EngineFrame name="Prediction → Experiment → Result" description="Make a prediction, run the experiment, and compare it with the observed result."><Typography sx={{ fontWeight: 700 }}>What will happen when the input increases?</Typography><Stack direction="row" spacing={1}><Button variant={prediction === 'increase' ? 'contained' : 'outlined'} onClick={() => setPrediction('increase')}>Increase</Button><Button variant={prediction === 'decrease' ? 'contained' : 'outlined'} onClick={() => setPrediction('decrease')}>Decrease</Button></Stack><Typography variant="body2">Experiment input: {input}</Typography><Slider min={0} max={100} value={input} onChange={(_, next) => { setInput(Array.isArray(next) ? next[0] : next); setResult(null) }} aria-label="Experiment input" /><Button variant="contained" disabled={!prediction} onClick={() => setResult(actual)} startIcon={<PlayArrowIcon />} sx={{ alignSelf: 'flex-start' }}>Run experiment</Button>{result && <Paper role="status" elevation={0} sx={{ p: 2, border: 1, borderColor: result === prediction ? 'success.main' : 'warning.main', backgroundColor: result === prediction ? 'success.light' : 'warning.light' }}><Typography sx={{ fontWeight: 700 }}>{result === prediction ? 'Prediction correct' : 'Prediction needs revision'}</Typography><Typography variant="body2">Observed result: {result}. The result follows the experiment input.</Typography></Paper>}<CompleteButton disabled={!result} onComplete={onComplete} /></EngineFrame>
 }
 
-export const PlatformEnginePreview: FC<{ engineId: PlatformEngineId; onComplete?: () => void }> = ({ engineId, onComplete }) => {
+const MathActivityEngine: FC<{ topic: MathTopic; onComplete?: () => void }> = ({ topic, onComplete }) => {
+  const [value, setValue] = useState(topic.mode === 'graph' ? 0 : topic.mode === 'input' ? topic.target - 2 : topic.mode === 'slider' ? Math.max(topic.target - 5, -10) : 0)
+  const [checked, setChecked] = useState(false)
+  const correct = value === topic.target
+  const min = topic.mode === 'slider' && topic.target < 0 ? topic.target - 7 : topic.mode === 'slider' ? Math.max(0, topic.target - 10) : 0
+  const max = topic.mode === 'slider' ? topic.target + 10 : 10
+  const prompt = topic.mode === 'count' ? `Tap ${topic.target} garden objects to complete the challenge.` : topic.mode === 'graph' ? `Tune the highlighted parameter to ${topic.target}.` : `Set the activity target to ${topic.target}.`
+  return <EngineFrame name={topic.activity} description={topic.activityDescription}><Paper elevation={0} sx={{ p: 2, minHeight: 90, display: 'grid', placeItems: 'center', backgroundColor: correct ? 'success.light' : 'background.default', transition: 'background-color .25s ease' }}>
+    {topic.mode === 'count' ? <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="center">{Array.from({ length: Math.max(topic.target, 7) }, (_, index) => <Button key={index} size="small" variant={index < value ? 'contained' : 'outlined'} onClick={() => setValue((current) => current === index + 1 ? index : index + 1)} sx={{ minWidth: 42, transition: 'transform .2s ease', transform: index < value ? 'translateY(-4px)' : 'none' }}>{index < value ? '●' : '○'}</Button>)}</Stack> : <Typography variant="h3" color={correct ? 'success.main' : 'primary.main'} sx={{ transition: 'transform .25s ease', transform: correct ? 'scale(1.12)' : 'scale(1)' }}>{value}</Typography>}
+  </Paper>
+  <Typography variant="body2" color="text.secondary">{prompt}</Typography>
+  {topic.mode === 'input' && <TextField type="number" label="Your answer" value={value} onChange={(event) => { setValue(Number(event.target.value)); setChecked(false) }} inputProps={{ step: 1 }} />}
+  {topic.mode === 'slider' && <Slider min={min} max={max} step={1} value={value} onChange={(_, next) => { setValue(Array.isArray(next) ? next[0] : next); setChecked(false) }} valueLabelDisplay="auto" aria-label={`${topic.activity} target`} />}
+  {topic.mode === 'graph' && <><Box component="svg" viewBox="0 0 400 130" sx={{ width: '100%', height: 150, backgroundColor: 'background.default', borderRadius: 2 }} role="img" aria-label={`${topic.activity} live graph`}><line x1="20" x2="380" y1="105" y2="105" stroke="currentColor" opacity=".3" /><line x1="200" x2="200" y1="15" y2="120" stroke="currentColor" opacity=".3" /><polyline points={Array.from({ length: 9 }, (_, index) => { const x = index - 4; return `${40 + index * 40},${105 - (value * x + 1) * 8}` }).join(' ')} fill="none" stroke="var(--mui-palette-primary-main)" strokeWidth="4" style={{ transition: 'all .25s ease' }} /></Box><Slider min={-5} max={5} step={1} value={value} onChange={(_, next) => { setValue(Array.isArray(next) ? next[0] : next); setChecked(false) }} valueLabelDisplay="auto" aria-label={`${topic.activity} parameter`} /></>}
+  <Button variant="outlined" onClick={() => setChecked(true)}>Check answer</Button>
+  {checked && <Typography role="status" color={correct ? 'success.main' : 'warning.main'}>{correct ? 'Correct — the activity target is matched.' : 'Not quite yet. Adjust the control and try again.'}</Typography>}
+  <CompleteButton disabled={!correct} onComplete={onComplete} />
+  </EngineFrame>
+}
+
+export const PlatformEnginePreview: FC<{ engineId: PlatformEngineId; onComplete?: () => void; mathTopic?: MathTopic }> = ({ engineId, onComplete, mathTopic }) => {
+  if (mathTopic) return <MathActivityEngine topic={mathTopic} onComplete={onComplete} />
   if (engineId === 'drag-drop') return <DragDropEngine config={{ title: 'Sort living and non-living things', prompt: 'Place each example into the correct category.', categories: ['Living', 'Non-living'], items: [{ id: 'tree', label: 'Tree', correctCategory: 'Living' }, { id: 'rock', label: 'Rock', correctCategory: 'Non-living' }, { id: 'dog', label: 'Dog', correctCategory: 'Living' }, { id: 'water', label: 'Water', correctCategory: 'Non-living' }] }} onComplete={onComplete ?? (() => undefined)} />
   if (engineId === 'matching') return <MatchingEngine config={{ title: 'Match shapes and features', prompt: 'Connect each shape to its defining feature.', leftLabel: 'Shape', rightLabel: 'Feature', pairs: [{ id: 'triangle', left: 'Triangle', right: '3 sides' }, { id: 'square', left: 'Square', right: '4 equal sides' }, { id: 'circle', left: 'Circle', right: 'No straight sides' }] }} onComplete={onComplete ?? (() => undefined)} />
   if (engineId === 'number-line') return <NumberLineEngine onComplete={onComplete} />
