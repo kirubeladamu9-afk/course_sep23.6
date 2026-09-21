@@ -110,13 +110,61 @@ const PredictionExperimentEngine: FC<EnginePreviewProps> = ({ onComplete }) => {
   return <EngineFrame name="Prediction → Experiment → Result" description="Make a prediction, run the experiment, and compare it with the observed result."><Typography sx={{ fontWeight: 700 }}>What will happen when the input increases?</Typography><Stack direction="row" spacing={1}><Button variant={prediction === 'increase' ? 'contained' : 'outlined'} onClick={() => setPrediction('increase')}>Increase</Button><Button variant={prediction === 'decrease' ? 'contained' : 'outlined'} onClick={() => setPrediction('decrease')}>Decrease</Button></Stack><Typography variant="body2">Experiment input: {input}</Typography><Slider min={0} max={100} value={input} onChange={(_, next) => { setInput(Array.isArray(next) ? next[0] : next); setResult(null) }} aria-label="Experiment input" /><Button variant="contained" disabled={!prediction} onClick={() => setResult(actual)} startIcon={<PlayArrowIcon />} sx={{ alignSelf: 'flex-start' }}>Run experiment</Button>{result && <Paper role="status" elevation={0} sx={{ p: 2, border: 1, borderColor: result === prediction ? 'success.main' : 'warning.main', backgroundColor: result === prediction ? 'success.light' : 'warning.light' }}><Typography sx={{ fontWeight: 700 }}>{result === prediction ? 'Prediction correct' : 'Prediction needs revision'}</Typography><Typography variant="body2">Observed result: {result}. The result follows the experiment input.</Typography></Paper>}<CompleteButton disabled={!result} onComplete={onComplete} /></EngineFrame>
 }
 
+const getMathActivityPrompt = (topic: MathTopic) => {
+  const prompts: Record<string, string> = {
+    'Counting & Number Recognition': `Tap bugs and fruits until the garden has ${topic.target} counted objects.`,
+    'Comparing Numbers': 'Enter the larger number to tip the seesaw toward the greater quantity.',
+    'Addition & Subtraction': `Move the robot along the number path until it lands on ${topic.target}.`,
+    'Place Value': 'Build the requested hundreds, tens, and ones number with blocks.',
+    'Multiplication/Division Concepts': 'Arrange equal critter groups, then enter the number of groups.',
+    Fractions: `Tap pizza slices to show ${topic.target}/8 of the whole.`,
+    Decimals: `Shade ${topic.target} squares on the 100-grid.`,
+    Ratios: `Adjust the recipe to ${topic.target} servings and multiply the ingredients.`,
+    Percentages: `Charge the 100-grid battery to ${topic.target}%.`,
+    'Factors & Multiples': `Feed ${topic.target} into the machine to reveal its factor pairs.`,
+    Measurement: `Drag the virtual ruler until the measured object reads ${topic.target} units.`,
+    Geometry: `Place ${topic.target} vertices to complete the target shape.`,
+    Angles: `Rotate the ray until the angle reads ${topic.target}°.`,
+    'Perimeter & Area': `Place tiles until the room area is ${topic.target} square units.`,
+    Symmetry: 'Complete the missing mirror half and check the reflection.',
+    'Coordinate Grids': `Guide the robot to coordinate (${topic.target}, ${topic.target}).`,
+    'Data & Statistics': `Build the chart and enter the target value ${topic.target}.`,
+    Probability: 'Draw balls from the bag and compare the live probability graph.',
+    Patterns: `Complete the pattern train with the next value ${topic.target}.`,
+    Money: `Buy the item and enter the correct change: ${topic.target}.`,
+    Time: `Set the clock hands to ${topic.target} minutes elapsed.`,
+    Integers: `Move the elevator until it reaches floor ${topic.target}.`,
+    Algebra: `Balance both sides and isolate x = ${topic.target}.`,
+    'Linear Equations': `Adjust m until the graph matches slope ${topic.target}.`,
+    Functions: `Feed the input into the machine and produce output ${topic.target}.`,
+    'Simultaneous Equations': 'Drag the two lines until their intersection is highlighted.',
+    'Pythagorean Theorem': `Resize the triangle until the target side is ${topic.target}.`,
+    Sets: 'Sort each item into the correct Venn diagram region.',
+    Similarity: `Scale the twin shape to factor ${topic.target}.`,
+    'Quadratic Equations': `Reshape the parabola until its target parameter is ${topic.target}.`,
+    'Sequences & Series': `Place the next sequence term: ${topic.target}.`,
+    Trigonometry: `Spin the unit-circle point to ${topic.target}° and read sin/cos/tan.`,
+    'Coordinate Geometry': `Click two points and measure distance ${topic.target}.`,
+    'Mathematical Modelling': `Adjust the scenario until the outcome reaches ${topic.target}.`,
+    'Polynomial Functions': `Sculpt the curve until the target coefficient is ${topic.target}.`,
+    'Exponential & Logarithmic Functions': `Grow the population to input level ${topic.target}.`,
+    'Analytical Geometry': `Manipulate the equation until the target coefficient is ${topic.target}.`,
+    Vectors: `Combine arrows until the resultant magnitude is ${topic.target}.`,
+    Limits: 'Move the marker toward x = 2 and observe the approaching value.',
+    Differentiation: `Drag the point until the tangent slope is ${topic.target}.`,
+    Integration: `Increase rectangles until the area estimate uses ${topic.target} rectangles.`,
+    'Advanced Algebra': `Solve the equation challenge: x = ${topic.target}.`,
+  }
+  return prompts[topic.title] ?? topic.activityDescription
+}
+
 const MathActivityEngine: FC<{ topic: MathTopic; onComplete?: () => void }> = ({ topic, onComplete }) => {
   const [value, setValue] = useState(topic.mode === 'graph' ? 0 : topic.mode === 'input' ? topic.target - 2 : topic.mode === 'slider' ? Math.max(topic.target - 5, -10) : 0)
   const [checked, setChecked] = useState(false)
   const correct = value === topic.target
   const min = topic.mode === 'slider' && topic.target < 0 ? topic.target - 7 : topic.mode === 'slider' ? Math.max(0, topic.target - 10) : 0
   const max = topic.mode === 'slider' ? topic.target + 10 : 10
-  const prompt = topic.mode === 'count' ? `Tap ${topic.target} garden objects to complete the challenge.` : topic.mode === 'graph' ? `Tune the highlighted parameter to ${topic.target}.` : `Set the activity target to ${topic.target}.`
+  const prompt = getMathActivityPrompt(topic)
   if (topic.title === 'Fractions') {
     const slices = Array.from({ length: 8 }, (_, index) => index < value)
     return <EngineFrame name={topic.activity} description={topic.activityDescription}><Paper elevation={0} sx={{ p: 2, minHeight: 170, display: 'grid', placeItems: 'center', backgroundColor: correct ? 'success.light' : 'background.default' }}><Box sx={{ width: 150, height: 150, borderRadius: '50%', background: 'repeating-conic-gradient(#f6b73c 0deg 43deg, #fff3c4 43deg 45deg)', border: 8, borderColor: '#a85d32', transform: correct ? 'scale(1.08) rotate(8deg)' : 'scale(1)', transition: 'transform .3s ease' }} /></Paper><Typography variant="body2" color="text.secondary">Tap pizza slices to show {topic.target}/8.</Typography><Stack direction="row" spacing={1} flexWrap="wrap">{slices.map((selected, index) => <Button key={index} variant={selected ? 'contained' : 'outlined'} onClick={() => { setValue((current) => current === index + 1 ? index : index + 1); setChecked(false) }} sx={{ minWidth: 44, transition: 'transform .2s ease', transform: selected ? 'translateY(-4px)' : 'none' }}>Slice {index + 1}</Button>)}</Stack><Button variant="outlined" onClick={() => setChecked(true)}>Check pizza</Button>{checked && <Typography role="status" color={correct ? 'success.main' : 'warning.main'}>{correct ? 'Chef says: perfect fraction!' : 'That fraction needs another slice adjustment.'}</Typography>}<CompleteButton disabled={!correct} onComplete={onComplete} /></EngineFrame>
