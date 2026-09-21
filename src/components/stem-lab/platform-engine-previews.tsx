@@ -23,6 +23,7 @@ import BalanceEquationActivity from './balance-equation-activity'
 import FunctionMachineActivity from './function-machine-activity'
 import LineIntersectionActivity from './line-intersection-activity'
 import TriangleBuilderActivity from './triangle-builder-activity'
+import ImprovedSetSorterActivity from './set-sorter-activity'
 import { type PlatformEngineId } from './platform-engine-library'
 import { type MathTopic } from '@/components/admin/stem-curriculum'
 
@@ -318,7 +319,7 @@ const MathActivityEngine: FC<{ topic: MathTopic; onComplete?: () => void }> = ({
   const finish = <TopicCheck correct={correct} checked={checked} onCheck={() => setChecked(true)} onComplete={onComplete} />
   const frame = (children: ReactNode) => <EngineFrame name={topic.activity} description={topic.activityDescription}>{children}{finish}</EngineFrame>
 
-  if (topic.title === 'Sets') return <SetSorterActivity topic={topic} onComplete={onComplete} />
+  if (topic.title === 'Sets') return <ImprovedSetSorterActivity topic={topic} onComplete={onComplete} />
   if (topic.title === 'Place Value') return <BaseTenBuilderActivity topic={topic} onComplete={onComplete} />
   if (topic.title === 'Multiplication/Division Concepts') return <ArrayBuilderActivity topic={topic} onComplete={onComplete} />
   if (topic.title === 'Comparing Numbers') return <NumberBalanceActivity topic={topic} onComplete={onComplete} />
@@ -337,7 +338,7 @@ const MathActivityEngine: FC<{ topic: MathTopic; onComplete?: () => void }> = ({
   if (topic.title === 'Decimals') return frame(<GridActivity topic={topic} value={value} setValue={update} />)
   if (topic.title === 'Perimeter & Area') return frame(<><Typography variant="body2">Place tiles to build a room with area {topic.target}.</Typography><Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: .5, maxWidth: 330 }}>{Array.from({ length: 24 }, (_, index) => <Button key={index} onClick={() => update(index + 1)} sx={{ minWidth: 0, aspectRatio: 1, backgroundColor: index < value ? 'primary.main' : 'action.hover' }}>{index < value ? '■' : '+'}</Button>)}</Box><Chip label={`Area: ${value} square units`} /></>)
   if (topic.title === 'Probability') return <ProbabilityMachineActivity topic={topic} onComplete={onComplete} />
-  if (['Sets'].includes(topic.title)) return frame(<><Typography>Sort each item into the Venn diagram regions.</Typography><Box sx={{ position: 'relative', height: 170, display: 'flex', justifyContent: 'center' }}><Box sx={{ width: 150, height: 120, borderRadius: '50%', border: 3, borderColor: 'primary.main', position: 'absolute', left: '25%' }} /><Box sx={{ width: 150, height: 120, borderRadius: '50%', border: 3, borderColor: 'secondary.main', position: 'absolute', right: '25%' }} />{['A', 'B', 'A∩B', 'C'].map((item, index) => <Button key={item} onClick={() => update(index + 1)} sx={{ position: 'absolute', left: `${20 + index * 20}%`, top: `${20 + (index % 2) * 60}px` }}>{item}</Button>)}</Box></>)
+  if (topic.title === 'Sets') return <ImprovedSetSorterActivity topic={topic} onComplete={onComplete} />
   if (topic.title === 'Simultaneous Equations') return <LineIntersectionActivity topic={topic} onComplete={onComplete} />
   if (['Linear Equations', 'Quadratic Equations', 'Polynomial Functions'].includes(topic.title)) return frame(<GraphVisual kind={topic.title === 'Linear Equations' ? 'linear' : topic.title === 'Quadratic Equations' ? 'parabola' : 'polynomial'} value={value || 1} target={topic.target} setValue={update} />)
   if (topic.title === 'Algebra') return <BalanceEquationActivity topic={topic} onComplete={onComplete} />
