@@ -1,8 +1,9 @@
 import { type SimulationConfig } from '@/components/admin/admin-data'
+import { getStemTool } from './stem-tool-library'
 
 export type StemSubject = 'Math' | 'Physics' | 'Chemistry' | 'Biology'
 export type StemGradeBand = 'Grade 1–2' | 'Grade 3–5' | 'Grade 6–8' | 'Grade 9–10' | 'Grade 11–12'
-export type StemTool = 'Interactive Diagram' | 'Calculator' | 'Graph' | 'Periodic Table' | 'Chemical Equation' | 'Number Line' | 'Counting Visualizer' | 'Shape Matcher' | 'Fraction Visualizer' | 'Geometry Builder' | 'Simulation / Virtual Lab'
+export type StemTool = 'Interactive Diagram' | 'Calculator' | 'Graph' | 'Periodic Table' | 'Chemical Equation' | 'Number Line' | 'Counting Visualizer' | 'Shape Matcher' | 'Fraction Visualizer' | 'Geometry Builder' | 'Pendulum Lab' | 'Neutralization Lab' | 'Osmosis Lab' | 'Projectile Motion Lab'
 
 export interface StemTopic {
   id: string
@@ -16,38 +17,8 @@ export interface StemTopic {
   simulation?: SimulationConfig
 }
 
-const pendulumSimulation: SimulationConfig = {
-  scenarioName: 'Pendulum experiment',
-  overview: 'Investigate how the length of a pendulum changes the time for one complete swing. Keep the release angle small and compare the calculated period with your observation.',
-  variables: [
-    { id: 1, label: 'Length', min: 0.25, max: 2, step: 0.25, defaultValue: 1, unit: 'm' },
-    { id: 2, label: 'Mass', min: 0.1, max: 2, step: 0.1, defaultValue: 0.5, unit: 'kg' },
-    { id: 3, label: 'Release angle', min: 5, max: 30, step: 5, defaultValue: 10, unit: '°' },
-  ],
-  rule: 'pendulum-period',
-  calculation: 'T = 2π√(length ÷ 9.81)',
-  outputLabel: 'Calculated period for one swing',
-  outputUnit: 's',
-  observationPrompt: 'Describe the relationship you observe when the length increases.',
-  expectedObservation: 'A longer pendulum has a longer period',
-  acceptedObservations: ['longer length means slower swing', 'period increases with length', 'longer pendulum swings more slowly'],
-}
-
-const osmosisSimulation: SimulationConfig = {
-  scenarioName: 'Osmosis lab',
-  overview: 'Model water movement across a selectively permeable membrane. Compare the solution concentration with the cell concentration to predict the direction of net water movement.',
-  variables: [
-    { id: 1, label: 'Solution concentration', min: 0, max: 20, step: 1, defaultValue: 12, unit: '%' },
-    { id: 2, label: 'Cell concentration', min: 0, max: 20, step: 1, defaultValue: 8, unit: '%' },
-  ],
-  rule: 'osmosis-movement',
-  calculation: 'concentration difference = solution − cell',
-  outputLabel: 'Concentration difference',
-  outputUnit: '%',
-  observationPrompt: 'Record the predicted direction of net water movement across the membrane.',
-  expectedObservation: 'Water moves out of the cell',
-  acceptedObservations: ['water leaves the cell', 'outward water movement', 'cell loses water'],
-}
+const pendulumSimulation = getStemTool('pendulum-lab')!.config
+const osmosisSimulation = getStemTool('osmosis-lab')!.config
 
 const topic = (subject: StemSubject, gradeBand: StemGradeBand, id: string, title: string, overview: string, tools: StemTool[], activitySteps: string[], status: StemTopic['status'] = 'available', simulation?: SimulationConfig): StemTopic => ({ id, subject, gradeBand, title, overview, tools, activitySteps, status, simulation })
 
@@ -71,7 +42,8 @@ export const STEM_TOPICS: StemTopic[] = [
   topic('Physics', 'Grade 6–8', 'physics-energy', 'Energy transfer', 'Trace energy changes between moving, stored, thermal, and light forms.', ['Interactive Diagram', 'Graph'], ['Identify the energy form', 'Trace a transfer', 'Compare the graph']),
   topic('Physics', 'Grade 6–8', 'physics-waves', 'Waves and sound', 'Relate amplitude, wavelength, and frequency to observable wave behavior.', ['Graph', 'Calculator'], ['Change the frequency', 'Graph a wave', 'Describe the pattern']),
   topic('Physics', 'Grade 9–10', 'physics-motion', 'Motion graphs', 'Read and build position-time and velocity-time graphs for moving objects.', ['Graph', 'Calculator', 'Number Line'], ['Set the motion', 'Plot the graph', 'Calculate the rate']),
-  topic('Physics', 'Grade 9–10', 'physics-pendulum', 'Pendulum experiment', 'Run a controlled pendulum experiment and connect length with period through a validated observation.', ['Simulation / Virtual Lab', 'Graph', 'Calculator'], ['Adjust length, mass, and angle', 'Run the pendulum model', 'Record and validate the observation'], 'available', pendulumSimulation),
+  topic('Physics', 'Grade 9–10', 'physics-projectile', 'Projectile motion', 'Adjust launch conditions and investigate how angle and speed affect a projectile’s range.', ['Projectile Motion Lab', 'Graph', 'Calculator'], ['Adjust launch conditions', 'Run the projectile model', 'Record and validate the observation'], 'available', getStemTool('projectile-motion-lab')!.config),
+  topic('Physics', 'Grade 9–10', 'physics-pendulum', 'Pendulum experiment', 'Run a controlled pendulum experiment and connect length with period through a validated observation.', ['Pendulum Lab', 'Graph', 'Calculator'], ['Adjust length, mass, and angle', 'Run the pendulum model', 'Record and validate the observation'], 'available', pendulumSimulation),
   topic('Physics', 'Grade 11–12', 'physics-electricity', 'Electric fields and circuits', 'Model potential difference, current, resistance, and energy in circuits.', ['Interactive Diagram', 'Calculator', 'Graph'], ['Build the circuit', 'Calculate current', 'Interpret the graph'], 'coming-soon'),
   topic('Physics', 'Grade 11–12', 'physics-momentum', 'Momentum and collisions', 'Use conservation of momentum to predict outcomes in one-dimensional collisions.', ['Calculator', 'Graph'], ['Set the masses', 'Calculate momentum', 'Compare before and after'], 'coming-soon'),
   topic('Chemistry', 'Grade 1–2', 'chemistry-materials', 'Materials around us', 'Sort everyday materials by visible properties and changes.', ['Interactive Diagram'], ['Explore materials', 'Sort by property', 'Describe a change'], 'coming-soon'),
@@ -80,7 +52,7 @@ export const STEM_TOPICS: StemTopic[] = [
   topic('Chemistry', 'Grade 6–8', 'chemistry-mixtures', 'Mixtures and solutions', 'Distinguish mixtures and solutions using particle-level models.', ['Interactive Diagram', 'Calculator'], ['Mix the substances', 'Inspect the particles', 'Classify the result']),
   topic('Chemistry', 'Grade 9–10', 'chemistry-periodic', 'Periodic table patterns', 'Use groups and periods to predict element properties and patterns.', ['Periodic Table', 'Calculator'], ['Select an element', 'Compare its group', 'Predict a property']),
   topic('Chemistry', 'Grade 9–10', 'chemistry-equations', 'Chemical equations', 'Balance atoms and interpret coefficients in chemical reactions.', ['Chemical Equation', 'Periodic Table'], ['Inspect the reactants', 'Balance the equation', 'Explain conservation']),
-  topic('Chemistry', 'Grade 9–10', 'chemistry-acids', 'Acids and bases', 'Compare pH, indicators, and neutralization in a guided chemical model.', ['Simulation / Virtual Lab', 'Chemical Equation', 'Calculator'], ['Choose acid and base inputs', 'Run the neutralization model', 'Validate the observed pH change']),
+  topic('Chemistry', 'Grade 9–10', 'chemistry-acids', 'Acids and bases', 'Compare pH, indicators, and neutralization in a guided chemical model.', ['Neutralization Lab', 'Chemical Equation', 'Calculator'], ['Choose acid and base inputs', 'Run the neutralization model', 'Validate the observed pH change'], 'available', getStemTool('neutralization-lab')!.config),
   topic('Chemistry', 'Grade 11–12', 'chemistry-equilibrium', 'Chemical equilibrium', 'Explore reversible reactions and how concentration changes shift equilibrium.', ['Graph', 'Calculator', 'Chemical Equation'], ['Set initial concentrations', 'Run the model', 'Interpret the graph'], 'coming-soon'),
   topic('Chemistry', 'Grade 11–12', 'chemistry-organic', 'Organic structures', 'Recognize functional groups and connect structure with molecular properties.', ['Interactive Diagram', 'Chemical Equation'], ['Build the structure', 'Identify the group', 'Predict a property'], 'coming-soon'),
   topic('Biology', 'Grade 1–2', 'biology-living', 'Living and non-living things', 'Identify common characteristics shared by living things.', ['Interactive Diagram'], ['Sort the examples', 'Find the shared feature', 'Explain your choice'], 'coming-soon'),
@@ -89,7 +61,7 @@ export const STEM_TOPICS: StemTopic[] = [
   topic('Biology', 'Grade 6–8', 'biology-cells', 'Cells and organelles', 'Explore cell structures and connect each organelle to its role.', ['Interactive Diagram', 'Shape Matcher'], ['Explore the cell', 'Match the organelle', 'Explain its function']),
   topic('Biology', 'Grade 6–8', 'biology-photosynthesis', 'Photosynthesis', 'Follow matter and energy through photosynthesis and identify the limiting inputs.', ['Interactive Diagram', 'Chemical Equation', 'Graph'], ['Explore the chloroplast', 'Balance the equation', 'Compare the rate']),
   topic('Biology', 'Grade 9–10', 'biology-genetics', 'Inheritance and traits', 'Use simple models to connect alleles, probability, and inherited traits.', ['Calculator', 'Counting Visualizer', 'Graph'], ['Set the alleles', 'Count the outcomes', 'Interpret the probability'], 'coming-soon'),
-  topic('Biology', 'Grade 9–10', 'biology-osmosis', 'Osmosis lab', 'Run a virtual osmosis lab and validate the direction of water movement across a membrane.', ['Simulation / Virtual Lab', 'Graph', 'Calculator'], ['Adjust solution and cell concentrations', 'Run the membrane model', 'Record and validate the observation'], 'available', osmosisSimulation),
+  topic('Biology', 'Grade 9–10', 'biology-osmosis', 'Osmosis lab', 'Run a virtual osmosis lab and validate the direction of water movement across a membrane.', ['Osmosis Lab', 'Graph', 'Calculator'], ['Adjust solution and cell concentrations', 'Run the membrane model', 'Record and validate the observation'], 'available', osmosisSimulation),
   topic('Biology', 'Grade 11–12', 'biology-cellular-respiration', 'Cellular respiration', 'Model how cells transfer energy from glucose through cellular respiration.', ['Chemical Equation', 'Graph', 'Calculator'], ['Set the inputs', 'Trace the pathway', 'Interpret the energy graph'], 'coming-soon'),
   topic('Biology', 'Grade 11–12', 'biology-evolution', 'Evolution and selection', 'Explore how variation and selection change populations over generations.', ['Graph', 'Calculator'], ['Set the variation', 'Run generations', 'Compare populations'], 'coming-soon'),
 ]

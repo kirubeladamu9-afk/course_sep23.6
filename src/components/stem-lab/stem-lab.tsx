@@ -24,6 +24,7 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import ScienceOutlinedIcon from '@mui/icons-material/ScienceOutlined'
 import { type FC, useMemo, useState } from 'react'
 import SimulationLesson from '@/components/course/simulation-lesson'
+import { getStemTool, type StemToolId } from './stem-tool-library'
 import { type StemGradeBand, type StemSubject, type StemTool, type StemTopic, STEM_GRADE_BANDS, STEM_SUBJECTS, STEM_TOPICS } from './stem-lab-data'
 
 const subjectColors: Record<StemSubject, 'primary' | 'secondary' | 'success' | 'warning'> = { Math: 'primary', Physics: 'secondary', Chemistry: 'warning', Biology: 'success' }
@@ -38,15 +39,21 @@ const toolDescription: Record<StemTool, string> = {
   'Shape Matcher': 'Match a shape to its defining features.',
   'Fraction Visualizer': 'Build equal parts and compare fractions.',
   'Geometry Builder': 'Construct a shape and change its dimensions.',
-  'Simulation / Virtual Lab': 'Adjust inputs, run the model, and validate an observation.',
+  'Pendulum Lab': 'Adjust pendulum inputs and validate the period observation.',
+  'Neutralization Lab': 'Mix acid and base inputs and validate the pH observation.',
+  'Osmosis Lab': 'Adjust concentrations and validate water movement.',
+  'Projectile Motion Lab': 'Adjust launch conditions and validate the range observation.',
 }
 
 const ToolStep: FC<{ tool: StemTool; onComplete: () => void }> = ({ tool, onComplete }) => <Paper elevation={0} sx={{ p: 3, border: 1, borderColor: 'divider' }}><Stack spacing={2}><Chip label={tool} color="primary" variant="outlined" sx={{ alignSelf: 'flex-start' }} /><Typography variant="h6">{tool}</Typography><Typography color="text.secondary">{toolDescription[tool]}</Typography><Button variant="contained" onClick={onComplete} startIcon={<CheckCircleOutlineIcon />} sx={{ alignSelf: 'flex-start' }}>Complete step</Button></Stack></Paper>
+
+const readyToolIds: Partial<Record<StemTool, StemToolId>> = { 'Pendulum Lab': 'pendulum-lab', 'Neutralization Lab': 'neutralization-lab', 'Osmosis Lab': 'osmosis-lab', 'Projectile Motion Lab': 'projectile-motion-lab' }
 
 const ActivityDialog: FC<{ topic: StemTopic; open: boolean; onClose: () => void; onComplete: () => void }> = ({ topic, open, onClose, onComplete }) => {
   const [step, setStep] = useState(0)
   const [completed, setCompleted] = useState<number[]>([])
   const currentTool = topic.tools[Math.min(step, topic.tools.length - 1)]
+  const simulationConfig = topic.simulation ?? getStemTool(readyToolIds[currentTool])?.config
   const isLastStep = step === topic.activitySteps.length - 1
   const markStepComplete = () => {
     setCompleted((current) => current.includes(step) ? current : [...current, step])
@@ -54,7 +61,7 @@ const ActivityDialog: FC<{ topic: StemTopic; open: boolean; onClose: () => void;
     else onComplete()
   }
   const close = () => { setStep(0); setCompleted([]); onClose() }
-  return <Dialog open={open} onClose={close} fullWidth maxWidth="md" scroll="paper"><DialogTitle sx={{ pb: 1 }}>{topic.title}</DialogTitle><DialogContent dividers><Stack spacing={2.5}><Typography color="text.secondary">{topic.overview}</Typography><Stepper activeStep={step} alternativeLabel>{topic.activitySteps.map((label, index) => <Step key={label} completed={completed.includes(index)}><StepButton color="inherit" onClick={() => completed.includes(index) && setStep(index)}>{label}</StepButton></Step>)}</Stepper>{currentTool === 'Simulation / Virtual Lab' && topic.simulation ? <SimulationLesson config={topic.simulation} onValidated={markStepComplete} /> : <ToolStep tool={currentTool} onComplete={markStepComplete} />}{completed.includes(step) && !isLastStep && <Typography variant="body2" color="success.main" sx={{ fontWeight: 700 }}>Step complete. Continue to the next activity.</Typography>}</Stack></DialogContent><DialogActions><Button onClick={close}>Exit activity</Button></DialogActions></Dialog>
+  return <Dialog open={open} onClose={close} fullWidth maxWidth="md" scroll="paper"><DialogTitle sx={{ pb: 1 }}>{topic.title}</DialogTitle><DialogContent dividers><Stack spacing={2.5}><Typography color="text.secondary">{topic.overview}</Typography><Stepper activeStep={step} alternativeLabel>{topic.activitySteps.map((label, index) => <Step key={label} completed={completed.includes(index)}><StepButton color="inherit" onClick={() => completed.includes(index) && setStep(index)}>{label}</StepButton></Step>)}</Stepper>{simulationConfig ? <SimulationLesson config={simulationConfig} onValidated={markStepComplete} /> : <ToolStep tool={currentTool} onComplete={markStepComplete} />}{completed.includes(step) && !isLastStep && <Typography variant="body2" color="success.main" sx={{ fontWeight: 700 }}>Step complete. Continue to the next activity.</Typography>}</Stack></DialogContent><DialogActions><Button onClick={close}>Exit activity</Button></DialogActions></Dialog>
 }
 
 export interface StemLabProps {

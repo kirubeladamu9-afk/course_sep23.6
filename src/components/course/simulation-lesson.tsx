@@ -35,6 +35,16 @@ export const calculateSimulationOutput = (rule: SimulationRule, variables: Recor
     const cell = variables[2] ?? 0
     return round(solution - cell)
   }
+  if (rule === 'neutralization') {
+    const acid = (variables[1] ?? 0) * (variables[2] ?? 0)
+    const base = (variables[3] ?? 0) * (variables[4] ?? 0)
+    return round(acid - base)
+  }
+  if (rule === 'projectile-range') {
+    const speed = variables[1] ?? 0
+    const angle = ((variables[2] ?? 0) * Math.PI) / 180
+    return round((speed ** 2 * Math.sin(2 * angle)) / 9.81)
+  }
   const values = Object.values(variables)
   return round(values.reduce((total, value) => total + value, 0))
 }

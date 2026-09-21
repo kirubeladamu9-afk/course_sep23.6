@@ -41,6 +41,7 @@ const getAdminPageTitle = (pathname: string) => {
   if (/^\/admin\/courses\/\d+\/edit$/.test(normalizedPath)) return 'Edit Course'
   if (normalizedPath === '/admin/courses') return 'Programs & Courses'
   if (normalizedPath === '/admin/registrations') return 'Registrations'
+  if (normalizedPath === '/admin/stem-lab') return 'STEM Lab'
   if (normalizedPath === '/admin/classes/pending') return 'Pending Scheduling'
   if (normalizedPath === '/admin/classes/new') return 'New Class'
   if (/^\/admin\/classes\/\d+$/.test(normalizedPath)) return 'Class Details'
