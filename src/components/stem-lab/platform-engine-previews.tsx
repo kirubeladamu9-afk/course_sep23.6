@@ -164,6 +164,24 @@ const GridActivity: FC<{ topic: MathTopic; value: number; setValue: (value: numb
 
 const GraphVisual: FC<{ kind: 'linear' | 'intersection' | 'parabola' | 'polynomial'; value: number; target: number; setValue: (value: number) => void }> = ({ kind, value, target, setValue }) => { const points = Array.from({ length: 9 }, (_, index) => { const x = index - 4; const y = kind === 'parabola' ? value * x * x - 1 : kind === 'polynomial' ? value * x * x * x / 5 : value * x + 1; return `${40 + index * 40},${105 - y * 8}` }).join(' '); return <><Box component="svg" viewBox="0 0 400 130" sx={{ width: '100%', height: 155, backgroundColor: 'background.default', borderRadius: 2 }} role="img" aria-label={`${kind} graph`}><line x1="20" x2="380" y1="105" y2="105" stroke="currentColor" opacity=".3" /><line x1="200" x2="200" y1="15" y2="120" stroke="currentColor" opacity=".3" />{kind === 'intersection' ? <><polyline points={points} fill="none" stroke="var(--mui-palette-primary-main)" strokeWidth="4" /><polyline points={Array.from({ length: 9 }, (_, index) => `${40 + index * 40},${105 - ((-value * (index - 4)) + 2) * 8}`).join(' ')} fill="none" stroke="var(--mui-palette-secondary-main)" strokeWidth="4" /><circle cx="200" cy="89" r={value === target ? 8 : 4} fill="var(--mui-palette-success-main)" /></> : <polyline points={points} fill="none" stroke="var(--mui-palette-primary-main)" strokeWidth="4" />}</Box><Typography variant="body2">{kind === 'linear' ? `y = ${value}x + 1` : kind === 'intersection' ? `Intersection control: ${value}` : `${kind} coefficient: ${value}`}</Typography><Slider min={1} max={5} step={1} value={value} onChange={(_, next) => setValue(Array.isArray(next) ? next[0] : next)} aria-label={`${kind} graph control`} /></> }
 
+const LinearEquationActivity: FC<{ topic: MathTopic; onComplete?: () => void }> = ({ topic, onComplete }) => {
+  const [slope, setSlope] = useState(0)
+  const [intercept, setIntercept] = useState(0)
+  const [touchedSlope, setTouchedSlope] = useState(false)
+  const [touchedIntercept, setTouchedIntercept] = useState(false)
+  const [checked, setChecked] = useState(false)
+  const targetSlope = topic.target
+  const targetIntercept = 1
+  const correct = touchedSlope && touchedIntercept && slope === targetSlope && intercept === targetIntercept
+  const points = Array.from({ length: 41 }, (_, index) => {
+    const x = index / 2 - 10
+    const y = slope * x + intercept
+    const screenY = Math.max(8, Math.min(122, 65 - y * 8))
+    return `${20 + index * 9},${screenY}`
+  }).join(' ')
+  return <EngineFrame name={topic.activity} description={topic.activityDescription}><Box component="svg" viewBox="0 0 400 130" sx={{ width: '100%', height: 180, backgroundColor: 'background.default', borderRadius: 2 }} role="img" aria-label={`Graph of y equals ${slope}x plus ${intercept}`}><line x1="20" x2="380" y1="105" y2="105" stroke="currentColor" opacity=".35" /><line x1="200" x2="200" y1="10" y2="120" stroke="currentColor" opacity=".35" />{Array.from({ length: 41 }, (_, index) => <line key={index} x1={20 + index * 9} x2={20 + index * 9} y1="101" y2="109" stroke="currentColor" opacity=".25" />)}<polyline points={points} fill="none" stroke="#107d6f" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" /></Box><Typography variant="h6" sx={{ fontFamily: 'monospace', textAlign: 'center' }}>y = {slope}x {intercept >= 0 ? '+' : '−'} {Math.abs(intercept)}</Typography><Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}><Box sx={{ flex: 1 }}><Typography variant="body2">m (slope): {slope}</Typography><Slider min={-3} max={3} step={1} value={slope} onChange={(_, next) => { setSlope(Array.isArray(next) ? next[0] : next); setTouchedSlope(true); setChecked(false) }} valueLabelDisplay="auto" aria-label="Slope m" /></Box><Box sx={{ flex: 1 }}><Typography variant="body2">b (y-intercept): {intercept}</Typography><Slider min={-4} max={4} step={1} value={intercept} onChange={(_, next) => { setIntercept(Array.isArray(next) ? next[0] : next); setTouchedIntercept(true); setChecked(false) }} valueLabelDisplay="auto" aria-label="Intercept b" /></Box></Stack><Typography variant="body2" color={correct ? 'success.main' : 'text.secondary'}>{correct ? 'Target equation reached: y = 2x + 1.' : 'Move both sliders to build y = 2x + 1.'}</Typography><Button variant="outlined" onClick={() => setChecked(true)}>Check Activity</Button>{checked && <Typography role="status" color={correct ? 'success.main' : 'warning.main'}>{correct ? 'Correct equation and graph.' : 'Not yet. Set both m and b to the target values.'}</Typography>}<CompleteButton disabled={!correct} onComplete={onComplete} /></EngineFrame>
+}
+
 const MathActivityEngine: FC<{ topic: MathTopic; onComplete?: () => void }> = ({ topic, onComplete }) => {
   const initial = topic.title === 'Fractions' ? topic.target : Math.min(Math.max(topic.target - 2, 0), 10)
   const [value, setValue] = useState(initial)
@@ -177,6 +195,7 @@ const MathActivityEngine: FC<{ topic: MathTopic; onComplete?: () => void }> = ({
   const finish = <TopicCheck correct={correct} checked={checked} onCheck={() => setChecked(true)} onComplete={onComplete} />
   const frame = (children: ReactNode) => <EngineFrame name={topic.activity} description={topic.activityDescription}>{children}{finish}</EngineFrame>
 
+  if (topic.title === 'Linear Equations') return <LinearEquationActivity topic={topic} onComplete={onComplete} />
   if (topic.title === 'Data & Statistics') {
     const mean = chartValues.reduce((sum, item) => sum + item, 0) / chartValues.length
     const chartCorrect = Math.round(mean) === topic.target
