@@ -25,6 +25,8 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import ScienceOutlinedIcon from '@mui/icons-material/ScienceOutlined'
 import { type FC, useMemo, useState } from 'react'
 import SimulationLesson from '@/components/course/simulation-lesson'
+import DragDropEngine, { type DragDropConfig } from './drag-drop-engine'
+import MatchingEngine, { type MatchingConfig } from './matching-engine'
 import { getStemTool, type StemToolId } from './stem-tool-library'
 import { type StemGradeBand, type StemSubject, type StemTool, type StemTopic, STEM_GRADE_BANDS, STEM_SUBJECTS, STEM_TOPICS } from './stem-lab-data'
 
@@ -38,6 +40,8 @@ const toolDescription: Record<StemTool, string> = {
   'Number Line': 'Place values and compare their position.',
   'Counting Visualizer': 'Build groups and count what you see.',
   'Shape Matcher': 'Match a shape to its defining features.',
+  'Drag & Drop': 'Sort objects into the category where they belong.',
+  Matching: 'Pair related ideas, terms, or representations.',
   'Fraction Visualizer': 'Build equal parts and compare fractions.',
   'Geometry Builder': 'Construct a shape and change its dimensions.',
   'Pendulum Lab': 'Adjust pendulum inputs and validate the period observation.',
@@ -46,8 +50,35 @@ const toolDescription: Record<StemTool, string> = {
   'Projectile Motion Lab': 'Adjust launch conditions and validate the range observation.',
 }
 
+const dragDropConfig: DragDropConfig = {
+  title: 'Sort living and non-living things',
+  prompt: 'Drag each example into the category that best describes it. You can also tap an item, then tap a category.',
+  categories: ['Living', 'Non-living'],
+  items: [
+    { id: 'tree', label: 'Tree', correctCategory: 'Living' },
+    { id: 'dog', label: 'Dog', correctCategory: 'Living' },
+    { id: 'rock', label: 'Rock', correctCategory: 'Non-living' },
+    { id: 'water', label: 'Water', correctCategory: 'Non-living' },
+  ],
+}
+
+const matchingConfig: MatchingConfig = {
+  title: 'Match each shape to its features',
+  prompt: 'Select one item from each column to connect the shape with its defining feature.',
+  leftLabel: 'Shape',
+  rightLabel: 'Feature',
+  pairs: [
+    { id: 'triangle', left: 'Triangle', right: '3 sides' },
+    { id: 'square', left: 'Square', right: '4 equal sides' },
+    { id: 'circle', left: 'Circle', right: 'No straight sides' },
+  ],
+}
+
 const ToolStep: FC<{ tool: StemTool; onComplete: () => void }> = ({ tool, onComplete }) => {
   const [modelValue, setModelValue] = useState(50)
+  if (tool === 'Drag & Drop') return <DragDropEngine config={dragDropConfig} onComplete={onComplete} />
+  if (tool === 'Matching') return <MatchingEngine config={matchingConfig} onComplete={onComplete} />
+  if (tool === 'Shape Matcher') return <MatchingEngine config={matchingConfig} onComplete={onComplete} />
   return <Paper elevation={0} sx={{ p: 3, border: 1, borderColor: 'divider' }}><Stack spacing={2}><Chip label={tool} color="primary" variant="outlined" sx={{ alignSelf: 'flex-start' }} /><Typography variant="h6">{tool}</Typography><Typography color="text.secondary">{toolDescription[tool]}</Typography><Box sx={{ position: 'relative', height: 96, overflow: 'hidden', borderRadius: 2, background: 'linear-gradient(135deg, rgba(16,125,111,.12), rgba(79,140,255,.16))' }}><Box sx={{ position: 'absolute', left: `${modelValue}%`, top: '50%', width: 28, height: 28, borderRadius: '50%', backgroundColor: 'primary.main', transform: 'translate(-50%, -50%)', boxShadow: 3, animation: 'stemLabPulse 1.8s ease-in-out infinite', '@keyframes stemLabPulse': { '0%, 100%': { scale: 1 }, '50%': { scale: 1.25 } } }} /><Typography variant="caption" sx={{ position: 'absolute', left: 12, top: 10, color: 'text.secondary' }}>Animated model response</Typography></Box><Box><Typography variant="caption" color="text.secondary">Adjust the model</Typography><Slider value={modelValue} onChange={(_, value) => setModelValue(Array.isArray(value) ? value[0] : value)} aria-label={`Adjust ${tool} model`} /></Box><Button variant="contained" onClick={onComplete} startIcon={<CheckCircleOutlineIcon />} sx={{ alignSelf: 'flex-start' }}>Complete step</Button></Stack></Paper>
 }
 

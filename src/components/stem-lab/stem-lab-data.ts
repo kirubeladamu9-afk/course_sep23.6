@@ -3,7 +3,7 @@ import { getStemTool } from './stem-tool-library'
 
 export type StemSubject = 'Math' | 'Physics' | 'Chemistry' | 'Biology'
 export type StemGradeBand = 'Grade 1–2' | 'Grade 3–5' | 'Grade 6–8' | 'Grade 9–10' | 'Grade 11–12'
-export type StemTool = 'Interactive Diagram' | 'Calculator' | 'Graph' | 'Periodic Table' | 'Chemical Equation' | 'Number Line' | 'Counting Visualizer' | 'Shape Matcher' | 'Fraction Visualizer' | 'Geometry Builder' | 'Pendulum Lab' | 'Neutralization Lab' | 'Osmosis Lab' | 'Projectile Motion Lab'
+export type StemTool = 'Interactive Diagram' | 'Calculator' | 'Graph' | 'Periodic Table' | 'Chemical Equation' | 'Number Line' | 'Counting Visualizer' | 'Shape Matcher' | 'Drag & Drop' | 'Matching' | 'Fraction Visualizer' | 'Geometry Builder' | 'Pendulum Lab' | 'Neutralization Lab' | 'Osmosis Lab' | 'Projectile Motion Lab'
 
 export interface StemTopic {
   id: string
@@ -53,12 +53,12 @@ const subjectTools: Record<StemSubject, StemTool[]> = {
   Math: ['Calculator', 'Graph', 'Geometry Builder'],
   Physics: ['Interactive Diagram', 'Graph', 'Calculator'],
   Chemistry: ['Interactive Diagram', 'Chemical Equation', 'Calculator'],
-  Biology: ['Interactive Diagram', 'Graph', 'Shape Matcher'],
+  Biology: ['Interactive Diagram', 'Graph', 'Drag & Drop'],
 }
 
 const makeScienceTopics = (subject: Exclude<StemSubject, 'Math'>, titles: string[]) => titles.map((title, index) => {
   const normalized = title.toLowerCase()
-  const tool = subject === 'Physics' && normalized === 'pendulum experiment' ? 'Pendulum Lab' : subject === 'Physics' && normalized === 'projectile motion' ? 'Projectile Motion Lab' : subject === 'Chemistry' && title === 'Acids & Bases' ? 'Neutralization Lab' : subject === 'Biology' && normalized === 'osmosis' ? 'Osmosis Lab' : undefined
+  const tool: StemTool | undefined = subject === 'Physics' && normalized === 'pendulum experiment' ? 'Pendulum Lab' : subject === 'Physics' && normalized === 'projectile motion' ? 'Projectile Motion Lab' : subject === 'Chemistry' && title === 'Acids & Bases' ? 'Neutralization Lab' : subject === 'Biology' && normalized === 'osmosis' ? 'Osmosis Lab' : undefined
   const simulation = tool === 'Pendulum Lab' ? getStemTool('pendulum-lab')?.config : tool === 'Projectile Motion Lab' ? getStemTool('projectile-motion-lab')?.config : tool === 'Neutralization Lab' ? getStemTool('neutralization-lab')?.config : tool === 'Osmosis Lab' ? getStemTool('osmosis-lab')?.config : undefined
   const tools = tool ? [tool, ...subjectTools[subject].slice(0, 2)] : subjectTools[subject]
   return topic(subject, gradeForIndex(index, titles.length), `${subject.toLowerCase()}-${slugify(title)}-${index + 1}`, title, `Build an animated, interactive understanding of ${title.toLowerCase()} through guided exploration and observable results.`, tools, activityFor(title), 'available', simulation)
@@ -79,6 +79,7 @@ const mathTopics: StemTopic[] = [
 
 export const STEM_TOPICS: StemTopic[] = [
   ...mathTopics,
+  topic('Biology', 'Grade 1–2', 'biology-living-and-non-living', 'Living and non-living things', 'Sort familiar examples and explain what makes something living.', ['Drag & Drop', 'Interactive Diagram'], ['Sort the examples', 'Explore the differences']),
   ...makeScienceTopics('Physics', [...physicsTitles, 'Pendulum Experiment', 'Projectile Motion']),
   ...makeScienceTopics('Chemistry', chemistryTitles),
   ...makeScienceTopics('Biology', [...biologyTitles, 'Osmosis']),
