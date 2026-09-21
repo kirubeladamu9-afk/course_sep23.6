@@ -164,6 +164,17 @@ const GridActivity: FC<{ topic: MathTopic; value: number; setValue: (value: numb
 
 const GraphVisual: FC<{ kind: 'linear' | 'intersection' | 'parabola' | 'polynomial'; value: number; target: number; setValue: (value: number) => void }> = ({ kind, value, target, setValue }) => { const points = Array.from({ length: 9 }, (_, index) => { const x = index - 4; const y = kind === 'parabola' ? value * x * x - 1 : kind === 'polynomial' ? value * x * x * x / 5 : value * x + 1; return `${40 + index * 40},${105 - y * 8}` }).join(' '); return <><Box component="svg" viewBox="0 0 400 130" sx={{ width: '100%', height: 155, backgroundColor: 'background.default', borderRadius: 2 }} role="img" aria-label={`${kind} graph`}><line x1="20" x2="380" y1="105" y2="105" stroke="currentColor" opacity=".3" /><line x1="200" x2="200" y1="15" y2="120" stroke="currentColor" opacity=".3" />{kind === 'intersection' ? <><polyline points={points} fill="none" stroke="var(--mui-palette-primary-main)" strokeWidth="4" /><polyline points={Array.from({ length: 9 }, (_, index) => `${40 + index * 40},${105 - ((-value * (index - 4)) + 2) * 8}`).join(' ')} fill="none" stroke="var(--mui-palette-secondary-main)" strokeWidth="4" /><circle cx="200" cy="89" r={value === target ? 8 : 4} fill="var(--mui-palette-success-main)" /></> : <polyline points={points} fill="none" stroke="var(--mui-palette-primary-main)" strokeWidth="4" />}</Box><Typography variant="body2">{kind === 'linear' ? `y = ${value}x + 1` : kind === 'intersection' ? `Intersection control: ${value}` : `${kind} coefficient: ${value}`}</Typography><Slider min={1} max={5} step={1} value={value} onChange={(_, next) => setValue(Array.isArray(next) ? next[0] : next)} aria-label={`${kind} graph control`} /></> }
 
+const AngleRotatorActivity: FC<{ topic: MathTopic; onComplete?: () => void }> = ({ topic, onComplete }) => {
+  const [angle, setAngle] = useState(45)
+  const [touched, setTouched] = useState(false)
+  const [checked, setChecked] = useState(false)
+  const correct = touched && angle === 90
+  const radians = angle * Math.PI / 180
+  const rayEnd = { x: 200 + Math.cos(radians) * 105, y: 125 - Math.sin(radians) * 105 }
+  const classification = angle === 0 ? 'zero angle' : angle < 90 ? 'acute angle' : angle === 90 ? 'right angle' : angle < 180 ? 'obtuse angle' : 'straight angle'
+  return <EngineFrame name={topic.activity} description={topic.activityDescription}><Box component="svg" viewBox="0 0 400 180" sx={{ width: '100%', height: 220, backgroundColor: 'background.default', borderRadius: 2 }} role="img" aria-label={`${angle} degree ${classification}`}><line x1="200" y1="125" x2="330" y2="125" stroke="#107d6f" strokeWidth="6" strokeLinecap="round" /><line x1="200" y1="125" x2={rayEnd.x} y2={rayEnd.y} stroke="#e94f64" strokeWidth="6" strokeLinecap="round" /><path d={`M ${200 + Math.cos(radians) * 45} ${125 - Math.sin(radians) * 45} A 45 45 0 0 0 245 125`} fill="none" stroke="#5d4200" strokeWidth="3" /><circle cx="200" cy="125" r="9" fill="#5d4200" /><text x="200" y="35" textAnchor="middle" fontSize="18" fontWeight="700" fill="#5d4200">{angle}°</text></Box><Typography variant="h5" sx={{ textAlign: 'center' }}>{angle}° · {classification}</Typography><Typography variant="body2" color="text.secondary">Rotate the red ray from the fixed horizontal ray. Target: 90°.</Typography><Slider min={0} max={180} step={1} value={angle} onChange={(_, next) => { setAngle(Array.isArray(next) ? next[0] : next); setTouched(true); setChecked(false) }} valueLabelDisplay="auto" aria-label="Angle in degrees" /><Button variant="outlined" onClick={() => setChecked(true)}>Check Activity</Button>{checked && <Typography role="status" color={correct ? 'success.main' : 'warning.main'}>{correct ? 'Correct right angle.' : 'Not yet. Set the rays to exactly 90°.'}</Typography>}<CompleteButton disabled={!correct} onComplete={onComplete} /></EngineFrame>
+}
+
 const ClockQuestActivity: FC<{ topic: MathTopic; onComplete?: () => void }> = ({ topic, onComplete }) => {
   const [hour, setHour] = useState(12)
   const [minute, setMinute] = useState(0)
@@ -210,6 +221,7 @@ const MathActivityEngine: FC<{ topic: MathTopic; onComplete?: () => void }> = ({
   const finish = <TopicCheck correct={correct} checked={checked} onCheck={() => setChecked(true)} onComplete={onComplete} />
   const frame = (children: ReactNode) => <EngineFrame name={topic.activity} description={topic.activityDescription}>{children}{finish}</EngineFrame>
 
+  if (topic.title === 'Angles') return <AngleRotatorActivity topic={topic} onComplete={onComplete} />
   if (topic.title === 'Time') return <ClockQuestActivity topic={topic} onComplete={onComplete} />
   if (topic.title === 'Linear Equations') return <LinearEquationActivity topic={topic} onComplete={onComplete} />
   if (topic.title === 'Data & Statistics') {
