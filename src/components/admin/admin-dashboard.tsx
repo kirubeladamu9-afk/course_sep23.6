@@ -13,7 +13,6 @@ import Divider from '@mui/material/Divider'
 import Drawer from '@mui/material/Drawer'
 import FormControl from '@mui/material/FormControl'
 import FormControlLabel from '@mui/material/FormControlLabel'
-import Grid from '@mui/material/Grid'
 import IconButton from '@mui/material/IconButton'
 import InputLabel from '@mui/material/InputLabel'
 import LinearProgress from '@mui/material/LinearProgress'
@@ -61,7 +60,6 @@ import TranslateOutlinedIcon from '@mui/icons-material/TranslateOutlined'
 import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline'
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline'
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined'
-import ScienceOutlinedIcon from '@mui/icons-material/ScienceOutlined'
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
 import PaymentsOutlinedIcon from '@mui/icons-material/PaymentsOutlined'
 import InsertLinkOutlinedIcon from '@mui/icons-material/InsertLinkOutlined'
@@ -84,7 +82,6 @@ import ReportsPage from './reports-page'
 import PracticeExamManagement from './practice-exam-management'
 import { BookstoreAdminPage } from '@/components/bookstore/bookstore-page'
 import PlatformEngineLessonPicker from './platform-engine-lesson-picker'
-import { STEM_CURRICULUM, createStemCurriculumModules } from './stem-curriculum'
 import Footer from '@/components/footer/footer'
 import { type AdminCourse, type AdminLesson, type AdminTutor, type AdminUser, type LessonType } from './admin-data'
 import InteractiveHotspotEditor from './interactive-hotspot-editor'
@@ -229,7 +226,7 @@ const lessonTypeOptions: Array<{ type: LessonType; label: string; detail: string
   { type: 'video', label: 'Video', detail: 'Upload a lecture' },
   { type: 'article', label: 'Article', detail: 'Write a lesson' },
   { type: 'interactive', label: 'Interactive', detail: 'Build an explorable diagram' },
-  { type: 'simulation', label: 'STEM Lab tool', detail: 'Attach a finished simulation tool' },
+  { type: 'simulation', label: 'STEM Lab activity', detail: 'Choose a platform-owned interactive engine' },
   { type: 'quiz', label: 'Quiz', detail: 'Test learning' },
   { type: 'practice', label: 'Practice', detail: 'Learn with instant feedback' },
   { type: 'live', label: 'Live', detail: 'Schedule a session' },
@@ -237,27 +234,6 @@ const lessonTypeOptions: Array<{ type: LessonType; label: string; detail: string
 
 type ClassLessonSchedule = { startDate: string; endDate: string; days: string[]; time: string; duration: number }
 type LessonPanelState = { moduleId: number; lesson: AdminLesson; isNew: boolean; liveLessonIndex: number }
-
-const stemSubjectMeta = [
-  { name: 'Mathematics', color: '#4f8cff', engines: 'Number Line · Graph · Geometry' },
-  { name: 'Physics', color: '#e8752f', engines: 'Physics · Simulation · Graph' },
-  { name: 'Chemistry', color: '#d26adf', engines: 'Virtual Lab · Molecule · Balance' },
-  { name: 'Biology', color: '#25a875', engines: 'Explorer · Microscope · Timeline' },
-]
-
-const StemCurriculumStudio: FC<{ hasCurriculum: boolean; onBuild: () => void }> = ({ hasCurriculum, onBuild }) => {
-  const lessonTotal = Object.values(STEM_CURRICULUM).reduce((total, topics) => total + topics.length, 0)
-  return <Paper elevation={0} sx={{ mb: 2.5, p: { xs: 2, md: 2.75 }, overflow: 'hidden', position: 'relative', border: 1, borderColor: 'primary.main', background: (theme) => `linear-gradient(120deg, ${alpha(theme.palette.primary.main, .12)}, ${alpha(theme.palette.secondary.main, .08)})` }}>
-    <Box sx={{ position: 'absolute', width: 180, height: 180, right: -70, top: -80, borderRadius: '50%', backgroundColor: 'secondary.main', opacity: .1 }} />
-    <Stack spacing={2} sx={{ position: 'relative' }}>
-      <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ md: 'center' }} spacing={2}>
-        <Box><Stack direction="row" spacing={1} alignItems="center"><Box sx={{ width: 38, height: 38, display: 'grid', placeItems: 'center', borderRadius: 2, color: 'primary.contrastText', backgroundColor: 'primary.main' }}><ScienceOutlinedIcon fontSize="small" /></Box><Typography variant="overline" color="primary.main" sx={{ fontWeight: 800, letterSpacing: 1.1 }}>Learning adventure studio</Typography></Stack><Typography variant="h5" sx={{ mt: .5, fontWeight: 800 }}>Make this course feel alive.</Typography><Typography color="text.secondary" sx={{ mt: .5, maxWidth: 720 }}>Start with a complete, ready-to-teach STEM journey. Every topic already has an interactive platform engine, so you can spend your time teaching—not assembling empty pages.</Typography></Box><Button label={hasCurriculum ? 'STEM journey added' : 'Build my STEM journey'} variant="contained" size="medium" onClick={onBuild} disabled={hasCurriculum} />
-      </Stack>
-      <Grid container spacing={1}><Grid item xs={12} sm={4}><Paper elevation={0} sx={{ p: 1.25, backgroundColor: 'background.paper', border: 1, borderColor: 'divider' }}><Typography variant="h6" sx={{ fontWeight: 800 }}>{lessonTotal}</Typography><Typography variant="caption" color="text.secondary">ready-made activities</Typography></Paper></Grid><Grid item xs={12} sm={4}><Paper elevation={0} sx={{ p: 1.25, backgroundColor: 'background.paper', border: 1, borderColor: 'divider' }}><Typography variant="h6" sx={{ fontWeight: 800 }}>4</Typography><Typography variant="caption" color="text.secondary">subject adventures</Typography></Paper></Grid><Grid item xs={12} sm={4}><Paper elevation={0} sx={{ p: 1.25, backgroundColor: 'background.paper', border: 1, borderColor: 'divider' }}><Typography variant="h6" sx={{ fontWeight: 800 }}>15</Typography><Typography variant="caption" color="text.secondary">interactive engines</Typography></Paper></Grid></Grid>
-      <Grid container spacing={1.25}>{stemSubjectMeta.map((subject) => <Grid item xs={12} sm={6} md={3} key={subject.name}><Box sx={{ p: 1.5, height: '100%', borderRadius: 2, backgroundColor: 'background.paper', border: 1, borderColor: 'divider', transition: 'transform .18s ease, border-color .18s ease', '&:hover': { transform: 'translateY(-3px)', borderColor: subject.color } }}><Box sx={{ width: 12, height: 12, mb: 1, borderRadius: '50%', backgroundColor: subject.color }} /><Typography variant="body2" sx={{ fontWeight: 800 }}>{subject.name}</Typography><Typography variant="caption" color="text.secondary">{STEM_CURRICULUM[subject.name].length} activities</Typography><Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: .5, lineHeight: 1.45 }}>{subject.engines}</Typography></Box></Grid>)}</Grid>
-    </Stack>
-  </Paper>
-}
 
 export const CourseEditor: FC<{ course: AdminCourse; onChange: (course: AdminCourse) => void; isClassLinked?: boolean; curriculumOnly?: boolean; allowedLessonTypes?: LessonType[]; classSchedule?: ClassLessonSchedule; classMeetingLink?: string }> = ({ course, onChange, isClassLinked = false, curriculumOnly = false, allowedLessonTypes, classSchedule, classMeetingLink = '' }) => {
   const [draggedModule, setDraggedModule] = useState<number | null>(null)
@@ -417,17 +393,6 @@ export const CourseEditor: FC<{ course: AdminCourse; onChange: (course: AdminCou
   const isVideoProcessing = lessonPanel?.lesson.type === 'video' && videoUploadProgress > 0 && videoUploadProgress < 100
   const liveLessonSessionDates = lessonPanel?.lesson.type === 'live' && classSchedule ? getAvailableClassSessionDates(classSchedule, course.modules.flatMap((module) => module.lessons), lessonPanel.isNew ? undefined : lessonPanel.lesson.id) : []
   const cannotSaveLesson = Boolean(!lessonPanel?.lesson.title.trim() || isVideoProcessing || (lessonPanel?.isNew && lessonPanel.lesson.type === 'video' && !lessonPanel.lesson.videoUrl) || (lessonPanel?.lesson.type === 'interactive' && (!lessonPanel.lesson.baseImageUrl || !(lessonPanel.lesson.interactiveHotspots?.length))) || (lessonPanel?.lesson.type === 'simulation' && !lessonPanel.lesson.simulationToolId) || (lessonPanel?.lesson.type === 'live' && classSchedule && !lessonPanel.lesson.scheduledAt))
-  const hasStemCurriculum = course.modules.some((module) => Object.keys(STEM_CURRICULUM).includes(module.title))
-  const addStemCurriculum = () => {
-    if (hasStemCurriculum) return
-    const nextModuleId = Math.max(0, ...course.modules.map((module) => module.id)) + 1
-    const nextLessonId = Math.max(0, ...course.modules.flatMap((module) => module.lessons.map((lesson) => lesson.id))) + 1
-    const modules = createStemCurriculumModules(nextModuleId, nextLessonId)
-    onChange({ ...course, modules: [...course.modules, ...modules] })
-    setExpandedModuleIds((ids) => [...ids, ...modules.map((module) => module.id)])
-    setExpandedSections((sections) => sections.includes('curriculum') ? sections : [...sections, 'curriculum'])
-    toast.add({ title: 'STEM curriculum added', description: 'Mathematics, Physics, Chemistry, and Biology modules are ready. Save changes to persist them.', type: 'success' })
-  }
   const handleThumbnailFile = (file: File) => {
     const supportedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif']
     if (!supportedTypes.includes(file.type)) {
@@ -447,7 +412,6 @@ export const CourseEditor: FC<{ course: AdminCourse; onChange: (course: AdminCou
 
   return (
     <Paper id="course-curriculum-editor" elevation={0} sx={{ mt: 3, p: 2.5, border: 1, borderColor: 'divider', scrollMarginTop: 24 }}>
-      {!curriculumOnly && <StemCurriculumStudio hasCurriculum={hasStemCurriculum} onBuild={addStemCurriculum} />}
       {!curriculumOnly && <CourseEditorSection expanded={expandedSections.includes('details')} onToggle={() => toggleSection('details')} title="Course details" description="Edit the information learners see before they enroll.">
           <Stack spacing={2}>
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
@@ -480,7 +444,7 @@ export const CourseEditor: FC<{ course: AdminCourse; onChange: (course: AdminCou
       </CourseEditorSection>}
       <Divider sx={{ my: 3 }} />
       <CourseEditorSection expanded={expandedSections.includes('curriculum')} onToggle={() => toggleSection('curriculum')} title="Course curriculum" description={`${course.modules.length} ${course.modules.length === 1 ? 'section' : 'sections'} · ${course.title || 'Untitled course'}`}>
-          <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} spacing={1.5} sx={{ mb: 2 }}><Typography color="text.secondary" variant="body2">Drag modules to reorder. Lessons can be reordered within their module.</Typography><Button label={hasStemCurriculum ? 'STEM curriculum added' : 'Add full STEM curriculum'} variant="outlined" size="small" onClick={addStemCurriculum} disabled={hasStemCurriculum} /></Stack>
+          <Typography color="text.secondary" variant="body2" sx={{ mb: 2 }}>Drag modules to reorder. Lessons can be reordered within their module. Add STEM Lab activities from any module&apos;s Add lesson menu.</Typography>
           <Stack spacing={1.5}>
         {course.modules.length === 0 && !isAddingModule && <Box sx={{ p: 4, textAlign: 'center', border: 1, borderColor: 'divider', borderStyle: 'dashed', borderRadius: 1 }}><Typography color="text.secondary" sx={{ mb: 1 }}>This course has no modules yet.</Typography><Button label="Add your first module" size="small" onClick={() => setIsAddingModule(true)} /></Box>}
         {course.modules.map((module) => {
