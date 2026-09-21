@@ -41,7 +41,6 @@ const getAdminPageTitle = (pathname: string) => {
   if (/^\/admin\/courses\/\d+\/edit$/.test(normalizedPath)) return 'Edit Course'
   if (normalizedPath === '/admin/courses') return 'Programs & Courses'
   if (normalizedPath === '/admin/registrations') return 'Registrations'
-  if (normalizedPath === '/admin/stem-lab') return 'STEM Lab'
   if (normalizedPath === '/admin/classes/pending') return 'Pending Scheduling'
   if (normalizedPath === '/admin/classes/new') return 'New Class'
   if (/^\/admin\/classes\/\d+$/.test(normalizedPath)) return 'Class Details'
@@ -136,11 +135,12 @@ const App: React.FC<AppProps> = ({ darkMode, onToggleDarkMode }) => {
   }, [authMode, currentPath, isAdminPath, isDashboardPath, isTutorPath])
 
   useEffect(() => {
+    if (isAdminPath && /^\/admin\/stem-lab\/?$/.test(currentPath)) navigateTo('/admin', true)
     if (isAdminPath && !canAccessAdmin) navigateTo('/', true)
     if (isTutorPath && !canAccessTutor) navigateTo('/', true)
     if (isDashboardPath && (!isAuthenticated || currentUser?.role === 'admin' || currentUser?.role === 'tutor')) navigateTo(currentUser?.role === 'admin' ? '/admin' : currentUser?.role === 'tutor' ? '/tutor' : '/', true)
     if (!isAdminPath && !isDashboardPath && !isTutorPath) setAuthMode(null)
-  }, [canAccessAdmin, canAccessTutor, currentUser?.role, isAdminPath, isAuthenticated, isDashboardPath, isTutorPath])
+  }, [canAccessAdmin, canAccessTutor, currentPath, currentUser?.role, isAdminPath, isAuthenticated, isDashboardPath, isTutorPath])
 
   useEffect(() => {
     if (isAdminPath || isDashboardPath || isTutorPath || isPracticeCatalogPath || practiceExamMatch || isAboutPath || isBookstorePath || isContactPath || isStemLabPath || courseMatch) {
