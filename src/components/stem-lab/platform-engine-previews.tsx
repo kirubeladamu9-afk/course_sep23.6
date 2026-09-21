@@ -26,6 +26,7 @@ import TriangleBuilderActivity from './triangle-builder-activity'
 import ImprovedSetSorterActivity from './set-sorter-activity'
 import ShapeScalerActivity from './shape-scaler-activity'
 import SequenceBuilderActivity from './sequence-builder-activity'
+import VectorPlaygroundActivity from './vector-playground-activity'
 import { type PlatformEngineId } from './platform-engine-library'
 import { type MathTopic } from '@/components/admin/stem-curriculum'
 
@@ -346,7 +347,8 @@ const MathActivityEngine: FC<{ topic: MathTopic; onComplete?: () => void }> = ({
   if (topic.title === 'Algebra') return <BalanceEquationActivity topic={topic} onComplete={onComplete} />
   if (topic.title === 'Functions') return <FunctionMachineActivity topic={topic} onComplete={onComplete} />
   if (topic.title === 'Integers') return <ElevatorIntegersActivity topic={topic} onComplete={onComplete} />
-  if (['Time', 'Trigonometry', 'Vectors'].includes(topic.title)) return frame(<><Box component="svg" viewBox="0 0 400 150" sx={{ width: '100%', height: 150, backgroundColor: 'background.default' }}><circle cx="200" cy="75" r="55" fill="none" stroke="currentColor" strokeWidth="3" />{topic.title === 'Time' ? <><line x1="200" y1="75" x2="200" y2="35" stroke="var(--mui-palette-primary-main)" strokeWidth="5" /><line x1="200" y1="75" x2="245" y2="75" stroke="var(--mui-palette-secondary-main)" strokeWidth="4" /></> : <line x1="200" y1="75" x2={200 + Math.cos(value * Math.PI / 180) * 55} y2={75 - Math.sin(value * Math.PI / 180) * 55} stroke="var(--mui-palette-primary-main)" strokeWidth="5" />}</Box><Slider min={0} max={topic.title === 'Time' ? 60 : 360} value={value} onChange={(_, next) => update(Array.isArray(next) ? next[0] : next)} aria-label={`${topic.title} visual control`} /><Typography>{topic.title === 'Vectors' ? `Resultant magnitude: ${value}` : `Live value: ${value}`}</Typography></>)
+  if (topic.title === 'Vectors') return <VectorPlaygroundActivity topic={topic} onComplete={onComplete} />
+  if (['Time', 'Trigonometry'].includes(topic.title)) return frame(<><Box component="svg" viewBox="0 0 400 150" sx={{ width: '100%', height: 150, backgroundColor: 'background.default' }}><circle cx="200" cy="75" r="55" fill="none" stroke="currentColor" strokeWidth="3" />{topic.title === 'Time' ? <><line x1="200" y1="75" x2="200" y2="35" stroke="var(--mui-palette-primary-main)" strokeWidth="5" /><line x1="200" y1="75" x2="245" y2="75" stroke="var(--mui-palette-secondary-main)" strokeWidth="4" /></> : <line x1="200" y1="75" x2={200 + Math.cos(value * Math.PI / 180) * 55} y2={75 - Math.sin(value * Math.PI / 180) * 55} stroke="var(--mui-palette-primary-main)" strokeWidth="5" />}</Box><Slider min={0} max={topic.title === 'Time' ? 60 : 360} value={value} onChange={(_, next) => update(Array.isArray(next) ? next[0] : next)} aria-label={`${topic.title} visual control`} /><Typography>Live value: {value}</Typography></>)
   if (topic.title === 'Measurement') {
     const updateRuler = (event: PointerEvent<HTMLElement>) => {
       if (!dragging) return
