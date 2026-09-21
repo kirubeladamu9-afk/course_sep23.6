@@ -73,6 +73,10 @@ export const STEM_CURRICULUM: Record<string, string[]> = {
 }
 
 export const getMathTopic = (title: string) => MATHEMATICS_TOPICS.find((topic) => topic.title === title)
+export const getCurriculumTopicKey = (subject: string, title: string) => {
+  const index = STEM_CURRICULUM[subject]?.indexOf(title) ?? -1
+  return index < 0 ? undefined : `${subject.toLowerCase()}-${index + 1}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
+}
 
 export const engineForTopic = (subject: string, topic: string): PlatformEngineId => {
   const value = topic.toLowerCase()
@@ -104,7 +108,7 @@ export const createStemCurriculumModules = (moduleIdStart: number, lessonIdStart
     title: subject,
     lessons: topics.map((title) => {
       const platformEngineId = engineForTopic(subject, title)
-      return { id: nextLessonId++, title, type: 'simulation' as const, duration: 20, resources: [], simulationToolId: platformEngineId, platformEngineId }
+      return { id: nextLessonId++, title, type: 'simulation' as const, duration: 20, resources: [], simulationToolId: platformEngineId, platformEngineId, curriculumTopic: getCurriculumTopicKey(subject, title) }
     }),
   }))
 }

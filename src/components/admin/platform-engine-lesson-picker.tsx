@@ -15,7 +15,7 @@ import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined'
 import { type FC, useMemo, useState } from 'react'
 import { type AdminLesson } from './admin-data'
 import { STEM_TOOL_LIBRARY, type StemToolDefinition } from '@/components/stem-lab/stem-tool-library'
-import { engineForTopic, getMathTopic, STEM_CURRICULUM } from './stem-curriculum'
+import { engineForTopic, getCurriculumTopicKey, getMathTopic, STEM_CURRICULUM } from './stem-curriculum'
 import { type PlatformEngineId } from '@/components/stem-lab/platform-engine-library'
 import { PlatformEnginePreview } from '@/components/stem-lab/platform-engine-previews'
 
@@ -50,7 +50,7 @@ const subjectDescription: Record<Exclude<SubjectFilter, 'All'>, string> = {
 
 const topicOptions = (): TopicOption[] => {
   const topics = Object.entries(STEM_CURRICULUM).flatMap(([subject, titles]) => titles.map((title, index) => ({
-    key: `${subject.toLowerCase()}-${index + 1}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+    key: getCurriculumTopicKey(subject, title) ?? `${subject.toLowerCase()}-${index + 1}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
     title,
     description: subject === 'Mathematics' ? getMathTopic(title)?.description ?? subjectDescription[subject as Exclude<SubjectFilter, 'All'>] : subjectDescription[subject as Exclude<SubjectFilter, 'All'>],
     subject: subject as Exclude<SubjectFilter, 'All'>,
@@ -75,7 +75,7 @@ const PlatformEngineLessonPicker: FC<PlatformEngineLessonPickerProps> = ({ lesso
   const [stage, setStage] = useState<StageFilter>('All')
   const [search, setSearch] = useState('')
   const options = useMemo(topicOptions, [])
-  const selectedKey = lesson.curriculumTopic ?? null
+  const selectedKey = lesson.curriculumTopic ?? options.find((option) => option.subject === 'Mathematics' && option.title === lesson.title)?.key ?? null
   const filteredOptions = options.filter((option) => (subject === 'All' || option.subject === subject) && (stage === 'All' || option.stage === stage) && `${option.title} ${option.subject} ${option.description}`.toLowerCase().includes(search.trim().toLowerCase()))
   const selectedOption = options.find((option) => option.key === selectedKey)
   const selectTopic = (option: TopicOption) => updateLessonDraft({ ...lesson, title: lesson.title.startsWith('New ') ? option.title : lesson.title, curriculumTopic: option.key, platformEngineId: option.platformEngineId, simulationToolId: option.simulation?.id ?? option.platformEngineId, simulation: option.simulation?.config })

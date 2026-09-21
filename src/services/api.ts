@@ -67,6 +67,8 @@ interface EnrollmentLesson {
   baseImageUrl?: string
   interactiveHotspots?: Array<{ id: number; left: string; top: string; label: string; explanation: string }>
   simulation?: SimulationConfig
+  platformEngineId?: string
+  curriculumTopic?: string
   resources?: Array<{ id: number; name: string; url?: string }>
   quizQuestions?: Array<{ id: number; question: string; options: string[] }>
   practiceQuestions?: PracticeLessonQuestion[]
