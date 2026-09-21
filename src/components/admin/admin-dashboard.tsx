@@ -418,7 +418,7 @@ export const CourseEditor: FC<{ course: AdminCourse; onChange: (course: AdminCou
           <Stack spacing={2}>
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
           <TextField required fullWidth label="Course title" value={course.title} onChange={(event) => onChange({ ...course, title: event.target.value })} />
-          <FormControl fullWidth required><InputLabel>Program</InputLabel><Select label="Program" value={course.category} onChange={(event) => onChange({ ...course, category: event.target.value })}><MenuItem value="Data">Data</MenuItem><MenuItem value="Development">Development</MenuItem><MenuItem value="Design">Design</MenuItem><MenuItem value="Business">Business</MenuItem></Select></FormControl>
+          <FormControl fullWidth required><InputLabel>Program</InputLabel><Select label="Program" value={course.category} onChange={(event) => onChange({ ...course, category: event.target.value })}><MenuItem value="Data">Data</MenuItem><MenuItem value="Development">Development</MenuItem><MenuItem value="Design">Design</MenuItem><MenuItem value="Business">Business</MenuItem><MenuItem value="Labs only">Labs only</MenuItem></Select></FormControl>
         </Stack>
         <Stack spacing={1} sx={{ width: '100%' }}>
           <Typography variant="body2" sx={{ fontWeight: 600 }}>Thumbnail</Typography>

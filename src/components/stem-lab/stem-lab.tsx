@@ -13,6 +13,7 @@ import InputLabel from '@mui/material/InputLabel'
 import MenuItem from '@mui/material/MenuItem'
 import Paper from '@mui/material/Paper'
 import Select from '@mui/material/Select'
+import Slider from '@mui/material/Slider'
 import Stack from '@mui/material/Stack'
 import Step from '@mui/material/Step'
 import StepButton from '@mui/material/StepButton'
@@ -45,7 +46,10 @@ const toolDescription: Record<StemTool, string> = {
   'Projectile Motion Lab': 'Adjust launch conditions and validate the range observation.',
 }
 
-const ToolStep: FC<{ tool: StemTool; onComplete: () => void }> = ({ tool, onComplete }) => <Paper elevation={0} sx={{ p: 3, border: 1, borderColor: 'divider' }}><Stack spacing={2}><Chip label={tool} color="primary" variant="outlined" sx={{ alignSelf: 'flex-start' }} /><Typography variant="h6">{tool}</Typography><Typography color="text.secondary">{toolDescription[tool]}</Typography><Button variant="contained" onClick={onComplete} startIcon={<CheckCircleOutlineIcon />} sx={{ alignSelf: 'flex-start' }}>Complete step</Button></Stack></Paper>
+const ToolStep: FC<{ tool: StemTool; onComplete: () => void }> = ({ tool, onComplete }) => {
+  const [modelValue, setModelValue] = useState(50)
+  return <Paper elevation={0} sx={{ p: 3, border: 1, borderColor: 'divider' }}><Stack spacing={2}><Chip label={tool} color="primary" variant="outlined" sx={{ alignSelf: 'flex-start' }} /><Typography variant="h6">{tool}</Typography><Typography color="text.secondary">{toolDescription[tool]}</Typography><Box sx={{ position: 'relative', height: 96, overflow: 'hidden', borderRadius: 2, background: 'linear-gradient(135deg, rgba(16,125,111,.12), rgba(79,140,255,.16))' }}><Box sx={{ position: 'absolute', left: `${modelValue}%`, top: '50%', width: 28, height: 28, borderRadius: '50%', backgroundColor: 'primary.main', transform: 'translate(-50%, -50%)', boxShadow: 3, animation: 'stemLabPulse 1.8s ease-in-out infinite', '@keyframes stemLabPulse': { '0%, 100%': { scale: 1 }, '50%': { scale: 1.25 } } }} /><Typography variant="caption" sx={{ position: 'absolute', left: 12, top: 10, color: 'text.secondary' }}>Animated model response</Typography></Box><Box><Typography variant="caption" color="text.secondary">Adjust the model</Typography><Slider value={modelValue} onChange={(_, value) => setModelValue(Array.isArray(value) ? value[0] : value)} aria-label={`Adjust ${tool} model`} /></Box><Button variant="contained" onClick={onComplete} startIcon={<CheckCircleOutlineIcon />} sx={{ alignSelf: 'flex-start' }}>Complete step</Button></Stack></Paper>
+}
 
 const readyToolIds: Partial<Record<StemTool, StemToolId>> = { 'Pendulum Lab': 'pendulum-lab', 'Neutralization Lab': 'neutralization-lab', 'Osmosis Lab': 'osmosis-lab', 'Projectile Motion Lab': 'projectile-motion-lab' }
 
