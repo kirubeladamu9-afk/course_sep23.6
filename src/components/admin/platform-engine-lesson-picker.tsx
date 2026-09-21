@@ -74,14 +74,15 @@ const PlatformEngineLessonPicker: FC<PlatformEngineLessonPickerProps> = ({ lesso
   const [subject, setSubject] = useState<SubjectFilter>('All')
   const [stage, setStage] = useState<StageFilter>('All')
   const [search, setSearch] = useState('')
+  const [legacyTopicDismissed, setLegacyTopicDismissed] = useState(false)
   const options = useMemo(topicOptions, [])
-  const selectedKey = lesson.curriculumTopic ?? options.find((option) => option.subject === 'Mathematics' && option.title === lesson.title)?.key ?? null
+  const selectedKey = lesson.curriculumTopic ?? (legacyTopicDismissed ? null : options.find((option) => option.subject === 'Mathematics' && option.title === lesson.title)?.key) ?? null
   const filteredOptions = options.filter((option) => (subject === 'All' || option.subject === subject) && (stage === 'All' || option.stage === stage) && `${option.title} ${option.subject} ${option.description}`.toLowerCase().includes(search.trim().toLowerCase()))
   const selectedOption = options.find((option) => option.key === selectedKey)
-  const selectTopic = (option: TopicOption) => updateLessonDraft({ ...lesson, title: lesson.title.startsWith('New ') ? option.title : lesson.title, curriculumTopic: option.key, platformEngineId: option.platformEngineId, simulationToolId: option.simulation?.id ?? option.platformEngineId, simulation: option.simulation?.config })
+  const selectTopic = (option: TopicOption) => { setLegacyTopicDismissed(false); updateLessonDraft({ ...lesson, title: lesson.title.startsWith('New ') ? option.title : lesson.title, curriculumTopic: option.key, platformEngineId: option.platformEngineId, simulationToolId: option.simulation?.id ?? option.platformEngineId, simulation: option.simulation?.config }) }
 
   if (selectedOption) return <Stack spacing={2}>
-    <Button variant="text" startIcon={<ArrowBackIcon />} onClick={() => updateLessonDraft({ ...lesson, curriculumTopic: undefined, platformEngineId: undefined, simulationToolId: '', simulation: undefined })} sx={{ alignSelf: 'flex-start' }}>Back to topic library</Button>
+    <Button variant="text" startIcon={<ArrowBackIcon />} onClick={() => { setLegacyTopicDismissed(true); updateLessonDraft({ ...lesson, curriculumTopic: undefined, platformEngineId: undefined, simulationToolId: '', simulation: undefined }) }} sx={{ alignSelf: 'flex-start' }}>Back to topic library</Button>
     <Paper elevation={0} sx={{ p: 2, border: 1, borderColor: 'primary.main', backgroundColor: 'action.selected' }}><Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={1}><Box><Typography variant="overline" color="primary.main" sx={{ fontWeight: 800 }}>Curriculum topic</Typography><Typography variant="h6">{selectedOption.title}</Typography><Typography variant="body2" color="text.secondary">{selectedOption.description}</Typography></Box><Stack direction="row" spacing={.75}><Chip label={selectedOption.subject} color="primary" /><Chip label={selectedOption.stage} variant="outlined" /></Stack></Stack></Paper>
     <PlatformEnginePreview engineId={selectedOption.platformEngineId} mathTopic={selectedOption.activity} />
     {selectedOption.simulation && <Paper elevation={0} sx={{ p: 2, border: 1, borderColor: 'divider' }}><Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Guided activity ready</Typography><Typography variant="body2" color="text.secondary">{selectedOption.simulation.config.overview}</Typography></Paper>}
