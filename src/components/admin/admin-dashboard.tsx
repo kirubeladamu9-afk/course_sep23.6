@@ -82,7 +82,7 @@ import PaymentsPage from './payments-page'
 import ReportsPage from './reports-page'
 import PracticeExamManagement from './practice-exam-management'
 import { BookstoreAdminPage } from '@/components/bookstore/bookstore-page'
-import StemLab from '@/components/stem-lab/stem-lab'
+import PlatformStemLabPage from './platform-stem-lab-page'
 import Footer from '@/components/footer/footer'
 import { type AdminCourse, type AdminLesson, type AdminTutor, type AdminUser, type LessonType } from './admin-data'
 import InteractiveHotspotEditor from './interactive-hotspot-editor'
@@ -1396,7 +1396,7 @@ const AdminDashboard: FC<AdminDashboardProps> = ({ darkMode, onToggleDarkMode })
         return <CoursesPage />
       }
       case 'registrations': return <RegistrationsPage />
-      case 'stem-lab': return <StemLab />
+      case 'stem-lab': return <PlatformStemLabPage />
       case 'classes': {
         if (/^\/admin\/classes\/pending\/?$/.test(pathname)) return <ClassesWorkspace view="pending" />
         if (/^\/admin\/classes\/new\/?$/.test(pathname)) return <ClassesWorkspace view="new" />

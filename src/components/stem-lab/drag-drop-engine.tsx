@@ -50,7 +50,7 @@ const DragDropEngine: FC<DragDropEngineProps> = ({ config, onComplete }) => {
         <Typography variant="h5">{config.title}</Typography>
         <Typography color="text.secondary" sx={{ mt: 0.75 }}>{config.prompt}</Typography>
       </Box>
-      <Paper elevation={0} sx={{ p: 1.5, minHeight: 78, border: 1, borderStyle: 'dashed', borderColor: 'divider', backgroundColor: 'background.default' }} onDragOver={(event) => event.preventDefault()} onDrop={() => draggedItem && setPlacements((current) => { const next = { ...current }; delete next[draggedItem]; return next })}>
+      <Paper elevation={0} sx={{ p: 1.5, minHeight: 78, border: 1, borderStyle: 'dashed', borderColor: 'divider', backgroundColor: 'background.default' }} onDragOver={(event) => event.preventDefault()} onDrop={() => { if (!draggedItem) return; setPlacements((current) => { const next = { ...current }; delete next[draggedItem]; return next }); setDraggedItem(null); setChecked(false) }}>
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>Items to place</Typography>
         <Stack direction="row" flexWrap="wrap" gap={1}>
           {unplacedItems.map((item) => <Box key={item.id} draggable onDragStart={() => setDraggedItem(item.id)} onClick={() => setDraggedItem(item.id)} sx={{ px: 1.5, py: 0.9, borderRadius: 2, border: 1, borderColor: draggedItem === item.id ? 'primary.main' : 'divider', backgroundColor: 'background.paper', cursor: 'grab', userSelect: 'none' }} aria-label={`Drag ${item.label}`}><Typography variant="body2" sx={{ fontWeight: 600 }}>{item.label}</Typography></Box>)}
