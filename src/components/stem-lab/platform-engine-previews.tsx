@@ -164,6 +164,21 @@ const GridActivity: FC<{ topic: MathTopic; value: number; setValue: (value: numb
 
 const GraphVisual: FC<{ kind: 'linear' | 'intersection' | 'parabola' | 'polynomial'; value: number; target: number; setValue: (value: number) => void }> = ({ kind, value, target, setValue }) => { const points = Array.from({ length: 9 }, (_, index) => { const x = index - 4; const y = kind === 'parabola' ? value * x * x - 1 : kind === 'polynomial' ? value * x * x * x / 5 : value * x + 1; return `${40 + index * 40},${105 - y * 8}` }).join(' '); return <><Box component="svg" viewBox="0 0 400 130" sx={{ width: '100%', height: 155, backgroundColor: 'background.default', borderRadius: 2 }} role="img" aria-label={`${kind} graph`}><line x1="20" x2="380" y1="105" y2="105" stroke="currentColor" opacity=".3" /><line x1="200" x2="200" y1="15" y2="120" stroke="currentColor" opacity=".3" />{kind === 'intersection' ? <><polyline points={points} fill="none" stroke="var(--mui-palette-primary-main)" strokeWidth="4" /><polyline points={Array.from({ length: 9 }, (_, index) => `${40 + index * 40},${105 - ((-value * (index - 4)) + 2) * 8}`).join(' ')} fill="none" stroke="var(--mui-palette-secondary-main)" strokeWidth="4" /><circle cx="200" cy="89" r={value === target ? 8 : 4} fill="var(--mui-palette-success-main)" /></> : <polyline points={points} fill="none" stroke="var(--mui-palette-primary-main)" strokeWidth="4" />}</Box><Typography variant="body2">{kind === 'linear' ? `y = ${value}x + 1` : kind === 'intersection' ? `Intersection control: ${value}` : `${kind} coefficient: ${value}`}</Typography><Slider min={1} max={5} step={1} value={value} onChange={(_, next) => setValue(Array.isArray(next) ? next[0] : next)} aria-label={`${kind} graph control`} /></> }
 
+const ClockQuestActivity: FC<{ topic: MathTopic; onComplete?: () => void }> = ({ topic, onComplete }) => {
+  const [hour, setHour] = useState(12)
+  const [minute, setMinute] = useState(0)
+  const [touchedHour, setTouchedHour] = useState(false)
+  const [touchedMinute, setTouchedMinute] = useState(false)
+  const [checked, setChecked] = useState(false)
+  const correct = touchedHour && touchedMinute && hour === 9 && minute === 30
+  const minuteAngle = minute * 6
+  const hourAngle = (hour % 12) * 30 + minute * 0.5
+  const handPoint = (angle: number, length: number) => ({ x: 200 + Math.sin(angle * Math.PI / 180) * length, y: 105 - Math.cos(angle * Math.PI / 180) * length })
+  const hourPoint = handPoint(hourAngle, 48)
+  const minutePoint = handPoint(minuteAngle, 70)
+  return <EngineFrame name={topic.activity} description={topic.activityDescription}><Box component="svg" viewBox="0 0 400 210" sx={{ width: '100%', height: 250, backgroundColor: 'background.default', borderRadius: 2 }} role="img" aria-label={`Clock set to ${hour}:${String(minute).padStart(2, '0')}`}><circle cx="200" cy="105" r="86" fill="#fff7df" stroke="#9a6732" strokeWidth="5" />{Array.from({ length: 60 }, (_, index) => { const pointA = handPoint(index * 6, index % 5 === 0 ? 76 : 81); const pointB = handPoint(index * 6, 84); return <line key={index} x1={pointA.x} y1={pointA.y} x2={pointB.x} y2={pointB.y} stroke="#5d4200" strokeWidth={index % 5 === 0 ? 3 : 1} /> })}{Array.from({ length: 12 }, (_, index) => { const point = handPoint((index + 1) * 30, 64); return <text key={index} x={point.x} y={point.y + 5} textAnchor="middle" fontSize="14" fontWeight="700" fill="#5d4200">{index + 1}</text> })}<line x1="200" y1="105" x2={hourPoint.x} y2={hourPoint.y} stroke="#107d6f" strokeWidth="7" strokeLinecap="round" /><line x1="200" y1="105" x2={minutePoint.x} y2={minutePoint.y} stroke="#e94f64" strokeWidth="4" strokeLinecap="round" /><circle cx="200" cy="105" r="7" fill="#5d4200" /></Box><Typography variant="h5" sx={{ textAlign: 'center', fontFamily: 'monospace' }}>{hour}:{String(minute).padStart(2, '0')}</Typography><Typography variant="body2" color="text.secondary">Set the playful clock to 9:30.</Typography><Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}><Box sx={{ flex: 1 }}><Typography variant="body2">Hour hand: {hour}</Typography><Slider min={1} max={12} step={1} value={hour} onChange={(_, next) => { setHour(Array.isArray(next) ? next[0] : next); setTouchedHour(true); setChecked(false) }} valueLabelDisplay="auto" aria-label="Hour hand" /></Box><Box sx={{ flex: 1 }}><Typography variant="body2">Minute hand: {minute}</Typography><Slider min={0} max={59} step={1} value={minute} onChange={(_, next) => { setMinute(Array.isArray(next) ? next[0] : next); setTouchedMinute(true); setChecked(false) }} valueLabelDisplay="auto" aria-label="Minute hand" /></Box></Stack><Button variant="outlined" onClick={() => setChecked(true)}>Check Activity</Button>{checked && <Typography role="status" color={correct ? 'success.main' : 'warning.main'}>{correct ? 'Correct time — the clock matches 9:30.' : 'Not yet. Set both hands to 9:30.'}</Typography>}<CompleteButton disabled={!correct} onComplete={onComplete} /></EngineFrame>
+}
+
 const LinearEquationActivity: FC<{ topic: MathTopic; onComplete?: () => void }> = ({ topic, onComplete }) => {
   const [slope, setSlope] = useState(0)
   const [intercept, setIntercept] = useState(0)
@@ -195,6 +210,7 @@ const MathActivityEngine: FC<{ topic: MathTopic; onComplete?: () => void }> = ({
   const finish = <TopicCheck correct={correct} checked={checked} onCheck={() => setChecked(true)} onComplete={onComplete} />
   const frame = (children: ReactNode) => <EngineFrame name={topic.activity} description={topic.activityDescription}>{children}{finish}</EngineFrame>
 
+  if (topic.title === 'Time') return <ClockQuestActivity topic={topic} onComplete={onComplete} />
   if (topic.title === 'Linear Equations') return <LinearEquationActivity topic={topic} onComplete={onComplete} />
   if (topic.title === 'Data & Statistics') {
     const mean = chartValues.reduce((sum, item) => sum + item, 0) / chartValues.length
