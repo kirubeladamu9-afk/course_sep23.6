@@ -82,6 +82,7 @@ import ReportsPage from './reports-page'
 import PracticeExamManagement from './practice-exam-management'
 import { BookstoreAdminPage } from '@/components/bookstore/bookstore-page'
 import PlatformEngineLessonPicker from './platform-engine-lesson-picker'
+import { STEM_CURRICULUM, createStemCurriculumModules } from './stem-curriculum'
 import Footer from '@/components/footer/footer'
 import { type AdminCourse, type AdminLesson, type AdminTutor, type AdminUser, type LessonType } from './admin-data'
 import InteractiveHotspotEditor from './interactive-hotspot-editor'
@@ -393,6 +394,16 @@ export const CourseEditor: FC<{ course: AdminCourse; onChange: (course: AdminCou
   const isVideoProcessing = lessonPanel?.lesson.type === 'video' && videoUploadProgress > 0 && videoUploadProgress < 100
   const liveLessonSessionDates = lessonPanel?.lesson.type === 'live' && classSchedule ? getAvailableClassSessionDates(classSchedule, course.modules.flatMap((module) => module.lessons), lessonPanel.isNew ? undefined : lessonPanel.lesson.id) : []
   const cannotSaveLesson = Boolean(!lessonPanel?.lesson.title.trim() || isVideoProcessing || (lessonPanel?.isNew && lessonPanel.lesson.type === 'video' && !lessonPanel.lesson.videoUrl) || (lessonPanel?.lesson.type === 'interactive' && (!lessonPanel.lesson.baseImageUrl || !(lessonPanel.lesson.interactiveHotspots?.length))) || (lessonPanel?.lesson.type === 'simulation' && !lessonPanel.lesson.simulationToolId) || (lessonPanel?.lesson.type === 'live' && classSchedule && !lessonPanel.lesson.scheduledAt))
+  const hasStemCurriculum = course.modules.some((module) => Object.keys(STEM_CURRICULUM).includes(module.title))
+  const addStemCurriculum = () => {
+    if (hasStemCurriculum) return
+    const nextModuleId = Math.max(0, ...course.modules.map((module) => module.id)) + 1
+    const nextLessonId = Math.max(0, ...course.modules.flatMap((module) => module.lessons.map((lesson) => lesson.id))) + 1
+    const modules = createStemCurriculumModules(nextModuleId, nextLessonId)
+    onChange({ ...course, modules: [...course.modules, ...modules] })
+    setExpandedModuleIds((ids) => [...ids, ...modules.map((module) => module.id)])
+    toast.add({ title: 'STEM curriculum added', description: 'Mathematics, Physics, Chemistry, and Biology modules are ready. Save changes to persist them.', type: 'success' })
+  }
   const handleThumbnailFile = (file: File) => {
     const supportedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif']
     if (!supportedTypes.includes(file.type)) {
@@ -444,7 +455,7 @@ export const CourseEditor: FC<{ course: AdminCourse; onChange: (course: AdminCou
       </CourseEditorSection>}
       <Divider sx={{ my: 3 }} />
       <CourseEditorSection expanded={expandedSections.includes('curriculum')} onToggle={() => toggleSection('curriculum')} title="Course curriculum" description={`${course.modules.length} ${course.modules.length === 1 ? 'section' : 'sections'} · ${course.title || 'Untitled course'}`}>
-          <Typography color="text.secondary" variant="body2" sx={{ mb: 2 }}>Drag modules to reorder. Lessons can be reordered within their module.</Typography>
+          <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} spacing={1.5} sx={{ mb: 2 }}><Typography color="text.secondary" variant="body2">Drag modules to reorder. Lessons can be reordered within their module.</Typography><Button label={hasStemCurriculum ? 'STEM curriculum added' : 'Add full STEM curriculum'} variant="outlined" size="small" onClick={addStemCurriculum} disabled={hasStemCurriculum} /></Stack>
           <Stack spacing={1.5}>
         {course.modules.length === 0 && !isAddingModule && <Box sx={{ p: 4, textAlign: 'center', border: 1, borderColor: 'divider', borderStyle: 'dashed', borderRadius: 1 }}><Typography color="text.secondary" sx={{ mb: 1 }}>This course has no modules yet.</Typography><Button label="Add your first module" size="small" onClick={() => setIsAddingModule(true)} /></Box>}
         {course.modules.map((module) => {
