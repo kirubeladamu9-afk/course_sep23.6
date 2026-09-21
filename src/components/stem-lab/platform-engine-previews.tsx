@@ -164,6 +164,19 @@ const GridActivity: FC<{ topic: MathTopic; value: number; setValue: (value: numb
 
 const GraphVisual: FC<{ kind: 'linear' | 'intersection' | 'parabola' | 'polynomial'; value: number; target: number; setValue: (value: number) => void }> = ({ kind, value, target, setValue }) => { const points = Array.from({ length: 9 }, (_, index) => { const x = index - 4; const y = kind === 'parabola' ? value * x * x - 1 : kind === 'polynomial' ? value * x * x * x / 5 : value * x + 1; return `${40 + index * 40},${105 - y * 8}` }).join(' '); return <><Box component="svg" viewBox="0 0 400 130" sx={{ width: '100%', height: 155, backgroundColor: 'background.default', borderRadius: 2 }} role="img" aria-label={`${kind} graph`}><line x1="20" x2="380" y1="105" y2="105" stroke="currentColor" opacity=".3" /><line x1="200" x2="200" y1="15" y2="120" stroke="currentColor" opacity=".3" />{kind === 'intersection' ? <><polyline points={points} fill="none" stroke="var(--mui-palette-primary-main)" strokeWidth="4" /><polyline points={Array.from({ length: 9 }, (_, index) => `${40 + index * 40},${105 - ((-value * (index - 4)) + 2) * 8}`).join(' ')} fill="none" stroke="var(--mui-palette-secondary-main)" strokeWidth="4" /><circle cx="200" cy="89" r={value === target ? 8 : 4} fill="var(--mui-palette-success-main)" /></> : <polyline points={points} fill="none" stroke="var(--mui-palette-primary-main)" strokeWidth="4" />}</Box><Typography variant="body2">{kind === 'linear' ? `y = ${value}x + 1` : kind === 'intersection' ? `Intersection control: ${value}` : `${kind} coefficient: ${value}`}</Typography><Slider min={1} max={5} step={1} value={value} onChange={(_, next) => setValue(Array.isArray(next) ? next[0] : next)} aria-label={`${kind} graph control`} /></> }
 
+const NumberLineRobotActivity: FC<{ topic: MathTopic; onComplete?: () => void }> = ({ topic, onComplete }) => {
+  const start = 4
+  const target = topic.target
+  const direction = target >= start ? 1 : -1
+  const distance = Math.abs(target - start)
+  const [position, setPosition] = useState(start)
+  const [hops, setHops] = useState(0)
+  const [checked, setChecked] = useState(false)
+  const correct = position === target && hops >= distance
+  const step = () => { if (position !== target) { setPosition((current) => current + direction); setHops((current) => current + 1); setChecked(false) } }
+  return <EngineFrame name={topic.activity} description={topic.activityDescription}><Typography variant="h6" sx={{ textAlign: 'center' }}>Start at {start} {direction > 0 ? '+' : '−'} {distance} = ?</Typography><Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>{direction > 0 ? `Move forward ${distance} steps.` : `Move backward ${distance} steps.`}</Typography><Box sx={{ position: 'relative', height: 150, px: 2, pt: 6 }}><Box sx={{ position: 'absolute', left: 20, right: 20, top: 95, height: 4, backgroundColor: 'primary.main' }} />{Array.from({ length: 11 }, (_, index) => <Box key={index} sx={{ position: 'absolute', left: `calc(${(index / 10) * 100}% - 2px)`, top: 82, display: 'flex', flexDirection: 'column', alignItems: 'center' }}><Box sx={{ width: 4, height: 28, backgroundColor: 'primary.main' }} /><Typography variant="caption" sx={{ fontWeight: 700 }}>{index}</Typography></Box>)}<Box sx={{ position: 'absolute', left: `calc(${(position / 10) * 100}% - 22px)`, top: 18, width: 44, height: 48, display: 'grid', placeItems: 'center', borderRadius: '14px 14px 8px 8px', backgroundColor: correct ? 'success.main' : 'secondary.main', color: 'common.white', fontSize: 25, transition: 'left .35s ease, transform .35s ease', transform: correct ? 'translateY(-10px) rotate(-8deg)' : 'translateY(0)' }} aria-label={`Robot at ${position}`}>{correct ? '★' : '🤖'}</Box></Box><Typography role="status" sx={{ textAlign: 'center', fontWeight: 700 }} color={correct ? 'success.main' : 'text.secondary'}>{correct ? `Robot cheer! It landed on ${target}.` : `Robot is on ${position}. ${distance - hops} step${distance - hops === 1 ? '' : 's'} remaining.`}</Typography><Button variant="contained" onClick={step} disabled={correct} sx={{ alignSelf: 'center' }}>{direction > 0 ? 'Hop forward' : 'Hop backward'}</Button><Button variant="outlined" onClick={() => setChecked(true)}>Check Activity</Button>{checked && <Typography role="status" color={correct ? 'success.main' : 'warning.main'}>{correct ? 'Correct landing.' : 'Keep hopping until the robot reaches the target.'}</Typography>}<CompleteButton disabled={!correct} onComplete={onComplete} /></EngineFrame>
+}
+
 const AngleRotatorActivity: FC<{ topic: MathTopic; onComplete?: () => void }> = ({ topic, onComplete }) => {
   const [angle, setAngle] = useState(45)
   const [touched, setTouched] = useState(false)
@@ -221,6 +234,7 @@ const MathActivityEngine: FC<{ topic: MathTopic; onComplete?: () => void }> = ({
   const finish = <TopicCheck correct={correct} checked={checked} onCheck={() => setChecked(true)} onComplete={onComplete} />
   const frame = (children: ReactNode) => <EngineFrame name={topic.activity} description={topic.activityDescription}>{children}{finish}</EngineFrame>
 
+  if (topic.title === 'Addition & Subtraction') return <NumberLineRobotActivity topic={topic} onComplete={onComplete} />
   if (topic.title === 'Angles') return <AngleRotatorActivity topic={topic} onComplete={onComplete} />
   if (topic.title === 'Time') return <ClockQuestActivity topic={topic} onComplete={onComplete} />
   if (topic.title === 'Linear Equations') return <LinearEquationActivity topic={topic} onComplete={onComplete} />
