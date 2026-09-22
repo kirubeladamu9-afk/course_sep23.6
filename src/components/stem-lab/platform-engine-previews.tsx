@@ -32,6 +32,9 @@ import ShapeBuilderActivity from './shape-builder-activity'
 import TileRoomActivity from './tile-room-activity'
 import DecimalPainterActivity from './decimal-painter-activity'
 import CurveSculptorActivity from './curve-sculptor-activity'
+import ShapeAnalyzerActivity from './shape-analyzer-activity'
+import ImprovedApproachingPointActivity from './approaching-point-activity'
+import TangentLineActivity from './tangent-line-activity'
 import { type PlatformEngineId } from './platform-engine-library'
 import { type MathTopic } from '@/components/admin/stem-curriculum'
 
@@ -766,8 +769,10 @@ const MathActivityEngine: FC<{ topic: MathTopic; onComplete?: () => void }> = ({
   if (topic.title === 'Coordinate Geometry') return <DistanceDetectiveActivity topic={topic} onComplete={onComplete} />
   if (topic.title === 'Mathematical Modelling') return <ScenarioSolverActivity topic={topic} onComplete={onComplete} />
   if (topic.title === 'Exponential & Logarithmic Functions') return <GrowthSimulatorActivity topic={topic} onComplete={onComplete} />
-  if (topic.title === 'Limits') return <ApproachingPointActivity topic={topic} onComplete={onComplete} />
-  if (['Analytical Geometry', 'Differentiation', 'Integration', 'Advanced Algebra'].includes(topic.title)) return frame(<><Box sx={{ minHeight: 150, p: 2, display: 'grid', placeItems: 'center', background: 'linear-gradient(135deg, transparent 48%, var(--mui-palette-primary-main) 49% 51%), repeating-linear-gradient(90deg, transparent 0 38px, rgba(0,0,0,.1) 39px 40px)', border: 1, borderColor: 'divider' }}><Typography variant="h4" color="primary.main">{topic.title === 'Integration' ? `${value} rectangles` : topic.title === 'Differentiation' ? `tangent slope ${value}` : `model parameter ${value}`}</Typography></Box><Slider min={0} max={Math.max(topic.target, 10)} value={value} onChange={(_, next) => update(Array.isArray(next) ? next[0] : next)} aria-label={`${topic.title} visual control`} /><Typography>Manipulate the visual model and observe the live {topic.title.toLowerCase()} result.</Typography></>)
+  if (topic.title === 'Limits') return <ImprovedApproachingPointActivity topic={topic} onComplete={onComplete} />
+  if (topic.title === 'Analytical Geometry') return <ShapeAnalyzerActivity topic={topic} onComplete={onComplete} />
+  if (topic.title === 'Differentiation') return <TangentLineActivity topic={topic} onComplete={onComplete} />
+  if (['Integration', 'Advanced Algebra'].includes(topic.title)) return frame(<><Box sx={{ minHeight: 150, p: 2, display: 'grid', placeItems: 'center', background: 'linear-gradient(135deg, transparent 48%, var(--mui-palette-primary-main) 49% 51%), repeating-linear-gradient(90deg, transparent 0 38px, rgba(0,0,0,.1) 39px 40px)', border: 1, borderColor: 'divider' }}><Typography variant="h4" color="primary.main">{topic.title === 'Integration' ? `${value} rectangles` : topic.title === 'Differentiation' ? `tangent slope ${value}` : `model parameter ${value}`}</Typography></Box><Slider min={0} max={Math.max(topic.target, 10)} value={value} onChange={(_, next) => update(Array.isArray(next) ? next[0] : next)} aria-label={`${topic.title} visual control`} /><Typography>Manipulate the visual model and observe the live {topic.title.toLowerCase()} result.</Typography></>)
   if (topic.title === 'Ratios') return <RecipeMixerActivity topic={topic} onComplete={onComplete} />
   return frame(<><Paper sx={{ p: 2, textAlign: 'center' }}><Typography variant="h4">{topic.title}</Typography><Typography>Interactive model value: {value}</Typography></Paper><Slider min={0} max={Math.max(topic.target, 10)} value={value} onChange={(_, next) => update(Array.isArray(next) ? next[0] : next)} aria-label={`${topic.title} visual control`} /><Typography>{getMathActivityPrompt(topic)}</Typography></>)
 }
