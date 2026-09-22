@@ -30,6 +30,7 @@ import VectorPlaygroundActivity from './vector-playground-activity'
 import RecipeMixerActivity from './recipe-mixer-activity'
 import ShapeBuilderActivity from './shape-builder-activity'
 import TileRoomActivity from './tile-room-activity'
+import DecimalPainterActivity from './decimal-painter-activity'
 import { type PlatformEngineId } from './platform-engine-library'
 import { type MathTopic } from '@/components/admin/stem-curriculum'
 
@@ -722,7 +723,7 @@ const MathActivityEngine: FC<{ topic: MathTopic; onComplete?: () => void }> = ({
   if (topic.title === 'Fractions') return frame(<><Paper elevation={0} sx={{ p: 2, display: 'grid', placeItems: 'center' }}><Box sx={{ width: 150, height: 150, borderRadius: '50%', background: `conic-gradient(#f6b73c ${value / 8 * 360}deg, #fff3c4 0)`, border: 8, borderColor: '#a85d32' }} /></Paper><Typography variant="body2">Tap pizza slices to show {topic.target}/8.</Typography><Stack direction="row" spacing={1} flexWrap="wrap">{Array.from({ length: 8 }, (_, index) => <Button key={index} variant={index < value ? 'contained' : 'outlined'} onClick={() => update(index + 1)}>Slice {index + 1}</Button>)}</Stack></>)
   if (topic.title === 'Counting & Number Recognition') return <CountingGardenActivity topic={topic} onComplete={onComplete} />
   if (topic.title === 'Percentages') return <PercentageBatteryActivity topic={topic} onComplete={onComplete} />
-  if (topic.title === 'Decimals') return frame(<GridActivity topic={topic} value={value} setValue={update} />)
+  if (topic.title === 'Decimals') return <DecimalPainterActivity topic={topic} onComplete={onComplete} />
   if (topic.title === 'Perimeter & Area') return <TileRoomActivity topic={topic} onComplete={onComplete} />
   if (topic.title === 'Probability') return <ProbabilityMachineActivity topic={topic} onComplete={onComplete} />
   if (topic.title === 'Sets') return <ImprovedSetSorterActivity topic={topic} onComplete={onComplete} />
