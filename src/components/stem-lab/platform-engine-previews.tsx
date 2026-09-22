@@ -42,6 +42,7 @@ import LivingOrNotActivity from './living-or-not-activity'
 import PlantLabelingActivity from './plant-labeling-activity'
 import HumanBodyPartsActivity from './human-body-parts-activity'
 import SenseChallengeActivity from './sense-challenge-activity'
+import AnimalSpotterActivity from './animal-spotter-activity'
 import HealthyPlateActivity from './healthy-plate-activity'
 import { type MathTopic } from '@/components/admin/stem-curriculum'
 
@@ -792,6 +793,7 @@ export const PlatformEnginePreview: FC<{ engineId: PlatformEngineId; onComplete?
   if (engineId === 'plant-labeling') return <PlantLabelingActivity onComplete={onComplete} />
   if (engineId === 'human-body-parts') return <HumanBodyPartsActivity onComplete={onComplete} />
   if (engineId === 'sense-challenge') return <SenseChallengeActivity onComplete={onComplete} />
+  if (engineId === 'animal-spotter') return <AnimalSpotterActivity onComplete={onComplete} />
   if (engineId === 'healthy-plate') return <HealthyPlateActivity onComplete={onComplete} />
   if (engineId === 'matching') return <MatchingEngine config={{ title: 'Match shapes and features', prompt: 'Connect each shape to its defining feature.', leftLabel: 'Shape', rightLabel: 'Feature', pairs: [{ id: 'triangle', left: 'Triangle', right: '3 sides' }, { id: 'square', left: 'Square', right: '4 equal sides' }, { id: 'circle', left: 'Circle', right: 'No straight sides' }] }} onComplete={onComplete ?? (() => undefined)} />
   if (engineId === 'number-line') return <NumberLineEngine onComplete={onComplete} />

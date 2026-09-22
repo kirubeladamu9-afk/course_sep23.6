@@ -4,6 +4,7 @@ export type PlatformEngineId =
   | 'plant-labeling'
   | 'human-body-parts'
   | 'sense-challenge'
+  | 'animal-spotter'
   | 'healthy-plate'
   | 'matching'
   | 'number-line'
@@ -35,6 +36,7 @@ export const PLATFORM_ENGINES: PlatformEngineDefinition[] = [
   { id: 'plant-labeling', name: 'Label the Plant', description: "Explore how a plant's structure supports its function.", subjects: ['Biology'], examples: ['Plant structures', 'Functions of roots and leaves', 'Flowering plants'], interaction: 'Drag or tap labels onto the correct plant structures.' },
   { id: 'human-body-parts', name: 'Label the Body', description: 'Identify major parts of the human body.', subjects: ['Biology'], examples: ['Body regions', 'Muscles and movement', 'Human anatomy'], interaction: 'Drag or tap labels onto the numbered body pointers.' },
   { id: 'sense-challenge', name: 'Sense Challenge', description: 'Match situations to the sense used to experience them.', subjects: ['Biology'], examples: ['Sight', 'Hearing', 'Smell, touch, and taste'], interaction: 'Tap the sense that matches each everyday situation.' },
+  { id: 'animal-spotter', name: 'Animal Spotter', description: 'Recognize and group common animals.', subjects: ['Biology'], examples: ['Farm animals', 'Pets', 'Animals in outdoor scenes'], interaction: 'Tap hidden animals to find them and hear their sounds.' },
   { id: 'healthy-plate', name: 'Build a Healthy Plate', description: 'Build a balanced, healthy meal.', subjects: ['Biology'], examples: ['Food groups', 'Balanced meals', 'Healthy choices'], interaction: 'Tap foods, sort their groups, judge balance, and apply the idea.' },
   { id: 'matching', name: 'Matching', description: 'Connect related terms, symbols, structures, and definitions.', subjects: ['Math', 'Chemistry', 'Biology'], examples: ['Shapes and features', 'DNA base pairs', 'Element and symbol'], interaction: 'Select one item from each column to form a pair.' },
   { id: 'number-line', name: 'Interactive Number Line', description: 'Place values and visualize movement for arithmetic and integers.', subjects: ['Math'], examples: ['Addition and subtraction', 'Fractions', 'Comparing numbers'], interaction: 'Drag a marker to a target value on a scaled line.' },
