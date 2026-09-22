@@ -27,6 +27,9 @@ import ImprovedSetSorterActivity from './set-sorter-activity'
 import ShapeScalerActivity from './shape-scaler-activity'
 import SequenceBuilderActivity from './sequence-builder-activity'
 import VectorPlaygroundActivity from './vector-playground-activity'
+import RecipeMixerActivity from './recipe-mixer-activity'
+import ShapeBuilderActivity from './shape-builder-activity'
+import TileRoomActivity from './tile-room-activity'
 import { type PlatformEngineId } from './platform-engine-library'
 import { type MathTopic } from '@/components/admin/stem-curriculum'
 
@@ -500,6 +503,196 @@ const DistanceDetectiveActivity: FC<{ topic: MathTopic; onComplete?: () => void 
   return <EngineFrame name={topic.activity} description={topic.activityDescription}><Stack spacing={2.25}><Paper elevation={0} sx={{ p: 2, border: 1, borderColor: 'divider', background: 'linear-gradient(135deg, rgba(16,125,111,.12), rgba(79,140,255,.08))' }}><Chip label={`${round.kind} round`} color="primary" size="small" /><Typography variant="h6" sx={{ mt: .75 }}>{round.prompt}</Typography></Paper><Stack direction={{ xs: 'column', md: 'row' }} spacing={2}><Paper elevation={0} sx={{ p: 1, flex: 1, border: 1, borderColor: 'divider' }}><Box component="svg" viewBox="0 0 400 210" sx={{ width: '100%', height: 300, background: 'repeating-linear-gradient(0deg, rgba(0,0,0,.06) 0 1px, transparent 1px 17.5px), repeating-linear-gradient(90deg, rgba(0,0,0,.06) 0 1px, transparent 1px 27.5px)', cursor: 'crosshair' }} role="img" aria-label="Coordinate plane" onPointerDown={addPoint}><line x1="35" x2="365" y1="170" y2="170" stroke="currentColor" strokeWidth="2" /><line x1="200" x2="200" y1="30" y2="190" stroke="currentColor" strokeWidth="2" /><text x="365" y="188" fontSize="12">x</text><text x="207" y="32" fontSize="12">y</text>{Array.from({ length: 13 }, (_, index) => <g key={index}><text x={35 + index * 27.5} y="188" textAnchor="middle" fontSize="9">{index - 6}</text><text x="191" y={174 - index * 11.67} textAnchor="end" fontSize="9">{6 - index}</text></g>)}{points.length >= 2 && <><line x1={plotA[0]} y1={plotA[1]} x2={plotB[0]} y2={plotB[1]} stroke="var(--mui-palette-primary-main)" strokeWidth="4" strokeDasharray="7 4" style={{ transition: 'all .4s ease' }} /><line x1={plotA[0]} y1={plotA[1]} x2={plotB[0]} y2={plotA[1]} stroke="#e94f64" strokeDasharray="5 4" /><line x1={plotB[0]} y1={plotA[1]} x2={plotB[0]} y2={plotB[1]} stroke="#4f8cff" strokeDasharray="5 4" /><text x={(plotA[0] + plotB[0]) / 2} y={plotA[1] - 5} textAnchor="middle" fontSize="11">Δx = {Math.abs(dx)}</text><text x={plotB[0] + 5} y={(plotA[1] + plotB[1]) / 2} fontSize="11">Δy = {Math.abs(dy)}</text></>}{points.map((point, index) => { const plotted = map(point); return <g key={index}><circle cx={plotted[0]} cy={plotted[1]} r="8" fill={index === 0 ? '#107d6f' : '#f6a623'} /><text x={plotted[0] + 9} y={plotted[1] - 8} fontSize="12" fontWeight="700">{index === 0 ? `A(${point[0]}, ${point[1]})` : `B(${point[0]}, ${point[1]})`}</text></g> })}{midpoint && points.length >= 2 && <><circle cx={plotM[0]} cy={plotM[1]} r="7" fill="#e94f64" /><text x={plotM[0] + 8} y={plotM[1] - 8} fontSize="12">M({mid[0]}, {mid[1]})</text></>}</Box><Typography variant="caption" color="text.secondary">Click grid intersections to place A, then B. Points snap to whole-number coordinates.</Typography></Paper><Paper elevation={0} sx={{ p: 2, flex: .8, border: 1, borderColor: 'divider' }}><Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Live working</Typography><Typography sx={{ fontFamily: 'monospace', mt: 1 }}>d = √(({b[0]} − {a[0]})² + ({b[1]} − {a[1]})²)</Typography><Typography variant="h5" color="primary.main" sx={{ mt: 1 }}>{points.length >= 2 ? `${distance.toFixed(2)} units` : 'Place two points'}</Typography><Typography sx={{ mt: 1 }}>Midpoint: ({mid[0]}, {mid[1]})</Typography><Button size="small" variant={midpoint ? 'contained' : 'outlined'} onClick={() => setMidpoint((value) => !value)} disabled={points.length < 2}>Show midpoint</Button><TextField type="text" label={round.kind === 'find the midpoint' ? 'Midpoint x,y' : 'Distance'} value={answer} onChange={(event) => { setAnswer(event.target.value); setChecked(null) }} placeholder="Your answer" sx={{ mt: 2 }} /></Paper></Stack><Stack direction="row" spacing={1.5}><Button variant="contained" onClick={() => setChecked(correct)} disabled={points.length < 2 || !answer.trim()}>Check Activity</Button><Button variant="outlined" onClick={reset}>Reset</Button><Button variant="text" onClick={next}>Next round</Button></Stack>{checked !== null && <Paper role="status" elevation={0} sx={{ p: 1.5, border: 1, borderColor: checked ? 'success.main' : 'error.main', backgroundColor: checked ? 'success.light' : 'error.light', animation: checked ? 'scenarioGlow .45s ease' : 'scenarioShake .35s ease' }}><Typography sx={{ fontWeight: 700 }}>{checked ? `Correct! The distance from (${a[0]}, ${a[1]}) to (${b[0]}, ${b[1]}) is ${distance.toFixed(2)}.` : 'Find the horizontal and vertical differences first, then use the Pythagorean theorem.'}</Typography></Paper>}<CompleteButton disabled={checked !== true} onComplete={onComplete} /></Stack></EngineFrame>
 }
 
+type GardenObject = { id: string; icon: string; label: string; left: number; top: number; size: number }
+type GardenRound = { objects: GardenObject[] }
+
+const GARDEN_OBJECTS = [
+  { icon: '🐞', label: 'ladybug' },
+  { icon: '🐝', label: 'bee' },
+  { icon: '🐌', label: 'snail' },
+  { icon: '🍎', label: 'apple' },
+  { icon: '🍓', label: 'strawberry' },
+  { icon: '🍇', label: 'grapes' },
+]
+
+const createGardenRound = () => {
+  const total = 3 + Math.floor(Math.random() * 8)
+  const objects = Array.from({ length: total }, (_, index) => {
+    const item = GARDEN_OBJECTS[Math.floor(Math.random() * GARDEN_OBJECTS.length)]
+    return { id: `garden-${Date.now()}-${index}`, ...item, left: 10 + Math.random() * 78, top: 12 + Math.random() * 70, size: 34 + Math.floor(Math.random() * 20) }
+  })
+  return { objects }
+}
+
+const CountingGardenActivity: FC<{ topic: MathTopic; onComplete?: () => void }> = ({ topic, onComplete }) => {
+  const [roundNumber, setRoundNumber] = useState(0)
+  const [round, setRound] = useState<GardenRound>(() => createGardenRound())
+  const [counted, setCounted] = useState<string[]>([])
+  const [animating, setAnimating] = useState<string | null>(null)
+  const [checked, setChecked] = useState(false)
+  const [correct, setCorrect] = useState(false)
+  const [completed, setCompleted] = useState(false)
+  const countedCount = counted.length
+  const toggleObject = (id: string) => {
+    if (animating === id) return
+    if (counted.includes(id)) {
+      setCounted((current) => current.filter((item) => item !== id))
+      setChecked(false)
+      setCorrect(false)
+      return
+    }
+    setAnimating(id)
+    window.setTimeout(() => {
+      setCounted((current) => current.includes(id) ? current : [...current, id])
+      setAnimating(null)
+      setChecked(false)
+      setCorrect(false)
+    }, 220)
+  }
+  const reset = () => { setCounted([]); setAnimating(null); setChecked(false); setCorrect(false); setCompleted(false) }
+  const nextRound = () => { setRoundNumber((current) => current + 1); setRound(createGardenRound()); reset() }
+  const checkActivity = () => { const isCorrect = countedCount === round.objects.length; setChecked(true); setCorrect(isCorrect) }
+  return <EngineFrame name={topic.activity} description={topic.activityDescription}><Chip label="Foundation" color="primary" sx={{ alignSelf: 'flex-start' }} /><Typography variant="h6">Round {roundNumber + 1}: Count the garden objects</Typography><Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="stretch"><Box sx={{ flex: 1, minHeight: 320, position: 'relative', overflow: 'hidden', borderRadius: 3, border: 2, borderColor: correct ? 'success.main' : 'divider', background: 'linear-gradient(180deg, #b9edff 0 30%, #77cb70 30% 100%)', animation: correct ? 'gardenCelebrate .8s ease-in-out' : checked && !correct ? 'gardenShake .35s ease' : 'none', '@keyframes gardenShake': { '0%, 100%': { transform: 'translateX(0)' }, '25%': { transform: 'translateX(-5px)' }, '75%': { transform: 'translateX(5px)' } }, '@keyframes gardenCelebrate': { '0%, 100%': { transform: 'scale(1)' }, '50%': { transform: 'scale(1.02)' } }, '&:after': { content: '""', position: 'absolute', inset: '30% 0 0', background: 'repeating-linear-gradient(165deg, rgba(38, 112, 54, .18) 0 2px, transparent 2px 14px)', pointerEvents: 'none' } }}><Typography sx={{ position: 'absolute', top: 10, left: 14, zIndex: 2, color: '#1e6a46', fontWeight: 800 }}>Garden patch</Typography><Box sx={{ position: 'absolute', inset: 0, zIndex: 1 }}>{round.objects.map((object) => { const isCounted = counted.includes(object.id); const isAnimating = animating === object.id; return <Box key={object.id} component="button" type="button" onClick={() => toggleObject(object.id)} aria-label={`${isCounted ? 'Uncount' : 'Count'} ${object.label}`} sx={{ position: 'absolute', left: `${object.left}%`, top: `${object.top}%`, transform: 'translate(-50%, -50%)', width: object.size + 22, height: object.size + 22, p: 0, display: 'grid', placeItems: 'center', border: 0, borderRadius: '50%', backgroundColor: isCounted ? 'rgba(255,255,255,.7)' : 'transparent', cursor: 'pointer', fontSize: object.size, lineHeight: 1, filter: isCounted ? 'drop-shadow(0 0 8px rgba(255,255,255,.95))' : 'none', animation: isAnimating ? 'gardenPop .42s ease' : correct ? 'gardenBounce .8s ease-in-out infinite' : 'none', '&:hover': { transform: 'translate(-50%, -50%) scale(1.12)' }, '@keyframes gardenPop': { '0%': { transform: 'translate(-50%, -50%) scale(.7) rotate(-8deg)' }, '55%': { transform: 'translate(-50%, -50%) scale(1.18) rotate(8deg)' }, '100%': { transform: 'translate(-50%, -50%) scale(1) rotate(0)' } }, '@keyframes gardenBounce': { '0%, 100%': { marginTop: 0 }, '50%': { marginTop: -8 } } }}>{object.icon}{isCounted && <Typography component="span" sx={{ position: 'absolute', right: -2, bottom: -2, width: 20, height: 20, display: 'grid', placeItems: 'center', borderRadius: '50%', backgroundColor: 'success.main', color: 'common.white', fontSize: 13, fontWeight: 900 }}>✓</Typography>}</Box> })}</Box></Box><Paper elevation={0} sx={{ minWidth: { sm: 150 }, p: 2, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', backgroundColor: 'background.default', border: 1, borderColor: 'divider' }}><Typography variant="overline" color="text.secondary">Count so far</Typography><Typography variant="h1" color="primary.main" sx={{ fontWeight: 900, lineHeight: 1, animation: animating ? 'gardenCounterBounce .3s ease' : 'none', '@keyframes gardenCounterBounce': { '0%': { transform: 'scale(.8)' }, '65%': { transform: 'scale(1.16)' }, '100%': { transform: 'scale(1)' } } }}>{countedCount}!</Typography><Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>Tap an object to count it. Tap again to undo.</Typography></Paper></Stack><Typography variant="body1" sx={{ fontWeight: 700 }}>Count the garden objects: {countedCount} of {round.objects.length}.</Typography><Stack direction="row" spacing={1} flexWrap="wrap"><Button variant="outlined" onClick={reset}>Reset</Button><Button variant="outlined" onClick={checkActivity}>Check Activity</Button></Stack>{checked && <Paper role="status" elevation={0} sx={{ p: 1.5, border: 1, borderColor: correct ? 'success.main' : 'warning.main', backgroundColor: correct ? 'success.light' : 'background.default' }}><Typography color={correct ? 'success.main' : 'warning.main'} sx={{ fontWeight: 700 }}>{correct ? `You counted all ${round.objects.length}!` : `Keep counting! ${round.objects.length - countedCount} more to go.`}</Typography></Paper>}{correct && !completed && <CompleteButton onComplete={() => { setCompleted(true); onComplete?.() }} />}{completed && <Stack direction="row" spacing={1} alignItems="center"><Typography color="success.main" sx={{ fontWeight: 700 }}>Activity complete!</Typography><Button variant="outlined" onClick={nextRound}>Next round</Button></Stack>}</EngineFrame>
+}
+
+type ParabolaCoefficients = { a: number; b: number; c: number }
+type ParabolaRoundType = 'match the curve' | 'hit the roots' | 'hit the vertex' | 'read the graph' | 'factor it'
+type ParabolaRound = {
+  type: ParabolaRoundType
+  title: string
+  instruction: string
+  target: ParabolaCoefficients
+  readMode?: 'roots' | 'vertex' | 'y-intercept'
+  factoredForm?: string
+}
+
+const PARABOLA_TARGETS: Record<ParabolaRoundType, ParabolaCoefficients[]> = {
+  'match the curve': [{ a: 2, b: -4, c: -3 }, { a: 1, b: 2, c: -3 }, { a: 0.5, b: -1, c: -2 }],
+  'hit the roots': [{ a: 1, b: -1, c: -6 }, { a: 1, b: 2, c: -8 }, { a: 1, b: -4, c: 3 }],
+  'hit the vertex': [{ a: 1, b: -4, c: 1 }, { a: 0.5, b: 3, c: -2 }, { a: 2, b: 4, c: -1 }],
+  'read the graph': [{ a: 1, b: -3, c: -4 }, { a: 1, b: 4, c: -5 }, { a: 0.5, b: -2, c: -3 }],
+  'factor it': [{ a: 1, b: -1, c: -6 }, { a: 1, b: 1, c: -12 }, { a: 1, b: -5, c: 6 }],
+}
+
+const parabolaNumber = (value: number) => Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/0+$/, '').replace(/\\.$/, '')
+const signedTerm = (value: number, suffix: string) => `${value < 0 ? '−' : '+'} ${parabolaNumber(Math.abs(value))}${suffix}`
+const equationFor = ({ a, b, c }: ParabolaCoefficients) => `y = ${parabolaNumber(a)}x² ${signedTerm(b, 'x')} ${signedTerm(c, '')}`
+const rootsFor = ({ a, b, c }: ParabolaCoefficients) => {
+  const discriminant = b * b - 4 * a * c
+  if (discriminant < -0.0001) return []
+  if (Math.abs(discriminant) < 0.0001) return [-b / (2 * a)]
+  const rootDistance = Math.sqrt(discriminant)
+  return [(-b - rootDistance) / (2 * a), (-b + rootDistance) / (2 * a)].sort((left, right) => left - right)
+}
+const vertexFor = ({ a, b, c }: ParabolaCoefficients) => {
+  const x = -b / (2 * a)
+  return { x, y: a * x * x + b * x + c }
+}
+const closeEnough = (left: number, right: number, tolerance = 0.12) => Math.abs(left - right) <= tolerance
+const coefficientsClose = (left: ParabolaCoefficients, right: ParabolaCoefficients) => closeEnough(left.a, right.a) && closeEnough(left.b, right.b) && closeEnough(left.c, right.c)
+const normalizeParabolaAnswer = (value: string) => value.toLowerCase().replace(/[\\s=]/g, '').replace(/−/g, '-').replace(/\^2/g, '²')
+
+const createParabolaRound = (roundNumber: number): ParabolaRound => {
+  const types: ParabolaRoundType[] = ['hit the roots', 'match the curve', 'hit the vertex', 'read the graph', 'factor it']
+  const type = types[roundNumber % types.length]
+  const targets = PARABOLA_TARGETS[type]
+  const target = targets[Math.floor(Math.random() * targets.length)]
+  if (type === 'hit the roots') {
+    const roots = rootsFor(target).map((root) => parabolaNumber(root)).join(' and ')
+    return { type, title: 'Hit the roots', instruction: `Adjust a, b and c until the parabola has roots at x = ${roots}.`, target }
+  }
+  if (type === 'match the curve') return { type, title: 'Match the curve', instruction: 'Adjust a, b and c until your curve overlaps the faint target parabola.', target }
+  if (type === 'hit the vertex') {
+    const vertex = vertexFor(target)
+    return { type, title: 'Hit the vertex', instruction: `Adjust a, b and c until the vertex is at (${parabolaNumber(vertex.x)}, ${parabolaNumber(vertex.y)}).`, target }
+  }
+  if (type === 'read the graph') {
+    return { type, title: 'Read the graph', instruction: 'Read the fixed parabola, then enter the requested feature.', target, readMode: roundNumber % 3 === 0 ? 'roots' : roundNumber % 3 === 1 ? 'vertex' : 'y-intercept' }
+  }
+  const roots = rootsFor(target)
+  const factoredForm = `(x ${roots[0] < 0 ? '+' : '−'} ${parabolaNumber(Math.abs(roots[0]))})(x ${roots[1] < 0 ? '+' : '−'} ${parabolaNumber(Math.abs(roots[1]))})`
+  return { type, title: 'Factor it', instruction: `Expand ${factoredForm} and enter the matching equation.`, target, factoredForm }
+}
+
+const ParabolaGraph: FC<{ coefficients: ParabolaCoefficients; target?: ParabolaCoefficients; correct: boolean; checked: boolean }> = ({ coefficients, target, correct, checked }) => {
+  const width = 640
+  const height = 450
+  const plot = { left: 120, top: 50, right: 520, bottom: 370 }
+  const xMin = -10
+  const xMax = 10
+  const yMin = -8
+  const yMax = 8
+  const xToSvg = (x: number) => plot.left + (x - xMin) * 20
+  const yToSvg = (y: number) => plot.bottom - (y - yMin) * 20
+  const pointsFor = (values: ParabolaCoefficients) => Array.from({ length: 161 }, (_, index) => {
+    const x = xMin + index * 0.125
+    return `${xToSvg(x)},${yToSvg(values.a * x * x + values.b * x + values.c)}`
+  }).join(' ')
+  const roots = rootsFor(coefficients)
+  const vertex = vertexFor(coefficients)
+  const discriminant = coefficients.b * coefficients.b - 4 * coefficients.a * coefficients.c
+  const withinX = (x: number) => x >= xMin && x <= xMax
+  const withinY = (y: number) => y >= yMin && y <= yMax
+  const graphColor = checked && correct ? 'var(--mui-palette-success-main)' : 'var(--mui-palette-primary-main)'
+  return <Box sx={{ width: '100%', overflow: 'hidden', border: 1, borderColor: 'divider', borderRadius: 2, backgroundColor: 'background.default', animation: checked && !correct ? 'parabolaShake .35s ease' : 'none', '@keyframes parabolaShake': { '0%, 100%': { transform: 'translateX(0)' }, '25%': { transform: 'translateX(-5px)' }, '75%': { transform: 'translateX(5px)' } } }}>
+    <Box component="svg" viewBox={`0 0 ${width} ${height}`} sx={{ display: 'block', width: '100%', minHeight: { xs: 300, sm: 390 } }} role="img" aria-label={`Coordinate graph of ${equationFor(coefficients)}`}>
+      <defs><clipPath id="parabola-plot-clip"><rect x={plot.left} y={plot.top} width={plot.right - plot.left} height={plot.bottom - plot.top} /></clipPath><filter id="parabola-glow"><feGaussianBlur stdDeviation="5" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter></defs>
+      <rect x={plot.left} y={plot.top} width={plot.right - plot.left} height={plot.bottom - plot.top} fill="var(--mui-palette-background-paper)" />
+      {Array.from({ length: 21 }, (_, index) => { const value = xMin + index; return <line key={`grid-x-${value}`} x1={xToSvg(value)} x2={xToSvg(value)} y1={plot.top} y2={plot.bottom} stroke="currentColor" opacity={value % 2 === 0 ? '.16' : '.08'} /> })}
+      {Array.from({ length: 17 }, (_, index) => { const value = yMin + index; return <line key={`grid-y-${value}`} x1={plot.left} x2={plot.right} y1={yToSvg(value)} y2={yToSvg(value)} stroke="currentColor" opacity={value % 2 === 0 ? '.16' : '.08'} /> })}
+      <line x1={plot.left} x2={plot.right} y1={yToSvg(0)} y2={yToSvg(0)} stroke="currentColor" strokeWidth="2" opacity=".65" />
+      <line x1={xToSvg(0)} x2={xToSvg(0)} y1={plot.top} y2={plot.bottom} stroke="currentColor" strokeWidth="2" opacity=".65" />
+      {Array.from({ length: 11 }, (_, index) => { const value = -10 + index * 2; return <text key={`x-label-${value}`} x={xToSvg(value)} y={plot.bottom + 24} textAnchor="middle" fontSize="12" fill="currentColor">{value}</text> })}
+      {Array.from({ length: 9 }, (_, index) => { const value = -8 + index * 2; return <text key={`y-label-${value}`} x={plot.left - 14} y={yToSvg(value) + 4} textAnchor="end" fontSize="12" fill="currentColor">{value}</text> })}
+      <text x={plot.right + 8} y={yToSvg(0) + 4} fontSize="13" fontWeight="700" fill="currentColor">x</text><text x={xToSvg(0) + 8} y={plot.top - 10} fontSize="13" fontWeight="700" fill="currentColor">y</text><circle cx={xToSvg(0)} cy={yToSvg(0)} r="5" fill="var(--mui-palette-secondary-main)" /><text x={xToSvg(0) + 9} y={yToSvg(0) - 9} fontSize="11" fill="currentColor">O</text>
+      {target && <polyline points={pointsFor(target)} fill="none" stroke="var(--mui-palette-secondary-main)" strokeWidth="3" strokeDasharray="8 7" opacity=".38" clipPath="url(#parabola-plot-clip)" />}
+      <polyline points={pointsFor(coefficients)} fill="none" stroke={graphColor} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" clipPath="url(#parabola-plot-clip)" filter={checked && correct ? 'url(#parabola-glow)' : undefined} style={{ transition: 'stroke .2s ease' }} />
+      {roots.filter(withinX).map((root) => <g key={`root-${root}`}><circle cx={xToSvg(root)} cy={yToSvg(0)} r="7" fill={graphColor} className="parabola-pulse" /><text x={xToSvg(root)} y={yToSvg(0) + 38} textAnchor="middle" fontSize="12" fontWeight="700" fill="currentColor">x = {parabolaNumber(root)}</text></g>)}
+      {withinX(vertex.x) && withinY(vertex.y) && <g><line x1={xToSvg(vertex.x)} x2={xToSvg(vertex.x)} y1={yToSvg(vertex.y)} y2={yToSvg(0)} stroke={graphColor} strokeDasharray="5 5" opacity=".7" /><line x1={xToSvg(vertex.x)} x2={xToSvg(0)} y1={yToSvg(vertex.y)} y2={yToSvg(vertex.y)} stroke={graphColor} strokeDasharray="5 5" opacity=".7" /><circle cx={xToSvg(vertex.x)} cy={yToSvg(vertex.y)} r="7" fill={graphColor} filter={checked && correct ? 'url(#parabola-glow)' : undefined} /><text x={xToSvg(vertex.x) + 10} y={yToSvg(vertex.y) - 12} fontSize="12" fontWeight="700" fill="currentColor">V ({parabolaNumber(vertex.x)}, {parabolaNumber(vertex.y)})</text></g>}
+      {withinY(coefficients.c) && <g><circle cx={xToSvg(0)} cy={yToSvg(coefficients.c)} r="6" fill="var(--mui-palette-warning-main)" /><text x={xToSvg(0) + 10} y={yToSvg(coefficients.c) + 4} fontSize="12" fontWeight="700" fill="currentColor">(0, {parabolaNumber(coefficients.c)})</text></g>}
+      <style>{'.parabola-pulse { animation: parabolaPulse 1.5s ease-in-out infinite; transform-box: fill-box; transform-origin: center; } @keyframes parabolaPulse { 0%, 100% { opacity: .65; transform: scale(.85); } 50% { opacity: 1; transform: scale(1.25); } }'}</style>
+    </Box>
+    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ px: 2, pb: 1.5, flexWrap: 'wrap' }}>
+      <Chip size="small" label={roots.length ? `Roots: ${roots.map((root) => `x = ${parabolaNumber(root)}`).join(', ')}` : 'No real roots'} color={roots.length ? 'primary' : 'default'} />
+      <Chip size="small" label={`Vertex: (${parabolaNumber(vertex.x)}, ${parabolaNumber(vertex.y)})`} />
+      <Chip size="small" label={`y-intercept: (0, ${parabolaNumber(coefficients.c)})`} />
+      <Chip size="small" label={`Discriminant: ${parabolaNumber(discriminant)} — ${discriminant > 0 ? 'two roots' : discriminant === 0 ? 'one root' : 'no real roots'}`} />
+    </Stack>
+  </Box>
+}
+
+const ParabolaControllerActivity: FC<{ topic: MathTopic; onComplete?: () => void }> = ({ topic, onComplete }) => {
+  const [roundNumber, setRoundNumber] = useState(0)
+  const [round, setRound] = useState(() => createParabolaRound(0))
+  const [coefficients, setCoefficients] = useState<ParabolaCoefficients>({ a: 1, b: 0, c: 0 })
+  const [readAnswer, setReadAnswer] = useState({ first: '', second: '' })
+  const [equationAnswer, setEquationAnswer] = useState('')
+  const [checked, setChecked] = useState(false)
+  const [correct, setCorrect] = useState(false)
+  const [completed, setCompleted] = useState(false)
+  const targetRoots = rootsFor(round.target)
+  const targetVertex = vertexFor(round.target)
+  const targetDiscriminant = round.target.b * round.target.b - 4 * round.target.a * round.target.c
+  const updateCoefficient = (key: keyof ParabolaCoefficients, value: number) => { setCoefficients((current) => ({ ...current, [key]: value })); setChecked(false); setCorrect(false) }
+  const reset = () => { setCoefficients({ a: 1, b: 0, c: 0 }); setReadAnswer({ first: '', second: '' }); setEquationAnswer(''); setChecked(false); setCorrect(false); setCompleted(false) }
+  const checkActivity = () => {
+    let isCorrect = false
+    if (round.type === 'hit the roots') isCorrect = rootsFor(coefficients).length === targetRoots.length && rootsFor(coefficients).every((root, index) => closeEnough(root, targetRoots[index]))
+    else if (round.type === 'hit the vertex') { const vertex = vertexFor(coefficients); isCorrect = closeEnough(vertex.x, targetVertex.x) && closeEnough(vertex.y, targetVertex.y) }
+    else if (round.type === 'read the graph') {
+      const first = Number(readAnswer.first)
+      const second = Number(readAnswer.second)
+      isCorrect = round.readMode === 'roots' ? Number.isFinite(first) && Number.isFinite(second) && closeEnough(first, targetRoots[0]) && closeEnough(second, targetRoots[1]) : round.readMode === 'vertex' ? Number.isFinite(first) && Number.isFinite(second) && closeEnough(first, targetVertex.x) && closeEnough(second, targetVertex.y) : Number.isFinite(first) && closeEnough(first, round.target.c)
+    } else if (round.type === 'factor it') isCorrect = normalizeParabolaAnswer(equationAnswer) === normalizeParabolaAnswer(equationFor(round.target))
+    else isCorrect = coefficientsClose(coefficients, round.target)
+    setChecked(true); setCorrect(isCorrect)
+  }
+  const nextRound = () => { const next = roundNumber + 1; setRoundNumber(next); setRound(createParabolaRound(next)); reset() }
+  const slider = (key: keyof ParabolaCoefficients, label: string, min: number, max: number, step: number) => <Box sx={{ flex: 1, minWidth: 150 }}><Stack direction="row" justifyContent="space-between" alignItems="center"><Typography variant="subtitle2">{label}</Typography><Chip size="small" label={parabolaNumber(coefficients[key])} color="primary" /></Stack><Slider min={min} max={max} step={step} value={coefficients[key]} marks valueLabelDisplay="off" onChange={(_, next) => updateCoefficient(key, Array.isArray(next) ? next[0] : next)} aria-label={`${label} coefficient`} /></Box>
+  const readPrompt = round.readMode === 'roots' ? 'Enter the two roots in ascending order.' : round.readMode === 'vertex' ? 'Enter the vertex coordinates (x, y).' : 'Enter the y-intercept c.'
+  return <EngineFrame name={topic.activity} description={topic.activityDescription}><Stack spacing={1}><Chip label="Advanced" color="secondary" sx={{ alignSelf: 'flex-start' }} /><Typography variant="h6">Round {roundNumber + 1}: {round.title}</Typography><Typography variant="body2" color="text.secondary">{round.instruction}</Typography></Stack><Typography variant="h5" sx={{ fontFamily: 'monospace', textAlign: 'center', letterSpacing: '.02em' }}>{round.type === 'factor it' ? `y = ${round.factoredForm}` : equationFor(coefficients)}</Typography><ParabolaGraph coefficients={round.type === 'read the graph' ? round.target : coefficients} target={round.type === 'match the curve' ? round.target : undefined} correct={correct} checked={checked} />{round.type !== 'read the graph' && round.type !== 'factor it' && <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>{slider('a', 'a · stretch / flip', 0.25, 3, 0.25)}{slider('b', 'b · shift', -8, 8, 0.5)}{slider('c', 'c · height', -8, 8, 0.5)}</Stack>}{round.type === 'read the graph' && <Paper elevation={0} sx={{ p: 1.5, border: 1, borderColor: 'divider' }}><Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>{readPrompt}</Typography><Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>{round.readMode === 'y-intercept' ? <TextField size="small" label="c" value={readAnswer.first} onChange={(event) => { setReadAnswer({ first: event.target.value, second: '' }); setChecked(false); setCorrect(false) }} /> : <><TextField size="small" label={round.readMode === 'roots' ? 'root 1' : 'x-coordinate'} value={readAnswer.first} onChange={(event) => { setReadAnswer((current) => ({ ...current, first: event.target.value })); setChecked(false); setCorrect(false) }} /><TextField size="small" label={round.readMode === 'roots' ? 'root 2' : 'y-coordinate'} value={readAnswer.second} onChange={(event) => { setReadAnswer((current) => ({ ...current, second: event.target.value })); setChecked(false); setCorrect(false) }} /></>}</Stack></Paper>}{round.type === 'factor it' && <TextField label="Expanded equation" placeholder="y = x² + ..." value={equationAnswer} onChange={(event) => { setEquationAnswer(event.target.value); setChecked(false); setCorrect(false) }} fullWidth />}{round.type !== 'read the graph' && round.type !== 'factor it' && <Typography variant="body2" color="text.secondary">Live readout: {equationFor(coefficients)}</Typography>}{round.type === 'read the graph' && <Typography variant="body2" color="text.secondary">Fixed equation: {equationFor(round.target)} · Discriminant: {parabolaNumber(targetDiscriminant)}</Typography>}<Stack direction="row" spacing={1} flexWrap="wrap"><Button variant="outlined" onClick={reset}>Reset</Button><Button variant="contained" onClick={checkActivity}>Check Activity</Button></Stack>{checked && <Paper role="status" elevation={0} sx={{ p: 1.5, border: 1, borderColor: correct ? 'success.main' : 'error.main', backgroundColor: correct ? 'success.light' : 'background.default' }}><Typography sx={{ fontWeight: 700, color: correct ? 'success.main' : 'error.main' }}>{correct ? `Correct! ${targetRoots.length ? `Roots at x = ${targetRoots.map(parabolaNumber).join(' and ')}` : `Vertex at (${parabolaNumber(targetVertex.x)}, ${parabolaNumber(targetVertex.y)})`}.` : round.type === 'hit the roots' ? 'Try lowering c to move the curve down, closer to crossing the axis at those points.' : round.type === 'hit the vertex' ? 'Move the axis of symmetry first, then adjust c to reach the target height.' : 'Check the labels and use the live equation to guide your next adjustment.'}</Typography>{correct && round.type === 'factor it' && <Typography variant="body2">{round.factoredForm} = {equationFor(round.target).replace('y = ', 'y = ')}</Typography>}{correct && <Typography variant="body2">Discriminant {parabolaNumber(targetDiscriminant)} means {targetDiscriminant > 0 ? 'two roots' : targetDiscriminant === 0 ? 'one root' : 'no real roots'}.</Typography>}</Paper>}{correct && !completed && <CompleteButton onComplete={() => { setCompleted(true); onComplete?.() }} />}{completed && <Stack direction="row" spacing={1} alignItems="center"><Typography color="success.main" sx={{ fontWeight: 700 }}>Activity complete.</Typography><Button variant="outlined" onClick={nextRound}>Next round</Button></Stack>}</EngineFrame>
+}
+
 const MathActivityEngine: FC<{ topic: MathTopic; onComplete?: () => void }> = ({ topic, onComplete }) => {
   const initial = topic.title === 'Fractions' ? topic.target : Math.min(Math.max(topic.target - 2, 0), 10)
   const [value, setValue] = useState(initial)
@@ -527,14 +720,15 @@ const MathActivityEngine: FC<{ topic: MathTopic; onComplete?: () => void }> = ({
     return <EngineFrame name={topic.activity} description={topic.activityDescription}><Paper elevation={0} sx={{ p: 2, minHeight: 190, display: 'flex', alignItems: 'flex-end', gap: 1.5, backgroundColor: chartCorrect ? 'success.light' : 'background.default' }}>{chartValues.map((item, index) => <Box key={index} sx={{ flex: 1, height: `${item * 16}px`, backgroundColor: 'primary.main', borderRadius: '6px 6px 0 0', position: 'relative' }}><Typography variant="caption" sx={{ position: 'absolute', top: -22 }}>{item}</Typography></Box>)}</Paper><Typography variant="body2">Drag bars until the rounded mean is {topic.target}.</Typography><Stack direction="row" spacing={1}>{chartValues.map((item, index) => <Slider key={index} min={1} max={10} value={item} onChange={(_, next) => { const n = Array.isArray(next) ? next[0] : next; setChartValues(current => current.map((entry, i) => i === index ? n : entry)) }} aria-label={`Chart bar ${index + 1}`} sx={{ flex: 1 }} />)}</Stack><Chip label={`Mean: ${mean.toFixed(1)}`} /><CompleteButton disabled={!chartCorrect} onComplete={onComplete} /></EngineFrame>
   }
   if (topic.title === 'Fractions') return frame(<><Paper elevation={0} sx={{ p: 2, display: 'grid', placeItems: 'center' }}><Box sx={{ width: 150, height: 150, borderRadius: '50%', background: `conic-gradient(#f6b73c ${value / 8 * 360}deg, #fff3c4 0)`, border: 8, borderColor: '#a85d32' }} /></Paper><Typography variant="body2">Tap pizza slices to show {topic.target}/8.</Typography><Stack direction="row" spacing={1} flexWrap="wrap">{Array.from({ length: 8 }, (_, index) => <Button key={index} variant={index < value ? 'contained' : 'outlined'} onClick={() => update(index + 1)}>Slice {index + 1}</Button>)}</Stack></>)
-  if (topic.title === 'Counting & Number Recognition') return frame(<><Paper elevation={0} sx={{ p: 2, display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>{Array.from({ length: topic.target }, (_, index) => <Button key={index} variant={index < value ? 'contained' : 'outlined'} onClick={() => update(index + 1)} sx={{ borderRadius: '50%', minWidth: 48, height: 48 }}>{index < value ? '●' : '○'}</Button>)}</Paper><Typography>Count the garden objects: {value} of {topic.target}.</Typography></>)
+  if (topic.title === 'Counting & Number Recognition') return <CountingGardenActivity topic={topic} onComplete={onComplete} />
   if (topic.title === 'Percentages') return <PercentageBatteryActivity topic={topic} onComplete={onComplete} />
   if (topic.title === 'Decimals') return frame(<GridActivity topic={topic} value={value} setValue={update} />)
-  if (topic.title === 'Perimeter & Area') return frame(<><Typography variant="body2">Place tiles to build a room with area {topic.target}.</Typography><Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: .5, maxWidth: 330 }}>{Array.from({ length: 24 }, (_, index) => <Button key={index} onClick={() => update(index + 1)} sx={{ minWidth: 0, aspectRatio: 1, backgroundColor: index < value ? 'primary.main' : 'action.hover' }}>{index < value ? '■' : '+'}</Button>)}</Box><Chip label={`Area: ${value} square units`} /></>)
+  if (topic.title === 'Perimeter & Area') return <TileRoomActivity topic={topic} onComplete={onComplete} />
   if (topic.title === 'Probability') return <ProbabilityMachineActivity topic={topic} onComplete={onComplete} />
   if (topic.title === 'Sets') return <ImprovedSetSorterActivity topic={topic} onComplete={onComplete} />
   if (topic.title === 'Simultaneous Equations') return <LineIntersectionActivity topic={topic} onComplete={onComplete} />
-  if (['Linear Equations', 'Quadratic Equations', 'Polynomial Functions'].includes(topic.title)) return frame(<GraphVisual kind={topic.title === 'Linear Equations' ? 'linear' : topic.title === 'Quadratic Equations' ? 'parabola' : 'polynomial'} value={value || 1} target={topic.target} setValue={update} />)
+  if (topic.title === 'Quadratic Equations') return <ParabolaControllerActivity topic={topic} onComplete={onComplete} />
+  if (['Linear Equations', 'Polynomial Functions'].includes(topic.title)) return frame(<GraphVisual kind={topic.title === 'Linear Equations' ? 'linear' : 'polynomial'} value={value || 1} target={topic.target} setValue={update} />)
   if (topic.title === 'Algebra') return <BalanceEquationActivity topic={topic} onComplete={onComplete} />
   if (topic.title === 'Functions') return <FunctionMachineActivity topic={topic} onComplete={onComplete} />
   if (topic.title === 'Integers') return <ElevatorIntegersActivity topic={topic} onComplete={onComplete} />
@@ -561,7 +755,8 @@ const MathActivityEngine: FC<{ topic: MathTopic; onComplete?: () => void }> = ({
   if (['Place Value', 'Multiplication/Division Concepts'].includes(topic.title)) return frame(<><Typography>Build with manipulatives: hundreds, tens, ones, or equal groups.</Typography><Stack direction="row" spacing={1} justifyContent="center" flexWrap="wrap">{Array.from({ length: Math.min(topic.target, 12) }, (_, index) => <Button key={index} onClick={() => update(index === Math.min(topic.target, 12) - 1 ? topic.target : index + 1)} variant={index < value ? 'contained' : 'outlined'}>{topic.title === 'Place Value' ? (index < 3 ? '100' : index < 6 ? '10' : '1') : '● ●'}</Button>)}</Stack><Chip label={`Built value: ${value}`} /></>)
   if (topic.title === 'Pythagorean Theorem') return <TriangleBuilderActivity topic={topic} onComplete={onComplete} />
   if (topic.title === 'Similarity') return <ShapeScalerActivity topic={topic} onComplete={onComplete} />
-  if (['Geometry', 'Angles'].includes(topic.title)) return frame(<><Box component="svg" viewBox="0 0 400 170" sx={{ width: '100%', height: 170, backgroundColor: 'background.default', borderRadius: 2 }} role="img" aria-label={`${topic.title} shape visual`}><polygon points={`200,20 ${100 + value * 8},140 ${300 - value * 5},140`} fill="var(--mui-palette-primary-main)" opacity=".3" stroke="var(--mui-palette-primary-main)" strokeWidth="4" /><text x="200" y="160" textAnchor="middle">{topic.title === 'Angles' ? `${value}° angle` : `${value} units`}</text></Box><Slider min={1} max={Math.max(topic.target, 10)} value={value} onChange={(_, next) => update(Array.isArray(next) ? next[0] : next)} aria-label={`${topic.title} shape control`} /><Typography>Drag vertices or the ray to explore this {topic.title.toLowerCase()} visual.</Typography></>)
+  if (topic.title === 'Geometry') return <ShapeBuilderActivity topic={topic} onComplete={onComplete} />
+  if (topic.title === 'Angles') return frame(<><Box component="svg" viewBox="0 0 400 170" sx={{ width: '100%', height: 170, backgroundColor: 'background.default', borderRadius: 2 }} role="img" aria-label={`${topic.title} shape visual`}><polygon points={`200,20 ${100 + value * 8},140 ${300 - value * 5},140`} fill="var(--mui-palette-primary-main)" opacity=".3" stroke="var(--mui-palette-primary-main)" strokeWidth="4" /><text x="200" y="160" textAnchor="middle">{value}° angle</text></Box><Slider min={1} max={Math.max(topic.target, 10)} value={value} onChange={(_, next) => update(Array.isArray(next) ? next[0] : next)} aria-label="Angles shape control" /><Typography>Rotate the ray to explore this angle.</Typography></>)
   if (topic.title === 'Coordinate Grids') return <CoordinateRobotActivity topic={topic} onComplete={onComplete} />
   if (['Comparing Numbers', 'Addition & Subtraction'].includes(topic.title)) return frame(<><Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: .5, p: 1, border: 1, borderColor: 'divider' }}>{Array.from({ length: 49 }, (_, index) => <Button key={index} onClick={() => update(index % 7 + 1)} sx={{ minWidth: 0, aspectRatio: 1, backgroundColor: index % 7 + 1 === value ? 'primary.main' : 'action.hover' }}>{index % 7}</Button>)}</Box><Typography>{topic.title === 'Comparing Numbers' ? 'Choose the larger quantity on the number balance.' : 'Move the marker across the number path/grid to the target.'}</Typography></>)
   if (topic.title === 'Symmetry') return <MirrorDrawingActivity topic={topic} onComplete={onComplete} />
@@ -570,7 +765,7 @@ const MathActivityEngine: FC<{ topic: MathTopic; onComplete?: () => void }> = ({
   if (topic.title === 'Exponential & Logarithmic Functions') return <GrowthSimulatorActivity topic={topic} onComplete={onComplete} />
   if (topic.title === 'Limits') return <ApproachingPointActivity topic={topic} onComplete={onComplete} />
   if (['Analytical Geometry', 'Differentiation', 'Integration', 'Advanced Algebra'].includes(topic.title)) return frame(<><Box sx={{ minHeight: 150, p: 2, display: 'grid', placeItems: 'center', background: 'linear-gradient(135deg, transparent 48%, var(--mui-palette-primary-main) 49% 51%), repeating-linear-gradient(90deg, transparent 0 38px, rgba(0,0,0,.1) 39px 40px)', border: 1, borderColor: 'divider' }}><Typography variant="h4" color="primary.main">{topic.title === 'Integration' ? `${value} rectangles` : topic.title === 'Differentiation' ? `tangent slope ${value}` : `model parameter ${value}`}</Typography></Box><Slider min={0} max={Math.max(topic.target, 10)} value={value} onChange={(_, next) => update(Array.isArray(next) ? next[0] : next)} aria-label={`${topic.title} visual control`} /><Typography>Manipulate the visual model and observe the live {topic.title.toLowerCase()} result.</Typography></>)
-  if (topic.title === 'Ratios') return frame(<><Typography>Recipe mixer: scale ingredients for {topic.target} servings.</Typography><Stack direction="row" spacing={1} justifyContent="center">{['flour', 'eggs', 'milk'].map((item, index) => <Chip key={item} label={`${item}: ${Math.max(1, value + index)}×`} color={index < 2 ? 'primary' : 'secondary'} />)}</Stack><Slider min={1} max={10} value={value} onChange={(_, next) => update(Array.isArray(next) ? next[0] : next)} aria-label="Recipe servings" /></>)
+  if (topic.title === 'Ratios') return <RecipeMixerActivity topic={topic} onComplete={onComplete} />
   return frame(<><Paper sx={{ p: 2, textAlign: 'center' }}><Typography variant="h4">{topic.title}</Typography><Typography>Interactive model value: {value}</Typography></Paper><Slider min={0} max={Math.max(topic.target, 10)} value={value} onChange={(_, next) => update(Array.isArray(next) ? next[0] : next)} aria-label={`${topic.title} visual control`} /><Typography>{getMathActivityPrompt(topic)}</Typography></>)
 }
 
