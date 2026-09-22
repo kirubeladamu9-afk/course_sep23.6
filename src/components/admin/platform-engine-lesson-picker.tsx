@@ -49,7 +49,7 @@ const subjectDescription: Record<Exclude<SubjectFilter, 'All'>, string> = {
 }
 
 const topicOptions = (): TopicOption[] => {
-  const topics = Object.entries(STEM_CURRICULUM).flatMap(([subject, titles]) => titles.map((title, index) => ({
+  const topics = Object.entries(STEM_CURRICULUM).flatMap(([subject, titles]) => titles.filter((title) => !(subject === 'Biology' && title === 'Parts of Plants')).map((title, index) => ({
     key: getCurriculumTopicKey(subject, title) ?? `${subject.toLowerCase()}-${index + 1}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
     title,
     description: subject === 'Biology' && title === 'Living & Non-Living Things' ? 'Sort everyday objects into living and non-living groups.' : subject === 'Biology' && title === 'Plant Structure' ? "Explore how a plant's structure supports its function." : subject === 'Mathematics' ? getMathTopic(title)?.description ?? subjectDescription[subject as Exclude<SubjectFilter, 'All'>] : subjectDescription[subject as Exclude<SubjectFilter, 'All'>],
