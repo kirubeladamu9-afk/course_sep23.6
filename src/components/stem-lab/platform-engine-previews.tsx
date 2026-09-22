@@ -31,6 +31,7 @@ import RecipeMixerActivity from './recipe-mixer-activity'
 import ShapeBuilderActivity from './shape-builder-activity'
 import TileRoomActivity from './tile-room-activity'
 import DecimalPainterActivity from './decimal-painter-activity'
+import CurveSculptorActivity from './curve-sculptor-activity'
 import { type PlatformEngineId } from './platform-engine-library'
 import { type MathTopic } from '@/components/admin/stem-curriculum'
 
@@ -729,7 +730,8 @@ const MathActivityEngine: FC<{ topic: MathTopic; onComplete?: () => void }> = ({
   if (topic.title === 'Sets') return <ImprovedSetSorterActivity topic={topic} onComplete={onComplete} />
   if (topic.title === 'Simultaneous Equations') return <LineIntersectionActivity topic={topic} onComplete={onComplete} />
   if (topic.title === 'Quadratic Equations') return <ParabolaControllerActivity topic={topic} onComplete={onComplete} />
-  if (['Linear Equations', 'Polynomial Functions'].includes(topic.title)) return frame(<GraphVisual kind={topic.title === 'Linear Equations' ? 'linear' : 'polynomial'} value={value || 1} target={topic.target} setValue={update} />)
+  if (topic.title === 'Polynomial Functions') return <CurveSculptorActivity topic={topic} onComplete={onComplete} />
+  if (topic.title === 'Linear Equations') return frame(<GraphVisual kind="linear" value={value || 1} target={topic.target} setValue={update} />)
   if (topic.title === 'Algebra') return <BalanceEquationActivity topic={topic} onComplete={onComplete} />
   if (topic.title === 'Functions') return <FunctionMachineActivity topic={topic} onComplete={onComplete} />
   if (topic.title === 'Integers') return <ElevatorIntegersActivity topic={topic} onComplete={onComplete} />
