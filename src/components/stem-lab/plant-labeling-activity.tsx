@@ -21,11 +21,11 @@ const plantImage = 'https://cdn.builder.io/api/v1/image/assets%2F2030fde0364c4f3
 
 const plantParts: PlantPart[] = [
   { id: 'leaflet', label: 'Bud', explanation: 'A bud protects a new shoot or flower as it begins to grow.', left: '71%', top: '10%' },
-  { id: 'flower', label: 'Flower', explanation: 'A flower helps the plant reproduce and can develop into fruit.', left: '71%', top: '19%' },
-  { id: 'leaf', label: 'Leaf', explanation: 'Leaves use sunlight, air, and water to make food.', left: '74%', top: '36%' },
-  { id: 'fruit', label: 'Fruit', explanation: 'Fruit develops from the flower and holds the plant’s seeds.', left: '74%', top: '47%' },
-  { id: 'stem', label: 'Stem', explanation: 'The stem supports the plant and carries water to its leaves.', left: '71%', top: '68%' },
-  { id: 'roots', label: 'Root', explanation: 'Roots anchor the plant and take in water and minerals from the soil.', left: '70%', top: '81%' },
+  { id: 'flower', label: 'Flower', explanation: 'A flower helps the plant reproduce and can develop into fruit.', left: '71%', top: '16%' },
+  { id: 'leaf', label: 'Leaf', explanation: 'Leaves use sunlight, air, and water to make food.', left: '71%', top: '34%' },
+  { id: 'fruit', label: 'Fruit', explanation: 'Fruit develops from the flower and holds the plant’s seeds.', left: '71%', top: '42%' },
+  { id: 'stem', label: 'Stem', explanation: 'The stem supports the plant and carries water to its leaves.', left: '71%', top: '59%' },
+  { id: 'roots', label: 'Root', explanation: 'Roots anchor the plant and take in water and minerals from the soil.', left: '70%', top: '71%' },
 ]
 
 const shuffle = <T,>(items: T[]) => {
