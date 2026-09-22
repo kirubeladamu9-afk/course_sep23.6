@@ -98,6 +98,7 @@ export const engineForTopic = (subject: string, topic: string): PlatformEngineId
   if (subject === 'Biology' && value === 'living & non-living things') return 'living-or-not'
   if (subject === 'Biology' && (value === 'plant structure' || value === 'parts of plants')) return 'plant-labeling'
   if (subject === 'Biology' && value === 'human body parts') return 'human-body-parts'
+  if (subject === 'Biology' && value === 'five senses') return 'sense-challenge'
   if (subject === 'Biology' && value === 'food & nutrition') return 'healthy-plate'
   if (/microscope|cell/.test(value)) return 'microscope'
   if (/life cycle|reproduction|timeline|division/.test(value)) return 'timeline'
