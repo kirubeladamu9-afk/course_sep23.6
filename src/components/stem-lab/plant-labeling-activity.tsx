@@ -20,12 +20,12 @@ type Feedback = { kind: 'success' | 'warning' | 'info'; text: string } | null
 const plantImage = 'https://cdn.builder.io/api/v1/image/assets%2F2030fde0364c4f30a369df2c467b746e%2F99cc102e631f4130bd1cdb596ce35381?format=webp&width=800&height=1200'
 
 const plantParts: PlantPart[] = [
-  { id: 'leaflet', label: 'Leaflet (young leaf)', explanation: 'A young leaf unfolds and begins making food for the plant.', left: '3%', top: '12%' },
+  { id: 'leaflet', label: 'Bud', explanation: 'A bud protects a new shoot or flower as it begins to grow.', left: '3%', top: '12%' },
   { id: 'flower', label: 'Flower', explanation: 'A flower helps the plant reproduce and can develop into fruit.', left: '72%', top: '12%' },
   { id: 'leaf', label: 'Leaf', explanation: 'Leaves use sunlight, air, and water to make food.', left: '78%', top: '34%' },
   { id: 'fruit', label: 'Fruit', explanation: 'Fruit develops from the flower and holds the plant’s seeds.', left: '76%', top: '53%' },
   { id: 'stem', label: 'Stem', explanation: 'The stem supports the plant and carries water to its leaves.', left: '3%', top: '63%' },
-  { id: 'roots', label: 'Roots', explanation: 'Roots anchor the plant and take in water and minerals from the soil.', left: '69%', top: '84%' },
+  { id: 'roots', label: 'Root', explanation: 'Roots anchor the plant and take in water and minerals from the soil.', left: '69%', top: '84%' },
 ]
 
 const shuffle = <T,>(items: T[]) => {
