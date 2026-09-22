@@ -38,6 +38,8 @@ import TangentLineActivity from './tangent-line-activity'
 import AreaUnderCurveActivity from './area-under-curve-activity'
 import EquationChallengeActivity from './equation-challenge-activity'
 import { type PlatformEngineId } from './platform-engine-library'
+import LivingOrNotActivity from './living-or-not-activity'
+import PlantLabelingActivity from './plant-labeling-activity'
 import { type MathTopic } from '@/components/admin/stem-curriculum'
 
 export type EnginePreviewProps = { onComplete?: () => void }
@@ -783,6 +785,8 @@ const MathActivityEngine: FC<{ topic: MathTopic; onComplete?: () => void }> = ({
 export const PlatformEnginePreview: FC<{ engineId: PlatformEngineId; onComplete?: () => void; mathTopic?: MathTopic }> = ({ engineId, onComplete, mathTopic }) => {
   if (mathTopic) return <MathActivityEngine topic={mathTopic} onComplete={onComplete} />
   if (engineId === 'drag-drop') return <DragDropEngine config={{ title: 'Sort living and non-living things', prompt: 'Place each example into the correct category.', categories: ['Living', 'Non-living'], items: [{ id: 'tree', label: 'Tree', correctCategory: 'Living' }, { id: 'rock', label: 'Rock', correctCategory: 'Non-living' }, { id: 'dog', label: 'Dog', correctCategory: 'Living' }, { id: 'water', label: 'Water', correctCategory: 'Non-living' }] }} onComplete={onComplete ?? (() => undefined)} />
+  if (engineId === 'living-or-not') return <LivingOrNotActivity onComplete={onComplete} />
+  if (engineId === 'plant-labeling') return <PlantLabelingActivity onComplete={onComplete} />
   if (engineId === 'matching') return <MatchingEngine config={{ title: 'Match shapes and features', prompt: 'Connect each shape to its defining feature.', leftLabel: 'Shape', rightLabel: 'Feature', pairs: [{ id: 'triangle', left: 'Triangle', right: '3 sides' }, { id: 'square', left: 'Square', right: '4 equal sides' }, { id: 'circle', left: 'Circle', right: 'No straight sides' }] }} onComplete={onComplete ?? (() => undefined)} />
   if (engineId === 'number-line') return <NumberLineEngine onComplete={onComplete} />
   if (engineId === 'graph') return <GraphEngine onComplete={onComplete} />

@@ -52,7 +52,7 @@ const topicOptions = (): TopicOption[] => {
   const topics = Object.entries(STEM_CURRICULUM).flatMap(([subject, titles]) => titles.map((title, index) => ({
     key: getCurriculumTopicKey(subject, title) ?? `${subject.toLowerCase()}-${index + 1}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
     title,
-    description: subject === 'Mathematics' ? getMathTopic(title)?.description ?? subjectDescription[subject as Exclude<SubjectFilter, 'All'>] : subjectDescription[subject as Exclude<SubjectFilter, 'All'>],
+    description: subject === 'Biology' && title === 'Living & Non-Living Things' ? 'Sort everyday objects into living and non-living groups.' : subject === 'Biology' && title === 'Plant Structure' ? "Explore how a plant's structure supports its function." : subject === 'Mathematics' ? getMathTopic(title)?.description ?? subjectDescription[subject as Exclude<SubjectFilter, 'All'>] : subjectDescription[subject as Exclude<SubjectFilter, 'All'>],
     subject: subject as Exclude<SubjectFilter, 'All'>,
     stage: subject === 'Mathematics' ? getMathTopic(title)?.tier ?? 'Foundation' : index < Math.ceil(titles.length / 3) ? 'Foundation' as const : index < Math.ceil((titles.length * 2) / 3) ? 'Core' as const : 'Advanced' as const,
     platformEngineId: engineForTopic(subject, title),

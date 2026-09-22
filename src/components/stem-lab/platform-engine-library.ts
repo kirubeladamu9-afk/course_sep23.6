@@ -1,5 +1,7 @@
 export type PlatformEngineId =
   | 'drag-drop'
+  | 'living-or-not'
+  | 'plant-labeling'
   | 'matching'
   | 'number-line'
   | 'graph'
@@ -26,6 +28,8 @@ export type PlatformEngineDefinition = {
 
 export const PLATFORM_ENGINES: PlatformEngineDefinition[] = [
   { id: 'drag-drop', name: 'Drag & Drop', description: 'Sort, classify, and place objects into meaningful categories.', subjects: ['Math', 'Chemistry', 'Biology'], examples: ['Living vs non-living', 'Habitats', 'Base-10 blocks'], interaction: 'Drag objects into validated drop zones.' },
+  { id: 'living-or-not', name: 'Living or Not?', description: 'Sort everyday objects into living and non-living groups.', subjects: ['Biology'], examples: ['Trees and rocks', 'Seeds and batteries', 'Everyday objects'], interaction: 'Drag or tap objects into validated living and non-living bins.' },
+  { id: 'plant-labeling', name: 'Label the Plant', description: "Explore how a plant's structure supports its function.", subjects: ['Biology'], examples: ['Plant structures', 'Functions of roots and leaves', 'Flowering plants'], interaction: 'Drag or tap labels onto the correct plant structures.' },
   { id: 'matching', name: 'Matching', description: 'Connect related terms, symbols, structures, and definitions.', subjects: ['Math', 'Chemistry', 'Biology'], examples: ['Shapes and features', 'DNA base pairs', 'Element and symbol'], interaction: 'Select one item from each column to form a pair.' },
   { id: 'number-line', name: 'Interactive Number Line', description: 'Place values and visualize movement for arithmetic and integers.', subjects: ['Math'], examples: ['Addition and subtraction', 'Fractions', 'Comparing numbers'], interaction: 'Drag a marker to a target value on a scaled line.' },
   { id: 'graph', name: 'Graph Builder', description: 'Manipulate parameters and see equations, data, and motion update live.', subjects: ['Math', 'Physics'], examples: ['Linear equations', 'Quadratics', 'Motion graphs'], interaction: 'Change controls and inspect the rendered curve.' },

@@ -95,6 +95,8 @@ export const engineForTopic = (subject: string, topic: string): PlatformEngineId
     if (/lab|acid|base|solution|mix|dissolv|separation|indicator|electrochemistry/.test(value)) return 'virtual-lab'
     return 'simulation'
   }
+  if (subject === 'Biology' && value === 'living & non-living things') return 'living-or-not'
+  if (subject === 'Biology' && value === 'plant structure') return 'plant-labeling'
   if (/microscope|cell/.test(value)) return 'microscope'
   if (/life cycle|reproduction|timeline|division/.test(value)) return 'timeline'
   if (/plant|body|animal|habitat|ecosystem|food|dna|molecular|structure/.test(value)) return 'biology-explorer'
