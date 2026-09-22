@@ -97,6 +97,7 @@ export const engineForTopic = (subject: string, topic: string): PlatformEngineId
   }
   if (subject === 'Biology' && value === 'living & non-living things') return 'living-or-not'
   if (subject === 'Biology' && value === 'plant structure') return 'plant-labeling'
+  if (subject === 'Biology' && value === 'food & nutrition') return 'healthy-plate'
   if (/microscope|cell/.test(value)) return 'microscope'
   if (/life cycle|reproduction|timeline|division/.test(value)) return 'timeline'
   if (/plant|body|animal|habitat|ecosystem|food|dna|molecular|structure/.test(value)) return 'biology-explorer'
