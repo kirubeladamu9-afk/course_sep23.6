@@ -52,9 +52,11 @@ const PendulumSimulation: FC<{ onComplete?: () => void }> = ({ onComplete }) => 
     <Stack direction={{ xs: 'column', md: 'row' }} spacing={2.5}>
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Box component="svg" viewBox="0 0 620 310" role="img" aria-label="Interactive pendulum with adjustable length and mass" sx={{ width: '100%', height: { xs: 250, md: 310 }, borderRadius: 2, background: 'linear-gradient(180deg, #f8fbff 0%, #eef4f7 100%)', border: 1, borderColor: 'divider' }}>
-          <path d="M270 42 Q310 116 350 42" fill="none" stroke="#a8afb5" strokeWidth="2" />
-          {Array.from({ length: 9 }, (_, index) => { const tickX = 270 + index * 10; return <line key={index} x1={tickX} y1={42 + Math.abs(4 - index) * 5} x2={tickX} y2={52 + Math.abs(4 - index) * 5} stroke="#858d94" strokeWidth="1" /> })}
+          <path d="M190 42 A120 120 0 0 0 430 42" fill="none" stroke="#9da7b0" strokeWidth="2" />
+          {Array.from({ length: 13 }, (_, index) => { const degrees = (index - 6) * 10; const radians = (degrees * Math.PI) / 180; const inner = 110; const outer = index % 3 === 0 ? 126 : 119; const x1 = 310 + Math.sin(radians) * inner; const y1 = 42 + Math.cos(radians) * inner; const x2 = 310 + Math.sin(radians) * outer; const y2 = 42 + Math.cos(radians) * outer; return <line key={degrees} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#78838c" strokeWidth={index % 3 === 0 ? 2 : 1} /> })}
+          {[-60, -30, 0, 30, 60].map((degrees) => { const radians = (degrees * Math.PI) / 180; return <text key={degrees} x={310 + Math.sin(radians) * 141} y={47 + Math.cos(radians) * 141} textAnchor="middle" fill="#68747d" fontSize="11">{degrees}°</text> })}
           <line x1="310" y1="42" x2="310" y2="285" stroke="#9aa6b2" strokeDasharray="4 5" />
+          <line x1="310" y1="42" x2={310 + Math.sin((liveAngle * Math.PI) / 180) * 104} y2={42 + Math.cos((liveAngle * Math.PI) / 180) * 104} stroke="#e24a43" strokeWidth="4" strokeLinecap="round" />
           <circle cx="310" cy="42" r="7" fill="#fff" stroke="#182b49" strokeWidth="3" />
           <line x1="310" y1="42" x2={bob.x} y2={bob.y} stroke="#252b34" strokeWidth="2" />
           <circle cx={bob.x} cy={bob.y} r={14 + mass * 5} fill="#2f43e8" stroke="#17228e" strokeWidth="2" />
