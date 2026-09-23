@@ -123,7 +123,14 @@ const WaveSimulatorActivity: FC<WaveSimulatorProps> = ({ onComplete }) => {
     return () => window.clearInterval(interval)
   }, [wavelength])
 
-  const points = useMemo(() => displacements.current.map((value, index) => `${35 + index * 10.3},${centerY - value * 48}`).join(' '), [renderTick])
+  const displayDisplacements = useMemo(() => {
+    if (mode !== 'Oscillate') return displacements.current
+    const pixelWavelength = Math.max(wavelength * 50, 36)
+    const dampingEnvelope = Math.exp(-(damping / 100) * elapsed * 0.18)
+    const phase = elapsed * frequency * Math.PI * 2
+    return displacements.current.map((_, index) => amplitudeScale * dampingEnvelope * Math.sin(phase - (index * 10.3 * Math.PI * 2) / pixelWavelength))
+  }, [amplitudeScale, damping, elapsed, frequency, mode, renderTick, wavelength])
+  const points = useMemo(() => displayDisplacements.map((value, index) => `${35 + index * 10.3},${centerY - value * 48}`).join(' '), [displayDisplacements])
   const challengeCorrect = measuredWavelength > 0 && Math.abs(measuredWavelength - target) <= 0.25
   const completed = feedback === 'correct' && challengeCorrect
 
@@ -166,9 +173,9 @@ const WaveSimulatorActivity: FC<WaveSimulatorProps> = ({ onComplete }) => {
           <line x1="35" x2="610" y1={centerY} y2={centerY} stroke="#6b7280" strokeWidth="3" opacity=".35" />
           <path d="M 19 97 L 8 112 L 19 127 M 8 112 L 35 112" stroke="#5c6266" strokeWidth="5" fill="none" strokeLinecap="round" />
           <line x1="35" y1="112" x2="35" y2={centerY} stroke="#686868" strokeWidth="5" />
-          <circle cx="35" cy={centerY - displacements.current[0] * 48} r="7" fill="#22c6df" stroke="#147c91" strokeWidth="2" onPointerDown={handleManualPointer} onPointerMove={handleManualPointer} />
+          <circle cx="35" cy={centerY - displayDisplacements[0] * 48} r="7" fill="#22c6df" stroke="#147c91" strokeWidth="2" onPointerDown={handleManualPointer} onPointerMove={handleManualPointer} />
           <polyline points={points} fill="none" stroke="#df1f2f" strokeWidth="2.5" opacity=".78" />
-          {displacements.current.map((value, index) => <circle key={index} cx={35 + index * 10.3} cy={centerY - value * 48} r={index === 0 ? 5 : 4} fill={index === 0 || index % 8 === 0 ? '#22c6df' : '#df1f2f'} stroke={index === 0 || index % 8 === 0 ? '#147c91' : '#a71320'} strokeWidth="1" />)}
+          {displayDisplacements.map((value, index) => <circle key={index} cx={35 + index * 10.3} cy={centerY - value * 48} r={index === 0 ? 5 : 4} fill={index === 0 || index % 8 === 0 ? '#22c6df' : '#df1f2f'} stroke={index === 0 || index % 8 === 0 ? '#147c91' : '#a71320'} strokeWidth="1" />)}
           <path d={end === 'No End' ? 'M 628 91 L 628 149' : 'M 625 82 L 625 158 M 633 82 L 633 158'} stroke="#30353b" strokeWidth="5" />
           {end !== 'No End' && <path d="M 626 91 l 10 8 M 626 105 l 10 8 M 626 119 l 10 8 M 626 133 l 10 8" stroke="#8d969d" strokeWidth="2" />}
           {end !== 'No End' && <path d="M 640 118 h 18 v 32 h -18" fill="none" stroke="#272b30" strokeWidth="5" strokeLinecap="round" />}
