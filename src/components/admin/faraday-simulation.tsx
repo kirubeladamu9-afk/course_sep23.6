@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FC, type PointerEvent as ReactPointerEvent } from 'react'
 import Box from '@mui/material/Box'
-import Checkbox from '@mui/material/Checkbox'
 import FormControlLabel from '@mui/material/FormControlLabel'
 import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
@@ -19,8 +18,6 @@ const FaradaySimulation: FC<{ onComplete?: () => void }> = ({ onComplete }) => {
   const theme = useTheme()
   const [magnetPosition, setMagnetPosition] = useState(0.18)
   const [magnetPolarity, setMagnetPolarity] = useState<'NS' | 'SN'>('NS')
-  const [coilCount, setCoilCount] = useState<1 | 2>(2)
-  const [showFieldLines, setShowFieldLines] = useState(true)
   const [showVoltmeter, setShowVoltmeter] = useState(true)
   const [velocity, setVelocity] = useState(0)
   const dragStart = useRef<{ x: number; position: number } | null>(null)
@@ -48,17 +45,13 @@ const FaradaySimulation: FC<{ onComplete?: () => void }> = ({ onComplete }) => {
 
   const fieldStrength = useMemo(() => {
     const firstCoilDistance = Math.abs(magnetPosition - 0.06)
-    const secondCoilDistance = Math.abs(magnetPosition - 0.68)
-    const firstField = 1 / (0.2 + firstCoilDistance * firstCoilDistance * 2.5)
-    const secondField = coilCount === 2 ? 1 / (0.2 + secondCoilDistance * secondCoilDistance * 2.5) : 0
-    return firstField + secondField
-  }, [coilCount, magnetPosition])
+    return 1 / (0.2 + firstCoilDistance * firstCoilDistance * 2.5)
+  }, [magnetPosition])
 
   const voltage = clamp(velocity * fieldStrength * (magnetPolarity === 'NS' ? -1 : 1) * 1.7, -5, 5)
   const brightness = clamp(Math.abs(voltage) / 5, 0, 1)
   const magnetLeft = 10 + ((magnetPosition + 1) / 2) * 80
   const coilOneLeft = 42
-  const coilTwoLeft = 72
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     event.currentTarget.setPointerCapture(event.pointerId)
@@ -86,7 +79,7 @@ const FaradaySimulation: FC<{ onComplete?: () => void }> = ({ onComplete }) => {
               <BoltOutlinedIcon color="primary" />
               <Typography component="h2" variant="h5" sx={{ fontWeight: 800, letterSpacing: '-.025em' }}>Electromagnetic induction lab</Typography>
             </Stack>
-            <Typography color="text.secondary" variant="body2">Move the magnet through the coils and observe Faraday&apos;s law in action.</Typography>
+            <Typography color="text.secondary" variant="body2">Move the magnet through the coil and observe Faraday&apos;s law in action.</Typography>
           </Box>
           <Stack direction="row" spacing={1} alignItems="center">
             <Typography variant="caption" color="text.secondary">Interactive model</Typography>
@@ -106,11 +99,9 @@ const FaradaySimulation: FC<{ onComplete?: () => void }> = ({ onComplete }) => {
           sx={{ position: 'relative', height: { xs: 300, sm: 330 }, overflow: 'hidden', borderRadius: 2.5, border: 1, borderColor: 'divider', background: theme.palette.mode === 'dark' ? 'linear-gradient(180deg, #162b3c 0%, #0f1e2c 100%)' : 'linear-gradient(180deg, #edf7f7 0%, #f8fbfc 100%)', touchAction: 'none', cursor: dragStart.current ? 'grabbing' : 'grab', userSelect: 'none' }}>
           <Typography sx={{ position: 'absolute', top: 14, left: 16, color: 'text.secondary', fontSize: 12, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase' }}>Drag magnet or use ← →</Typography>
           <Box sx={{ position: 'absolute', left: '7%', right: '7%', bottom: 42, height: 2, bgcolor: alpha(theme.palette.text.primary, 0.15) }} />
-          {showFieldLines && [0, 1, 2].map((index) => <Box key={index} sx={{ position: 'absolute', left: `${magnetLeft}%`, top: '49%', width: `${170 + index * 28}px`, height: `${92 + index * 24}px`, transform: 'translate(-50%, -50%)', border: `1px solid ${alpha(theme.palette.info.main, 0.42 - index * 0.09)}`, borderRadius: '50%', zIndex: 1 }} />)}
           <Box component="svg" viewBox="0 0 1000 330" preserveAspectRatio="none" aria-label="Wires connecting the induction lamp and coils" sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }}>
             <path d="M116 172 H250 V80 H418" fill="none" stroke="#9a4b32" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
             <path d="M116 187 H272 V112 H438" fill="none" stroke="#9a4b32" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-            {coilCount === 2 && <><path d="M116 203 H205 V238 H688" fill="none" stroke="#9a4b32" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" /><path d="M116 225 H230 V266 H714" fill="none" stroke="#9a4b32" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" /></>}
             <circle cx="116" cy="172" r="5" fill="#d98b45" /><circle cx="116" cy="187" r="5" fill="#d98b45" />
           </Box>
           <Typography sx={{ position: 'absolute', left: '8%', bottom: 16, color: 'text.secondary', fontSize: 11 }}>low field</Typography>
@@ -121,18 +112,18 @@ const FaradaySimulation: FC<{ onComplete?: () => void }> = ({ onComplete }) => {
             <Box sx={{ flex: 1, display: 'grid', placeItems: 'center', bgcolor: magnetPolarity === 'NS' ? '#4773bd' : '#cf4b55', color: 'white', fontWeight: 900, fontSize: 14 }}>{magnetPolarity === 'NS' ? 'S' : 'N'}</Box>
           </Box>
 
-          {[{ left: coilOneLeft, label: '4 loops' }, ...(coilCount === 2 ? [{ left: coilTwoLeft, label: '2 loops' }] : [])].map((coil) => <Box key={coil.left} sx={{ position: 'absolute', left: `${coil.left}%`, top: '24%', width: 50, height: 145, transform: 'translateX(-50%)', zIndex: 2 }}>
+          {[{ left: coilOneLeft, label: '4 loops' }].map((coil) => <Box key={coil.left} sx={{ position: 'absolute', left: `${coil.left}%`, top: '24%', width: 50, height: 145, transform: 'translateX(-50%)', zIndex: 2 }}>
             {[0, 1, 2, 3, 4].map((loop) => <Box key={loop} sx={{ position: 'absolute', inset: `${loop * 3}px ${loop * 2}px`, border: `3px solid ${alpha(theme.palette.warning.main, 0.88)}`, borderRadius: '50%', transform: 'rotate(12deg)' }} />)}
             <Typography sx={{ position: 'absolute', top: -25, left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap', color: 'text.secondary', fontSize: 11, fontWeight: 700 }}>{coil.label}</Typography>
           </Box>)}
 
           <Box sx={{ position: 'absolute', left: '5.2%', top: '26.5%', width: 125, height: 105, display: { xs: 'none', sm: 'block' }, filter: `drop-shadow(0 0 ${8 + brightness * 28}px rgba(255, 193, 7, ${0.18 + brightness * 0.72}))`, zIndex: 2 }}>
             <Box component="svg" viewBox="0 0 120 100" aria-label={`Induction lamp brightness ${Math.round(brightness * 100)} percent`} sx={{ width: '100%', height: '100%', overflow: 'visible' }}>
-              <circle cx="60" cy="38" r="46" fill="#ffd34e" opacity={0.04 + brightness * 0.28} />
-              <path d="M60 7C36 7 20 24 25 45c2 10 10 15 18 20 3 2 4 6 4 9h26c0-3 1-7 4-9 8-5 16-10 18-20C100 24 84 7 60 7Z" fill={`rgba(255, 221, 104, ${0.22 + brightness * 0.78})`} stroke="#a86b20" strokeWidth="2.5" />
+              <circle cx="60" cy="38" r="48" fill="#ffffff" opacity={0.12 + brightness * 0.48} />
+              <path d="M60 7C36 7 20 24 25 45c2 10 10 15 18 20 3 2 4 6 4 9h26c0-3 1-7 4-9 8-5 16-10 18-20C100 24 84 7 60 7Z" fill={`rgba(255, 255, 255, ${0.26 + brightness * 0.74})`} stroke="#9a9a9a" strokeWidth="2.5" />
               <path d="M48 74h24v9H48zM45 83h30v7H45z" fill="#9b9b9b" stroke="#5d5d5d" strokeWidth="1.5" />
               <path d="M45 86h30M48 89h24" stroke="#454545" strokeWidth="1.5" />
-              <path d="M49 39c4-10 7 10 11 0s7 10 11 0" fill="none" stroke="#fff8b0" strokeWidth={2 + brightness * 2} opacity={0.42 + brightness * 0.58} />
+              <path d="M49 39c4-10 7 10 11 0s7 10 11 0" fill="none" stroke="#ffffff" strokeWidth={2 + brightness * 3} opacity={0.62 + brightness * 0.38} />
             </Box>
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: -1 }}>Induction lamp</Typography>
           </Box>
@@ -150,19 +141,16 @@ const FaradaySimulation: FC<{ onComplete?: () => void }> = ({ onComplete }) => {
       <Box sx={{ px: { xs: 2, md: 3 }, pb: 2.5 }}>
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'center' }} justifyContent="space-between">
           <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-            <Box component="button" type="button" onClick={() => setCoilCount(1)} aria-pressed={coilCount === 1} sx={{ border: 1, borderColor: coilCount === 1 ? 'primary.main' : 'divider', borderRadius: 2, px: 1.5, py: .75, bgcolor: coilCount === 1 ? 'primary.main' : 'transparent', color: coilCount === 1 ? 'primary.contrastText' : 'text.secondary', font: 'inherit', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>1 coil</Box>
-            <Box component="button" type="button" onClick={() => setCoilCount(2)} aria-pressed={coilCount === 2} sx={{ border: 1, borderColor: coilCount === 2 ? 'primary.main' : 'divider', borderRadius: 2, px: 1.5, py: .75, bgcolor: coilCount === 2 ? 'primary.main' : 'transparent', color: coilCount === 2 ? 'primary.contrastText' : 'text.secondary', font: 'inherit', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>2 coils</Box>
             <Box component="button" type="button" onClick={() => setMagnetPolarity((current) => current === 'NS' ? 'SN' : 'NS')} sx={{ display: 'flex', alignItems: 'center', gap: .5, border: 1, borderColor: 'divider', borderRadius: 2, px: 1.25, py: .75, bgcolor: 'transparent', color: 'text.secondary', font: 'inherit', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><SwapHorizIcon fontSize="small" /> Flip magnet</Box>
           </Stack>
           <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-            <FormControlLabel control={<Checkbox size="small" checked={showFieldLines} onChange={(event) => setShowFieldLines(event.target.checked)} />} label={<Typography variant="body2">Field lines</Typography>} />
             <FormControlLabel control={<Switch size="small" checked={showVoltmeter} onChange={(event) => setShowVoltmeter(event.target.checked)} />} label={<Typography variant="body2">Voltmeter</Typography>} />
             <Box component="button" type="button" onClick={reset} aria-label="Reset simulation" sx={{ display: 'flex', alignItems: 'center', gap: .5, border: 0, bgcolor: 'transparent', color: 'text.secondary', font: 'inherit', fontSize: 13, cursor: 'pointer' }}><RestartAltIcon fontSize="small" /> Reset</Box>
             {onComplete && <Button size="small" variant="contained" onClick={onComplete}>Finish activity</Button>}
           </Stack>
         </Stack>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 2, pt: 1.75, borderTop: 1, borderColor: 'divider' }}>
-          <Stack direction="row" spacing={1} alignItems="center"><VisibilityOutlinedIcon fontSize="small" color="action" /><Typography variant="caption" color="text.secondary">Magnetic flux changes as the magnet moves past each coil.</Typography></Stack>
+          <Stack direction="row" spacing={1} alignItems="center"><VisibilityOutlinedIcon fontSize="small" color="action" /><Typography variant="caption" color="text.secondary">Magnetic flux changes as the magnet moves through the coil.</Typography></Stack>
           <Typography variant="caption" color="text.secondary" sx={{ ml: { sm: 'auto' } }}><strong>ε = −N · ΔΦ / Δt</strong> · Lenz&apos;s law</Typography>
         </Stack>
       </Box>
