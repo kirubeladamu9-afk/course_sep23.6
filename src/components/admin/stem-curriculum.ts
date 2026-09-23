@@ -95,6 +95,9 @@ export const engineForTopic = (subject: string, topic: string): PlatformEngineId
     if (value === 'light & shadows') return 'shadow-lab'
     if (value === 'sound & vibrations') return 'wave-simulator'
     if (value === 'heat & cold') return 'particle-heat'
+    if (value === 'magnets') return 'magnetic-playground'
+    if (value === 'floating & sinking') return 'floating-sinking'
+    if (value === 'forces & motion') return 'graph'
     return 'physics'
   }
   if (subject === 'Chemistry') {

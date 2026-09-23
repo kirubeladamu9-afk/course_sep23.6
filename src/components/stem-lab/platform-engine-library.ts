@@ -19,6 +19,8 @@ export type PlatformEngineId =
   | 'shadow-lab'
   | 'wave-simulator'
   | 'particle-heat'
+  | 'magnetic-playground'
+  | 'floating-sinking'
   | 'virtual-lab'
   | 'molecule-atom'
   | 'biology-explorer'
@@ -57,6 +59,8 @@ export const PLATFORM_ENGINES: PlatformEngineDefinition[] = [
   { id: 'shadow-lab', name: 'Shadow Lab', description: 'See how light creates shadows.', subjects: ['Physics'], examples: ['Light position', 'Shadow size', 'Shadow direction'], interaction: 'Move a lamp, object, and screen to change a computed shadow.' },
   { id: 'wave-simulator', name: 'Wave Simulator', description: 'Explore how vibrations create sound.', subjects: ['Physics'], examples: ['Frequency', 'Wavelength', 'Pitch'], interaction: 'Adjust frequency and observe a synchronized sound wave.' },
   { id: 'particle-heat', name: 'Particle Heat Simulator', description: 'See how heat affects particle movement.', subjects: ['Physics'], examples: ['Temperature', 'Particle motion', 'Heating and cooling'], interaction: 'Adjust temperature and observe particles move faster or slower.' },
+  { id: 'magnetic-playground', name: 'Magnetic Playground', description: 'Explore how magnets attract and repel.', subjects: ['Physics'], examples: ['Magnetic poles', 'Attraction', 'Repulsion'], interaction: 'Drag magnets together and observe their magnetic interaction.' },
+  { id: 'floating-sinking', name: 'Float or Sink', description: 'Explore why some objects float and others sink.', subjects: ['Physics'], examples: ['Water', 'Objects', 'Buoyancy'], interaction: 'Place objects in water and observe whether they float or sink.' },
   { id: 'virtual-lab', name: 'Virtual Lab', description: 'Follow a safe, observable procedure with materials, measurements, and results.', subjects: ['Chemistry', 'Biology'], examples: ['Acids and bases', 'Mixing materials', 'Osmosis'], interaction: 'Set up, run, observe, and validate an experiment.' },
   { id: 'molecule-atom', name: 'Molecule / Atom Builder', description: 'Construct atoms and molecule structures from connected parts.', subjects: ['Chemistry'], examples: ['Atomic structure', 'Chemical bonding', 'Organic molecules'], interaction: 'Place particles or atoms and validate the target structure.' },
   { id: 'biology-explorer', name: 'Biology Explorer', description: 'Explore labeled structures and reveal connected biological processes.', subjects: ['Biology'], examples: ['Plant parts', 'Cell organelles', 'Human body systems'], interaction: 'Select hotspots to reveal explanations and relationships.' },
