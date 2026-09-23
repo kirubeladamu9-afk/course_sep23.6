@@ -108,10 +108,10 @@ const FaradaySimulation: FC<{ onComplete?: () => void }> = ({ onComplete }) => {
           <Box sx={{ position: 'absolute', left: '7%', right: '7%', bottom: 42, height: 2, bgcolor: alpha(theme.palette.text.primary, 0.15) }} />
           {showFieldLines && [0, 1, 2].map((index) => <Box key={index} sx={{ position: 'absolute', left: `${magnetLeft}%`, top: '49%', width: `${170 + index * 28}px`, height: `${92 + index * 24}px`, transform: 'translate(-50%, -50%)', border: `1px solid ${alpha(theme.palette.info.main, 0.42 - index * 0.09)}`, borderRadius: '50%', zIndex: 1 }} />)}
           <Box component="svg" viewBox="0 0 1000 330" preserveAspectRatio="none" aria-label="Wires connecting the induction lamp and coils" sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }}>
-            <path d="M116 150 H250 V80 H418" fill="none" stroke="#9a4b32" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M116 178 H272 V112 H438" fill="none" stroke="#9a4b32" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-            {coilCount === 2 && <><path d="M116 188 H205 V238 H688" fill="none" stroke="#9a4b32" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" /><path d="M116 212 H230 V266 H714" fill="none" stroke="#9a4b32" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" /></>}
-            <circle cx="116" cy="150" r="5" fill="#d98b45" /><circle cx="116" cy="178" r="5" fill="#d98b45" />
+            <path d="M116 172 H250 V80 H418" fill="none" stroke="#9a4b32" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M116 187 H272 V112 H438" fill="none" stroke="#9a4b32" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+            {coilCount === 2 && <><path d="M116 203 H205 V238 H688" fill="none" stroke="#9a4b32" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" /><path d="M116 225 H230 V266 H714" fill="none" stroke="#9a4b32" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" /></>}
+            <circle cx="116" cy="172" r="5" fill="#d98b45" /><circle cx="116" cy="187" r="5" fill="#d98b45" />
           </Box>
           <Typography sx={{ position: 'absolute', left: '8%', bottom: 16, color: 'text.secondary', fontSize: 11 }}>low field</Typography>
           <Typography sx={{ position: 'absolute', right: '8%', bottom: 16, color: 'text.secondary', fontSize: 11 }}>high field</Typography>
@@ -126,9 +126,15 @@ const FaradaySimulation: FC<{ onComplete?: () => void }> = ({ onComplete }) => {
             <Typography sx={{ position: 'absolute', top: -25, left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap', color: 'text.secondary', fontSize: 11, fontWeight: 700 }}>{coil.label}</Typography>
           </Box>)}
 
-          <Box sx={{ position: 'absolute', left: '11%', top: '15%', display: { xs: 'none', sm: 'block' }, textAlign: 'center' }}>
-            <Box sx={{ width: 74, height: 74, borderRadius: '50%', bgcolor: `rgba(255, 207, 64, ${0.18 + brightness * 0.55})`, boxShadow: `0 0 ${12 + brightness * 24}px rgba(255, 193, 7, ${0.18 + brightness * 0.5})`, border: 3, borderColor: 'warning.main', display: 'grid', placeItems: 'center' }}><Box sx={{ width: 24, height: 30, borderRadius: '50%', bgcolor: 'warning.light', opacity: 0.45 + brightness * 0.55 }} /></Box>
-            <Typography variant="caption" color="text.secondary">Induction lamp</Typography>
+          <Box sx={{ position: 'absolute', left: '5.2%', top: '26.5%', width: 125, height: 105, display: { xs: 'none', sm: 'block' }, filter: `drop-shadow(0 0 ${8 + brightness * 28}px rgba(255, 193, 7, ${0.18 + brightness * 0.72}))`, zIndex: 2 }}>
+            <Box component="svg" viewBox="0 0 120 100" aria-label={`Induction lamp brightness ${Math.round(brightness * 100)} percent`} sx={{ width: '100%', height: '100%', overflow: 'visible' }}>
+              <circle cx="60" cy="38" r="46" fill="#ffd34e" opacity={0.04 + brightness * 0.28} />
+              <path d="M60 7C36 7 20 24 25 45c2 10 10 15 18 20 3 2 4 6 4 9h26c0-3 1-7 4-9 8-5 16-10 18-20C100 24 84 7 60 7Z" fill={`rgba(255, 221, 104, ${0.22 + brightness * 0.78})`} stroke="#a86b20" strokeWidth="2.5" />
+              <path d="M48 74h24v9H48zM45 83h30v7H45z" fill="#9b9b9b" stroke="#5d5d5d" strokeWidth="1.5" />
+              <path d="M45 86h30M48 89h24" stroke="#454545" strokeWidth="1.5" />
+              <path d="M49 39c4-10 7 10 11 0s7 10 11 0" fill="none" stroke="#fff8b0" strokeWidth={2 + brightness * 2} opacity={0.42 + brightness * 0.58} />
+            </Box>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: -1 }}>Induction lamp</Typography>
           </Box>
 
           {showVoltmeter && <Box sx={{ position: 'absolute', right: '7%', top: 14, width: { xs: 116, sm: 138 }, p: 1.25, borderRadius: 2, border: 1, borderColor: 'divider', bgcolor: alpha(theme.palette.background.paper, 0.88), backdropFilter: 'blur(8px)' }}>
