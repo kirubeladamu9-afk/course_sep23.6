@@ -30,7 +30,7 @@ type CurrentMode = 'electrons' | 'conventional'
 
 type Position = { x: number; y: number }
 type CircuitComponent = { id: string; type: ComponentType; x: number; y: number; value: number; closed: boolean }
-type Wire = { id: number; from: Terminal; to: Terminal }
+type Wire = { id: number; from: Terminal; to: Terminal; midpoint?: Position }
 type Meter = { id: string; type: MeterType; x: number; y: number; targetId: string | null }
 type Challenge = { requiredResistors: number; targetResistance: number }
 type GraphEdge = { node: Terminal; wireId?: number; componentId?: string }
@@ -78,6 +78,7 @@ const CircuitBuilderActivity: FC<CircuitBuilderProps> = ({ onComplete }) => {
   const [wireMode, setWireMode] = useState(false)
   const [draggingComponent, setDraggingComponent] = useState<string | null>(null)
   const [draggingMeter, setDraggingMeter] = useState<string | null>(null)
+  const [draggingMidpoint, setDraggingMidpoint] = useState<number | null>(null)
   const [feedback, setFeedback] = useState<Feedback>('idle')
   const [hasOpenedSwitch, setHasOpenedSwitch] = useState(false)
   const [showCurrent, setShowCurrent] = useState(true)
@@ -232,6 +233,7 @@ const CircuitBuilderActivity: FC<CircuitBuilderProps> = ({ onComplete }) => {
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId)
     setDraggingComponent(null)
     setDraggingMeter(null)
+    setDraggingMidpoint(null)
   }
   const updateMeterPosition = (id: string, event: PointerEvent) => {
     const position = workspacePosition(event)
@@ -242,7 +244,25 @@ const CircuitBuilderActivity: FC<CircuitBuilderProps> = ({ onComplete }) => {
   const updatePointer = (event: PointerEvent<HTMLDivElement>) => {
     if (draggingComponent) updateComponentPosition(draggingComponent, event)
     if (draggingMeter) updateMeterPosition(draggingMeter, event)
+    if (draggingMidpoint !== null) {
+      const position = workspacePosition(event)
+      if (position) setWires((current) => current.map((wire) => wire.id === draggingMidpoint ? { ...wire, midpoint: position } : wire))
+    }
     if (wireStart) setWirePointer(workspacePosition(event))
+  }
+  const defaultWireMidpoint = (from: Position, to: Position): Position => ({
+    x: (from.x + to.x) / 2,
+    y: (from.y + to.y) / 2 + clamp(Math.abs(to.x - from.x) * .16, 4, 12),
+  })
+  const wirePath = (from: Position, to: Position, midpoint?: Position) => {
+    const bend = midpoint ?? defaultWireMidpoint(from, to)
+    return { bend, forward: `M ${from.x} ${from.y} Q ${bend.x} ${bend.y} ${to.x} ${to.y}`, reverse: `M ${to.x} ${to.y} Q ${bend.x} ${bend.y} ${from.x} ${from.y}` }
+  }
+  const startMidpointDrag = (id: number, event: PointerEvent<SVGCircleElement>) => {
+    event.stopPropagation()
+    event.currentTarget.setPointerCapture(event.pointerId)
+    setDraggingMidpoint(id)
+    setFeedback('idle')
   }
   const connectTerminals = (target: Terminal) => {
     if (!wireStart || wireStart === target) return
@@ -292,6 +312,7 @@ const CircuitBuilderActivity: FC<CircuitBuilderProps> = ({ onComplete }) => {
     setWirePointer(null)
     setWireMode(false)
     setHasOpenedSwitch(false)
+    setDraggingMidpoint(null)
     setFeedback('idle')
   }
 
@@ -325,7 +346,7 @@ const CircuitBuilderActivity: FC<CircuitBuilderProps> = ({ onComplete }) => {
           <Stack spacing={.75}>
             {paletteItems.map((item) => <Box key={item.type} component="button" type="button" draggable onDragStart={(event) => handlePaletteDragStart(item.type, event)} onClick={() => addPaletteItem(item.type)} sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%', p: 1, border: 1, borderColor: wireMode && item.type === 'wire' ? 'primary.main' : 'divider', borderRadius: 1.5, backgroundColor: 'background.paper', color: 'text.primary', cursor: 'grab', textAlign: 'left', font: 'inherit', '&:hover': { borderColor: 'primary.main', backgroundColor: 'action.hover' } }}><Box sx={{ display: 'grid', placeItems: 'center', color: 'primary.main' }}>{item.icon}</Box><Typography variant="body2" sx={{ fontWeight: 700 }}>{paletteLabels[item.type]}</Typography></Box>)}
           </Stack>
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>Drag items onto the workspace. Click Wire, then drag between terminals.</Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>Drag items onto the workspace. Click Wire, then connect terminals; drag a wire midpoint to reroute it.</Typography>
           <Typography variant="subtitle2" sx={{ fontWeight: 900, mt: 2, mb: 1 }}>Meters</Typography>
           <Stack spacing={.75}>
             {meterItems.map((item) => <Box key={item.type} component="button" type="button" draggable onDragStart={(event) => handlePaletteDragStart(item.type, event)} onClick={() => addPaletteItem(item.type)} sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%', p: 1, border: 1, borderColor: 'divider', borderRadius: 1.5, backgroundColor: 'background.paper', color: 'text.primary', cursor: 'grab', textAlign: 'left', font: 'inherit', '&:hover': { borderColor: 'primary.main', backgroundColor: 'action.hover' } }}><Box sx={{ display: 'grid', placeItems: 'center', color: 'primary.main' }}>{item.icon}</Box><Typography variant="body2" sx={{ fontWeight: 700 }}>{paletteLabels[item.type]}</Typography></Box>)}
@@ -342,9 +363,16 @@ const CircuitBuilderActivity: FC<CircuitBuilderProps> = ({ onComplete }) => {
               const direction = circuit.wireDirections.get(wire.id)
               const animationFrom = direction ? terminalPositions[currentMode === 'electrons' ? direction.to : direction.from] : from
               const animationTo = direction ? terminalPositions[currentMode === 'electrons' ? direction.from : direction.to] : to
-              return <g key={wire.id} onDoubleClick={() => removeWire(wire.id)} style={{ cursor: 'pointer' }}><line x1={from.x} y1={from.y} x2={to.x} y2={to.y} stroke={active ? '#168c78' : '#91a5a7'} strokeWidth="1.2" strokeLinecap="round" pointerEvents="stroke" /><line x1={from.x} y1={from.y} x2={to.x} y2={to.y} stroke="transparent" strokeWidth="4" pointerEvents="stroke" />{showCurrent && active && animationFrom && animationTo && <>{[0, 1].map((marker) => <circle key={marker} r=".8" fill={currentMode === 'electrons' ? '#2f65c8' : '#d87324'}><animateMotion dur={feedback === 'correct' ? '.55s' : '1.15s'} begin={`${marker * .35}s`} repeatCount="indefinite" path={`M ${animationFrom.x} ${animationFrom.y} L ${animationTo.x} ${animationTo.y}`} /></circle>)}</>}</g>
+              const route = wirePath(from, to, wire.midpoint)
+              const animationRoute = animationFrom && animationTo ? wirePath(animationFrom, animationTo, route.bend) : null
+              return <g key={wire.id} onDoubleClick={() => removeWire(wire.id)} style={{ cursor: 'pointer' }}>
+                <path d={route.forward} fill="none" stroke={active ? '#168c78' : '#91a5a7'} strokeWidth="1.2" strokeLinecap="round" />
+                <path d={route.forward} fill="none" stroke="transparent" strokeWidth="4" pointerEvents="stroke" />
+                {showCurrent && active && animationRoute && <>{[0, 1].map((marker) => <circle key={marker} r=".8" fill={currentMode === 'electrons' ? '#2f65c8' : '#d87324'}><animateMotion dur={feedback === 'correct' ? '.55s' : '1.15s'} begin={`${marker * .35}s`} repeatCount="indefinite" path={animationRoute.forward} /></circle>)}</>}
+                <circle cx={route.bend.x} cy={route.bend.y} r="1.8" fill="#ffffff" stroke={active ? '#168c78' : '#91a5a7'} strokeWidth=".7" role="button" tabIndex={0} aria-label="Drag to reroute wire" onPointerDown={(event) => startMidpointDrag(wire.id, event)} onPointerUp={() => setDraggingMidpoint(null)} />
+              </g>
             })}
-            {wireStart && wirePointer && terminalPositions[wireStart] && <line x1={terminalPositions[wireStart].x} y1={terminalPositions[wireStart].y} x2={wirePointer.x} y2={wirePointer.y} stroke="#e3a52f" strokeWidth="1" strokeDasharray="2 1.5" />}
+            {wireStart && wirePointer && terminalPositions[wireStart] && <path d={wirePath(terminalPositions[wireStart], wirePointer).forward} fill="none" stroke="#e3a52f" strokeWidth="1" strokeDasharray="2 1.5" />}
           </Box>
           {components.map((component) => {
             const terminals = componentTerminals(component)
