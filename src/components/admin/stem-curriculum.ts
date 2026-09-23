@@ -88,7 +88,15 @@ export const engineForTopic = (subject: string, topic: string): PlatformEngineId
     if (/function|graph|coordinate|sequence|trigonometry|limit|differentiation|integration/.test(value)) return 'graph'
     return 'simulation'
   }
-  if (subject === 'Physics') return 'physics'
+  if (subject === 'Physics') {
+    if (value === 'push & pull') return 'force-playground'
+    if (value === 'movement') return 'motion-track'
+    if (value === 'fast & slow') return 'speed-race'
+    if (value === 'light & shadows') return 'shadow-lab'
+    if (value === 'sound & vibrations') return 'wave-simulator'
+    if (value === 'heat & cold') return 'simulation'
+    return 'physics'
+  }
   if (subject === 'Chemistry') {
     if (/atom|molecule|periodic|bond|organic|hydrocarbon|alcohol|aldehyde|polymer/.test(value)) return 'molecule-atom'
     if (/equation|formula|stoichiometry|redox|oxidation/.test(value)) return 'equation-balance'

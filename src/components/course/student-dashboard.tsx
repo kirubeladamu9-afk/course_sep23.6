@@ -258,7 +258,7 @@ const getClassSessionState = (classRecord: DashboardClass, now: Date) => {
 const getLessons = (course: DashboardCourse) => course.modules.flatMap((module) => module.lessons)
 const getCompletionLessons = (course: DashboardCourse) => getLessons(course).filter((lesson) => lesson.type !== 'practice')
 const getEnrollmentContentId = (enrollment: MyEnrollment) => enrollment.classId ?? enrollment.courseId ?? enrollment.id
-const physicsActivityTopicKeys = ['Push & Pull', 'Movement', 'Fast & Slow', 'Light & Shadows'].map((title) => [title, getCurriculumTopicKey('Physics', title)] as const)
+const physicsActivityTopicKeys = ['Push & Pull', 'Movement', 'Fast & Slow', 'Light & Shadows', 'Sound & Vibrations', 'Heat & Cold'].map((title) => [title, getCurriculumTopicKey('Physics', title)] as const)
 const getPhysicsActivityTopic = (curriculumTopic: string | undefined, title: string) => physicsActivityTopicKeys.find(([, key]) => key === curriculumTopic)?.[0] ?? title
 const mapEnrollmentCourse = (enrollment: MyEnrollment): DashboardCourse => ({
   id: getEnrollmentContentId(enrollment),

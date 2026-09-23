@@ -13,6 +13,7 @@ import ForcePlaygroundActivity from './force-playground-activity'
 import MotionTrackActivity from './motion-track-activity'
 import SpeedRaceActivity from './speed-race-activity'
 import ShadowLabActivity from './shadow-lab-activity'
+import WaveSimulatorActivity from './wave-simulator-activity'
 import DragDropEngine from './drag-drop-engine'
 import MatchingEngine from './matching-engine'
 import PercentageBatteryActivity from './percentage-battery-activity'
@@ -806,9 +807,12 @@ export const PlatformEnginePreview: FC<{ engineId: PlatformEngineId; onComplete?
   if (engineId === 'timeline') return <TimelineEngine onComplete={onComplete} />
   if (engineId === 'data-chart') return <DataChartEngine onComplete={onComplete} />
   if (engineId === 'simulation') return <SimulationEngine onComplete={onComplete} />
-  if (engineId === 'physics' && topicTitle === 'Movement') return <MotionTrackActivity onComplete={onComplete} />
-  if (engineId === 'physics' && topicTitle === 'Fast & Slow') return <SpeedRaceActivity onComplete={onComplete} />
-  if (engineId === 'physics' && topicTitle === 'Light & Shadows') return <ShadowLabActivity onComplete={onComplete} />
+  if (engineId === 'force-playground' || (engineId === 'physics' && topicTitle === 'Push & Pull')) return <ForcePlaygroundActivity onComplete={onComplete} />
+  if (engineId === 'motion-track' || (engineId === 'physics' && topicTitle === 'Movement')) return <MotionTrackActivity onComplete={onComplete} />
+  if (engineId === 'speed-race' || (engineId === 'physics' && topicTitle === 'Fast & Slow')) return <SpeedRaceActivity onComplete={onComplete} />
+  if (engineId === 'shadow-lab' || (engineId === 'physics' && topicTitle === 'Light & Shadows')) return <ShadowLabActivity onComplete={onComplete} />
+  if (engineId === 'wave-simulator' || (engineId === 'physics' && topicTitle === 'Sound & Vibrations')) return <WaveSimulatorActivity onComplete={onComplete} />
+  if (engineId === 'physics' && topicTitle === 'Heat & Cold') return <SimulationEngine onComplete={onComplete} />
   if (engineId === 'physics') return <PhysicsEngine onComplete={onComplete} />
   if (engineId === 'virtual-lab') return <VirtualLabEngine onComplete={onComplete} />
   return <PredictionExperimentEngine onComplete={onComplete} />

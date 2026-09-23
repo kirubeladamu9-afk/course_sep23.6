@@ -13,6 +13,11 @@ export type PlatformEngineId =
   | 'equation-balance'
   | 'simulation'
   | 'physics'
+  | 'force-playground'
+  | 'motion-track'
+  | 'speed-race'
+  | 'shadow-lab'
+  | 'wave-simulator'
   | 'virtual-lab'
   | 'molecule-atom'
   | 'biology-explorer'
@@ -44,7 +49,12 @@ export const PLATFORM_ENGINES: PlatformEngineDefinition[] = [
   { id: 'geometry', name: 'Geometry Manipulator', description: 'Construct shapes while measurements update from draggable vertices.', subjects: ['Math'], examples: ['Area and perimeter', 'Angles', 'Pythagorean theorem'], interaction: 'Drag vertices and observe geometric calculations.' },
   { id: 'equation-balance', name: 'Equation / Balance', description: 'Solve algebraic and chemical equations by keeping both sides equivalent.', subjects: ['Math', 'Chemistry'], examples: ['x + 3 = 7', 'Chemical equations', 'Stoichiometry'], interaction: 'Adjust both sides until the configured equality is satisfied.' },
   { id: 'simulation', name: 'Simulation', description: 'Change inputs, run a rule, and explain the resulting value.', subjects: ['Math', 'Physics', 'Chemistry', 'Biology'], examples: ['Population growth', 'Dissolving', 'Photosynthesis'], interaction: 'Manipulate variables and run a calculated model.' },
-  { id: 'physics', name: 'Force Playground', description: 'Explore how pushing and pulling move objects.', subjects: ['Physics'], examples: ['Pushing everyday objects', 'Comparing weight', 'Heavy and light objects'], interaction: 'Drag objects across a surface and identify which needs the biggest push.' },
+  { id: 'physics', name: 'Physics Playground', description: 'Legacy physics activity engine for older lessons.', subjects: ['Physics'], examples: ['Legacy physics lessons'], interaction: 'Use a configured physics activity.' },
+  { id: 'force-playground', name: 'Force Playground', description: 'Explore how pushing and pulling move objects.', subjects: ['Physics'], examples: ['Pushing everyday objects', 'Comparing weight', 'Heavy and light objects'], interaction: 'Drag objects across a surface and identify which needs the biggest push.' },
+  { id: 'motion-track', name: 'Motion Track', description: 'Explore different types of movement.', subjects: ['Physics'], examples: ['Position', 'Speed', 'Movement types'], interaction: 'Control a car and inspect its live motion.' },
+  { id: 'speed-race', name: 'Speed Race', description: 'Compare the speeds of moving objects.', subjects: ['Physics'], examples: ['Racing characters', 'Speed comparisons', 'Prediction'], interaction: 'Predict and observe which racer is faster.' },
+  { id: 'shadow-lab', name: 'Shadow Lab', description: 'See how light creates shadows.', subjects: ['Physics'], examples: ['Light position', 'Shadow size', 'Shadow direction'], interaction: 'Move a lamp, object, and screen to change a computed shadow.' },
+  { id: 'wave-simulator', name: 'Wave Simulator', description: 'Explore how vibrations create sound.', subjects: ['Physics'], examples: ['Frequency', 'Wavelength', 'Pitch'], interaction: 'Adjust frequency and observe a synchronized sound wave.' },
   { id: 'virtual-lab', name: 'Virtual Lab', description: 'Follow a safe, observable procedure with materials, measurements, and results.', subjects: ['Chemistry', 'Biology'], examples: ['Acids and bases', 'Mixing materials', 'Osmosis'], interaction: 'Set up, run, observe, and validate an experiment.' },
   { id: 'molecule-atom', name: 'Molecule / Atom Builder', description: 'Construct atoms and molecule structures from connected parts.', subjects: ['Chemistry'], examples: ['Atomic structure', 'Chemical bonding', 'Organic molecules'], interaction: 'Place particles or atoms and validate the target structure.' },
   { id: 'biology-explorer', name: 'Biology Explorer', description: 'Explore labeled structures and reveal connected biological processes.', subjects: ['Biology'], examples: ['Plant parts', 'Cell organelles', 'Human body systems'], interaction: 'Select hotspots to reveal explanations and relationships.' },
