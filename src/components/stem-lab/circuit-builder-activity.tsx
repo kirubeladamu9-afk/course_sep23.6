@@ -17,6 +17,7 @@ import LightbulbIcon from '@mui/icons-material/Lightbulb'
 import ReplayIcon from '@mui/icons-material/Replay'
 import SettingsIcon from '@mui/icons-material/Settings'
 import SpeedIcon from '@mui/icons-material/Speed'
+import ToggleOffIcon from '@mui/icons-material/ToggleOff'
 import ToggleOnIcon from '@mui/icons-material/ToggleOn'
 import { type DragEvent, type FC, type PointerEvent, type ReactNode, useMemo, useRef, useState } from 'react'
 
@@ -219,7 +220,6 @@ const CircuitBuilderActivity: FC<CircuitBuilderProps> = ({ onComplete }) => {
     setFeedback('idle')
   }
   const startComponentDrag = (id: string, event: PointerEvent<HTMLDivElement>) => {
-    event.currentTarget.setPointerCapture(event.pointerId)
     setDraggingComponent(id)
     setFeedback('idle')
   }
@@ -310,9 +310,9 @@ const CircuitBuilderActivity: FC<CircuitBuilderProps> = ({ onComplete }) => {
 
   const renderComponentIcon = (component: CircuitComponent) => {
     if (component.type === 'battery') return <BatteryChargingFullIcon sx={{ color: 'success.main' }} />
-    if (component.type === 'bulb') return <LightbulbIcon sx={{ color: bulbLit ? '#f7b733' : 'text.secondary', filter: bulbLit ? 'drop-shadow(0 0 8px rgba(247,183,51,.9))' : 'none' }} />
+    if (component.type === 'bulb') return <LightbulbIcon sx={{ fontSize: 36, color: bulbLit ? '#ffd43b' : 'text.secondary', filter: bulbLit ? 'drop-shadow(0 0 14px rgba(255,196,37,1))' : 'none' }} />
     if (component.type === 'resistor') return <ElectricBoltIcon sx={{ color: 'warning.main' }} />
-    return <ToggleOnIcon sx={{ color: component.closed ? 'success.main' : 'text.secondary' }} />
+    return component.closed ? <ToggleOnIcon sx={{ color: 'success.main' }} /> : <ToggleOffIcon sx={{ color: 'text.secondary' }} />
   }
 
   return <Paper elevation={0} sx={{ p: { xs: 2, md: 3 }, border: 1, borderColor: 'divider' }}>
@@ -350,7 +350,7 @@ const CircuitBuilderActivity: FC<CircuitBuilderProps> = ({ onComplete }) => {
             const terminals = componentTerminals(component)
             const isDragging = draggingComponent === component.id
             return <Box key={component.id} onPointerDown={(event) => startComponentDrag(component.id, event)} onPointerMove={(event) => isDragging && updateComponentPosition(component.id, event)} onPointerUp={stopDragging} sx={{ position: 'absolute', left: `${component.x}%`, top: `${component.y}%`, width: 112, height: 76, transform: 'translate(-50%, -50%)', zIndex: 3, cursor: isDragging ? 'grabbing' : 'grab', transition: isDragging ? 'none' : 'left .15s ease, top .15s ease' }}>
-              <Box component="button" type="button" onClick={(event) => component.type === 'switch' ? toggleSwitch(component.id, event as unknown as PointerEvent<HTMLButtonElement>) : (component.type === 'battery' || component.type === 'resistor') ? cycleValue(component.id, component.type, event as unknown as PointerEvent<HTMLButtonElement>) : event.stopPropagation()} sx={{ width: '100%', height: 58, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: .75, border: 1, borderColor: component.type === 'bulb' && bulbLit ? '#f7b733' : 'divider', borderRadius: 2, backgroundColor: 'background.paper', color: 'text.primary', font: 'inherit', boxShadow: component.type === 'bulb' && bulbLit ? '0 0 18px rgba(247,183,51,.7)' : 2, animation: component.type === 'bulb' && bulbLit && feedback === 'correct' ? 'bulbGlow .6s ease-in-out infinite alternate' : 'none', '@keyframes bulbGlow': { from: { boxShadow: '0 0 12px rgba(247,183,51,.35)' }, to: { boxShadow: '0 0 28px rgba(247,183,51,.95)' } } }}>{renderComponentIcon(component)}{showLabels && <Typography variant="caption" sx={{ fontWeight: 800 }}>{paletteLabels[component.type]}</Typography>}{showValues && component.type !== 'switch' && <Typography variant="caption" color="text.secondary">{component.value}{component.type === 'battery' ? ' V' : ' Ω'}</Typography>}</Box>
+              <Box component="button" type="button" aria-pressed={component.type === 'switch' ? component.closed : undefined} onClick={(event) => component.type === 'switch' ? toggleSwitch(component.id, event as unknown as PointerEvent<HTMLButtonElement>) : (component.type === 'battery' || component.type === 'resistor') ? cycleValue(component.id, component.type, event as unknown as PointerEvent<HTMLButtonElement>) : event.stopPropagation()} sx={{ width: '100%', height: 58, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: .75, border: 1, borderColor: component.type === 'bulb' && bulbLit ? '#f7b733' : 'divider', borderRadius: 2, background: component.type === 'bulb' && bulbLit ? 'radial-gradient(circle, rgba(255,226,102,.98) 0%, rgba(255,244,184,.9) 42%, #fff 78%)' : undefined, backgroundColor: 'background.paper', color: 'text.primary', font: 'inherit', boxShadow: component.type === 'bulb' && bulbLit ? '0 0 34px 10px rgba(247,183,51,.88)' : 2, animation: component.type === 'bulb' && bulbLit && feedback === 'correct' ? 'bulbGlow .6s ease-in-out infinite alternate' : 'none', '@keyframes bulbGlow': { from: { boxShadow: '0 0 24px 6px rgba(247,183,51,.6)' }, to: { boxShadow: '0 0 42px 14px rgba(247,183,51,1)' } } }}>{renderComponentIcon(component)}{showLabels && <Typography variant="caption" sx={{ fontWeight: 800 }}>{paletteLabels[component.type]}</Typography>}{component.type === 'switch' && <Typography variant="caption" color={component.closed ? 'success.main' : 'text.secondary'} sx={{ fontWeight: 900 }}>{component.closed ? 'ON' : 'OFF'}</Typography>}{showValues && component.type !== 'switch' && <Typography variant="caption" color="text.secondary">{component.value}{component.type === 'battery' ? ' V' : ' Ω'}</Typography>}</Box>
               <Box component="button" type="button" aria-label={`Remove ${paletteLabels[component.type]}`} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); removeComponent(component.id) }} sx={{ position: 'absolute', right: -5, top: -7, width: 22, height: 22, p: 0, display: 'grid', placeItems: 'center', border: 1, borderColor: 'divider', borderRadius: '50%', backgroundColor: 'background.paper', color: 'text.secondary', cursor: 'pointer' }}><DeleteOutlineIcon sx={{ fontSize: 14 }} /></Box>
               {terminals.map((item) => <Box key={item} component="button" type="button" aria-label={`Connect ${item}`} onPointerDown={(event) => selectTerminal(item, event)} sx={{ position: 'absolute', left: item === terminals[0] ? -7 : undefined, right: item === terminals[1] ? -7 : undefined, top: '50%', transform: 'translateY(-50%)', width: 14, height: 14, p: 0, border: 2, borderColor: wireStart === item ? 'warning.main' : 'primary.main', borderRadius: '50%', backgroundColor: 'background.paper', cursor: 'crosshair' }} />)}
             </Box>
