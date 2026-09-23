@@ -117,8 +117,9 @@ const FaradaySimulation: FC<{ onComplete?: () => void }> = ({ onComplete }) => {
             <Typography sx={{ position: 'absolute', top: -25, left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap', color: 'text.secondary', fontSize: 11, fontWeight: 700 }}>{coil.label}</Typography>
           </Box>)}
 
-          <Box sx={{ position: 'absolute', left: '5.2%', top: '26.5%', width: 125, height: 105, display: { xs: 'none', sm: 'block' }, filter: `drop-shadow(0 0 ${8 + brightness * 28}px rgba(255, 193, 7, ${0.18 + brightness * 0.72}))`, zIndex: 2 }}>
-            <Box component="svg" viewBox="0 0 120 100" aria-label={`Induction lamp brightness ${Math.round(brightness * 100)} percent`} sx={{ width: '100%', height: '100%', overflow: 'visible' }}>
+          <Box sx={{ position: 'absolute', left: '5.2%', top: '26.5%', width: 125, height: 105, display: { xs: 'none', sm: 'block' }, filter: `drop-shadow(0 0 ${12 + brightness * 38}px rgba(255, 255, 255, ${0.3 + brightness * 0.7}))`, zIndex: 2 }}>
+            <Box sx={{ position: 'absolute', left: -82, top: -104, width: 290, height: 290, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,.98) 0 23%, rgba(255,255,255,.8) 23% 43%, rgba(230,245,255,.7) 43% 65%, rgba(164,215,250,.6) 65% 100%)', opacity: 0.2 + brightness * 0.8, transition: 'opacity .18s ease', pointerEvents: 'none' }} />
+            <Box component="svg" viewBox="0 0 120 100" aria-label={`Induction lamp brightness ${Math.round(brightness * 100)} percent`} sx={{ position: 'relative', width: '100%', height: '100%', overflow: 'visible' }}>
               <circle cx="60" cy="38" r="48" fill="#ffffff" opacity={0.12 + brightness * 0.48} />
               <path d="M60 7C36 7 20 24 25 45c2 10 10 15 18 20 3 2 4 6 4 9h26c0-3 1-7 4-9 8-5 16-10 18-20C100 24 84 7 60 7Z" fill={`rgba(255, 255, 255, ${0.26 + brightness * 0.74})`} stroke="#9a9a9a" strokeWidth="2.5" />
               <path d="M48 74h24v9H48zM45 83h30v7H45z" fill="#9b9b9b" stroke="#5d5d5d" strokeWidth="1.5" />
