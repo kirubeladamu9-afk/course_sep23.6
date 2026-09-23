@@ -31,10 +31,12 @@ type CurrentMode = 'electrons' | 'conventional'
 type Position = { x: number; y: number }
 type CircuitComponent = { id: string; type: ComponentType; x: number; y: number; value: number; closed: boolean }
 type Wire = { id: number; from: Terminal; to: Terminal; midpoint?: Position }
-type Meter = { id: string; type: MeterType; x: number; y: number; targetId: string | null }
+type MeasurementPoint = { kind: 'terminal'; terminal: Terminal } | { kind: 'wire'; wireId: number }
+type Meter = { id: string; type: MeterType; x: number; y: number; positivePoint: MeasurementPoint | null; negativePoint: MeasurementPoint | null }
+type ProbeName = 'positive' | 'negative'
 type Challenge = { requiredResistors: number; targetResistance: number }
 type GraphEdge = { node: Terminal; wireId?: number; componentId?: string }
-type CircuitAnalysis = { complete: boolean; traversedIds: Set<string>; activeWireIds: Set<number>; wireDirections: Map<number, { from: Terminal; to: Terminal }> }
+type CircuitAnalysis = { complete: boolean; traversedIds: Set<string>; activeWireIds: Set<number>; wireDirections: Map<number, { from: Terminal; to: Terminal }>; nodeVoltages: Map<Terminal, number> }
 
 type CircuitBuilderProps = { onComplete?: () => void }
 
@@ -63,7 +65,13 @@ const createChallenge = (): Challenge => {
 }
 const createComponent = (type: ComponentType, id: string, x: number, y: number): CircuitComponent => ({ id, type, x, y, value: defaultValue(type), closed: false })
 const componentTerminals = (component: CircuitComponent): Terminal[] => [terminal(component.id, terminalName(component, 'left')), terminal(component.id, terminalName(component, 'right'))]
+const componentResistance = (component: CircuitComponent) => component.type === 'bulb' ? bulbResistance : component.type === 'resistor' ? component.value : 0
 const parseTerminal = (value: Terminal) => value.slice(value.indexOf(':') + 1)
+const seriesWireId = (meter: Meter) => {
+  const positiveWireId = meter.positivePoint?.kind === 'wire' ? meter.positivePoint.wireId : null
+  const negativeWireId = meter.negativePoint?.kind === 'wire' ? meter.negativePoint.wireId : null
+  return positiveWireId !== null && positiveWireId === negativeWireId ? positiveWireId : null
+}
 
 const CircuitBuilderActivity: FC<CircuitBuilderProps> = ({ onComplete }) => {
   const workspaceRef = useRef<HTMLDivElement>(null)
@@ -75,10 +83,12 @@ const CircuitBuilderActivity: FC<CircuitBuilderProps> = ({ onComplete }) => {
   const [meters, setMeters] = useState<Meter[]>([])
   const [wireStart, setWireStart] = useState<Terminal | null>(null)
   const [wirePointer, setWirePointer] = useState<Position | null>(null)
+  const [probePointer, setProbePointer] = useState<Position | null>(null)
   const [wireMode, setWireMode] = useState(false)
   const [draggingComponent, setDraggingComponent] = useState<string | null>(null)
   const [draggingMeter, setDraggingMeter] = useState<string | null>(null)
   const [draggingMidpoint, setDraggingMidpoint] = useState<number | null>(null)
+  const [draggingProbe, setDraggingProbe] = useState<{ meterId: string; probe: ProbeName } | null>(null)
   const [feedback, setFeedback] = useState<Feedback>('idle')
   const [hasOpenedSwitch, setHasOpenedSwitch] = useState(false)
   const [showCurrent, setShowCurrent] = useState(true)
@@ -107,8 +117,7 @@ const CircuitBuilderActivity: FC<CircuitBuilderProps> = ({ onComplete }) => {
     return distance(component) < distance(nearest) ? component : nearest
   }, null)
   const addMeter = (type: MeterType, position: Position) => {
-    const target = nearestComponent(position)
-    setMeters((current) => [...current, { id: nextId(type), type, x: position.x, y: position.y, targetId: target?.id ?? null }])
+    setMeters((current) => [...current, { id: nextId(type), type, x: position.x, y: position.y, positivePoint: null, negativePoint: null }])
     setFeedback('idle')
   }
 
@@ -157,19 +166,35 @@ const CircuitBuilderActivity: FC<CircuitBuilderProps> = ({ onComplete }) => {
 
   const circuit = useMemo<CircuitAnalysis>(() => {
     const battery = components.find((component) => component.type === 'battery')
-    if (!battery) return { complete: false, traversedIds: new Set(), activeWireIds: new Set(), wireDirections: new Map() }
+    if (!battery) return { complete: false, traversedIds: new Set(), activeWireIds: new Set(), wireDirections: new Map(), nodeVoltages: new Map() }
     const adjacency = new Map<Terminal, GraphEdge[]>()
     const addEdge = (from: Terminal, to: Terminal, edge: Omit<GraphEdge, 'node'>) => {
       adjacency.set(from, [...(adjacency.get(from) ?? []), { node: to, ...edge }])
       adjacency.set(to, [...(adjacency.get(to) ?? []), { node: from, ...edge }])
     }
-    wires.forEach((wire) => addEdge(wire.from, wire.to, { wireId: wire.id }))
+    const ammetersByWire = new Map<number, Meter>()
+    meters.forEach((meter) => {
+      const wireId = meter.type === 'ammeter' ? seriesWireId(meter) : null
+      if (wireId !== null) ammetersByWire.set(wireId, meter)
+    })
+    wires.forEach((wire) => {
+      const ammeter = ammetersByWire.get(wire.id)
+      if (!ammeter) {
+        addEdge(wire.from, wire.to, { wireId: wire.id })
+        return
+      }
+      const meterPositive = `${ammeter.id}:ammeter-positive`
+      const meterNegative = `${ammeter.id}:ammeter-negative`
+      addEdge(wire.from, meterPositive, { wireId: wire.id })
+      addEdge(meterPositive, meterNegative, { componentId: ammeter.id })
+      addEdge(meterNegative, wire.to, { wireId: wire.id })
+    })
     components.forEach((component) => {
       if (component.type === 'battery' || (component.type === 'switch' && !component.closed)) return
       const [left, right] = componentTerminals(component)
       addEdge(left, right, { componentId: component.id })
     })
-    const queue: Array<{ node: Terminal; traversedIds: Set<string>; activeWireIds: Set<number>; wireDirections: Map<number, { from: Terminal; to: Terminal }> }> = [{ node: terminal(battery.id, 'positive'), traversedIds: new Set(), activeWireIds: new Set(), wireDirections: new Map() }]
+    const queue: Array<{ node: Terminal; traversedIds: Set<string>; activeWireIds: Set<number>; wireDirections: Map<number, { from: Terminal; to: Terminal }>; nodeResistances: Map<Terminal, number> }> = [{ node: terminal(battery.id, 'positive'), traversedIds: new Set(), activeWireIds: new Set(), wireDirections: new Map(), nodeResistances: new Map([[terminal(battery.id, 'positive'), 0]]) }]
     const visited = new Set<string>()
     while (queue.length) {
       const current = queue.shift()!
@@ -178,22 +203,36 @@ const CircuitBuilderActivity: FC<CircuitBuilderProps> = ({ onComplete }) => {
       visited.add(key)
       if (current.node === terminal(battery.id, 'negative')) {
         const traversedTypes = new Set([...current.traversedIds].map((id) => components.find((component) => component.id === id)?.type))
-        if (traversedTypes.has('bulb')) return { complete: true, traversedIds: current.traversedIds, activeWireIds: current.activeWireIds, wireDirections: current.wireDirections }
+        if (traversedTypes.has('bulb')) {
+          const pathResistance = current.nodeResistances.get(current.node) ?? 0
+          const pathCurrent = battery.value / Math.max(pathResistance, 1)
+          const nodeVoltages = new Map([...current.nodeResistances].map(([node, resistance]) => [node, Math.max(0, battery.value - pathCurrent * resistance)]))
+          const wireDirections = new Map<number, { from: Terminal; to: Terminal }>()
+          wires.forEach((wire) => {
+            const fromVoltage = nodeVoltages.get(wire.from) ?? 0
+            const toVoltage = nodeVoltages.get(wire.to) ?? 0
+            wireDirections.set(wire.id, fromVoltage >= toVoltage ? { from: wire.from, to: wire.to } : { from: wire.to, to: wire.from })
+          })
+          return { complete: true, traversedIds: current.traversedIds, activeWireIds: current.activeWireIds, wireDirections, nodeVoltages }
+        }
       }
       ;(adjacency.get(current.node) ?? []).forEach((edge) => {
         const traversedIds = new Set(current.traversedIds)
         const activeWireIds = new Set(current.activeWireIds)
         const wireDirections = new Map(current.wireDirections)
+        const nodeResistances = new Map(current.nodeResistances)
         if (edge.componentId) traversedIds.add(edge.componentId)
         if (edge.wireId !== undefined) {
           activeWireIds.add(edge.wireId)
           wireDirections.set(edge.wireId, { from: current.node, to: edge.node })
         }
-        queue.push({ node: edge.node, traversedIds, activeWireIds, wireDirections })
+        const edgeComponent = edge.componentId ? components.find((component) => component.id === edge.componentId) : null
+        nodeResistances.set(edge.node, (current.nodeResistances.get(current.node) ?? 0) + (edgeComponent ? componentResistance(edgeComponent) : 0))
+        queue.push({ node: edge.node, traversedIds, activeWireIds, wireDirections, nodeResistances })
       })
     }
-    return { complete: false, traversedIds: new Set(), activeWireIds: new Set(), wireDirections: new Map() }
-  }, [components, wires])
+    return { complete: false, traversedIds: new Set(), activeWireIds: new Set(), wireDirections: new Map(), nodeVoltages: new Map() }
+  }, [components, meters, wires])
 
   const battery = components.find((component) => component.type === 'battery')
   const resistors = components.filter((component) => component.type === 'resistor')
@@ -211,7 +250,7 @@ const CircuitBuilderActivity: FC<CircuitBuilderProps> = ({ onComplete }) => {
   const removeComponent = (id: string) => {
     setComponents((currentComponents) => currentComponents.filter((component) => component.id !== id))
     setWires((currentWires) => currentWires.filter((wire) => !wire.from.startsWith(`${id}:`) && !wire.to.startsWith(`${id}:`)))
-    setMeters((currentMeters) => currentMeters.map((meter) => meter.targetId === id ? { ...meter, targetId: null } : meter))
+    setMeters((currentMeters) => currentMeters.map((meter) => meter.positivePoint?.kind === 'terminal' && meter.positivePoint.terminal.startsWith(`${id}:`) || meter.negativePoint?.kind === 'terminal' && meter.negativePoint.terminal.startsWith(`${id}:`) ? { ...meter, positivePoint: null, negativePoint: null } : meter))
     setFeedback('idle')
   }
   const updateComponentPosition = (id: string, event: PointerEvent) => {
@@ -229,17 +268,56 @@ const CircuitBuilderActivity: FC<CircuitBuilderProps> = ({ onComplete }) => {
     setDraggingMeter(id)
     setFeedback('idle')
   }
+  const measurementPointPosition = (point: MeasurementPoint | null): Position | null => {
+    if (!point) return null
+    if (point.kind === 'terminal') return terminalPositions[point.terminal] ?? null
+    const wire = wires.find((item) => item.id === point.wireId)
+    if (!wire) return null
+    const from = terminalPositions[wire.from]
+    const to = terminalPositions[wire.to]
+    return from && to ? wirePath(from, to, wire.midpoint).bend : null
+  }
+  const nearestMeasurementPoint = (position: Position): MeasurementPoint | null => {
+    const candidates: Array<{ point: MeasurementPoint; position: Position }> = Object.entries(terminalPositions).map(([value, point]) => ({ point: { kind: 'terminal', terminal: value }, position: point }))
+    wires.forEach((wire) => {
+      const from = terminalPositions[wire.from]
+      const to = terminalPositions[wire.to]
+      if (from && to) candidates.push({ point: { kind: 'wire', wireId: wire.id }, position: wirePath(from, to, wire.midpoint).bend })
+    })
+    const nearest = candidates.reduce<{ point: MeasurementPoint; position: Position; distance: number } | null>((current, candidate) => {
+      const distance = Math.hypot(candidate.position.x - position.x, candidate.position.y - position.y)
+      return !current || distance < current.distance ? { ...candidate, distance } : current
+    }, null)
+    return nearest && nearest.distance <= 10 ? nearest.point : null
+  }
+  const attachProbe = (meterId: string, probe: ProbeName, point: MeasurementPoint) => {
+    setMeters((current) => current.map((meter) => meter.id === meterId ? { ...meter, [`${probe}Point`]: point } : meter))
+    setFeedback('idle')
+  }
+  const startProbeDrag = (meterId: string, probe: ProbeName, event: PointerEvent<SVGPathElement>) => {
+    event.stopPropagation()
+    setDraggingProbe({ meterId, probe })
+    setProbePointer(workspacePosition(event))
+    setFeedback('idle')
+  }
   const stopDragging = (event: PointerEvent<HTMLDivElement>) => {
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId)
+    if (draggingProbe) {
+      const meter = meters.find((item) => item.id === draggingProbe.meterId)
+      const position = workspacePosition(event)
+      const point = position ? nearestMeasurementPoint(position) : null
+      if (meter && point && (meter.type === 'voltmeter' || point.kind === 'wire')) attachProbe(draggingProbe.meterId, draggingProbe.probe, point)
+    }
     setDraggingComponent(null)
     setDraggingMeter(null)
     setDraggingMidpoint(null)
+    setDraggingProbe(null)
+    setProbePointer(null)
   }
   const updateMeterPosition = (id: string, event: PointerEvent) => {
     const position = workspacePosition(event)
     if (!position) return
-    const target = nearestComponent(position)
-    setMeters((current) => current.map((meter) => meter.id === id ? { ...meter, ...position, targetId: target?.id ?? null } : meter))
+    setMeters((current) => current.map((meter) => meter.id === id ? { ...meter, ...position } : meter))
   }
   const updatePointer = (event: PointerEvent<HTMLDivElement>) => {
     if (draggingComponent) updateComponentPosition(draggingComponent, event)
@@ -248,6 +326,7 @@ const CircuitBuilderActivity: FC<CircuitBuilderProps> = ({ onComplete }) => {
       const position = workspacePosition(event)
       if (position) setWires((current) => current.map((wire) => wire.id === draggingMidpoint ? { ...wire, midpoint: position } : wire))
     }
+    if (draggingProbe) setProbePointer(workspacePosition(event))
     if (wireStart) setWirePointer(workspacePosition(event))
   }
   const defaultWireMidpoint = (from: Position, to: Position): Position => ({
@@ -260,6 +339,12 @@ const CircuitBuilderActivity: FC<CircuitBuilderProps> = ({ onComplete }) => {
   }
   const startMidpointDrag = (id: number, event: PointerEvent<SVGCircleElement>) => {
     event.stopPropagation()
+    if (draggingProbe) {
+      attachProbe(draggingProbe.meterId, draggingProbe.probe, { kind: 'wire', wireId: id })
+      setDraggingProbe(null)
+      setProbePointer(null)
+      return
+    }
     event.currentTarget.setPointerCapture(event.pointerId)
     setDraggingMidpoint(id)
     setFeedback('idle')
@@ -275,6 +360,12 @@ const CircuitBuilderActivity: FC<CircuitBuilderProps> = ({ onComplete }) => {
   }
   const selectTerminal = (target: Terminal, event: PointerEvent<HTMLButtonElement>) => {
     event.stopPropagation()
+    if (draggingProbe) {
+      attachProbe(draggingProbe.meterId, draggingProbe.probe, { kind: 'terminal', terminal: target })
+      setDraggingProbe(null)
+      setProbePointer(null)
+      return
+    }
     if (!wireStart) {
       setWireStart(target)
       setWireMode(true)
@@ -310,20 +401,28 @@ const CircuitBuilderActivity: FC<CircuitBuilderProps> = ({ onComplete }) => {
     setMeters([])
     setWireStart(null)
     setWirePointer(null)
+    setProbePointer(null)
     setWireMode(false)
     setHasOpenedSwitch(false)
     setDraggingMidpoint(null)
     setFeedback('idle')
   }
 
+  const pointPotential = (point: MeasurementPoint | null) => {
+    if (!circuit.complete || !point) return null
+    if (point.kind === 'terminal') return circuit.nodeVoltages.get(point.terminal) ?? null
+    const wire = wires.find((item) => item.id === point.wireId)
+    if (!wire) return null
+    return circuit.nodeVoltages.get(wire.from) ?? circuit.nodeVoltages.get(wire.to) ?? null
+  }
   const meterReading = (meter: Meter) => {
-    const target = components.find((component) => component.id === meter.targetId)
-    if (meter.type === 'ammeter') return `${current.toFixed(3)} A`
-    if (!target) return '— V'
-    if (target.type === 'battery') return `${target.value.toFixed(1)} V`
-    if (target.type === 'resistor') return `${(current * target.value).toFixed(2)} V`
-    if (target.type === 'bulb') return `${(current * bulbResistance).toFixed(2)} V`
-    return `${(target.closed ? 0 : current * 0).toFixed(2)} V`
+    if (meter.type === 'ammeter') {
+      const wireId = seriesWireId(meter)
+      return wireId !== null && circuit.complete && circuit.activeWireIds.has(wireId) ? `${current.toFixed(3)} A` : '0.00 A'
+    }
+    const positive = pointPotential(meter.positivePoint)
+    const negative = pointPotential(meter.negativePoint)
+    return positive !== null && negative !== null ? `${Math.abs(positive - negative).toFixed(2)} V` : '— V'
   }
   const status = !battery ? 'Place a battery to set the circuit voltage.' : !components.some((component) => component.type === 'bulb') ? 'Place a light bulb, then connect its terminals into the circuit.' : !circuit.complete ? 'Circuit incomplete — connect a closed path from the positive terminal through the load to the negative terminal.' : !switchInPath ? 'Circuit is closed, but the switch is not part of the conductive path.' : 'Closed loop detected — current can flow through the bulb.'
   const hint = !battery ? 'Start with a source, then add the components named in the challenge.' : !circuit.complete ? 'Check for an open terminal, an open switch, or a wire that stops short of the battery.' : !targetResistanceMet ? `The resistor total must match the challenge target of ${challenge.targetResistance} Ω.` : !hasOpenedSwitch ? 'Open the switch once, then close it again to test the current change.' : 'Trace the connected path and compare the live readings with the challenge.'
@@ -335,6 +434,12 @@ const CircuitBuilderActivity: FC<CircuitBuilderProps> = ({ onComplete }) => {
     if (component.type === 'resistor') return <ElectricBoltIcon sx={{ color: 'warning.main' }} />
     return component.closed ? <ToggleOnIcon sx={{ color: 'success.main' }} /> : <ToggleOffIcon sx={{ color: 'text.secondary' }} />
   }
+  const meterProbePosition = (meter: Meter, probe: ProbeName) => {
+    const point = probe === 'positive' ? meter.positivePoint : meter.negativePoint
+    if (draggingProbe?.meterId === meter.id && draggingProbe.probe === probe && probePointer) return probePointer
+    return measurementPointPosition(point) ?? { x: meter.x + (probe === 'positive' ? -8 : 8), y: meter.y + 9 }
+  }
+  const meterPointLabel = (point: MeasurementPoint | null) => point?.kind === 'wire' ? 'series wire' : point?.kind === 'terminal' ? 'terminal' : 'unplaced'
 
   return <Paper elevation={0} sx={{ p: { xs: 2, md: 3 }, border: 1, borderColor: 'divider' }}>
     <Stack spacing={2}>
@@ -355,6 +460,20 @@ const CircuitBuilderActivity: FC<CircuitBuilderProps> = ({ onComplete }) => {
         <Box ref={workspaceRef} onDragOver={(event) => event.preventDefault()} onDrop={handleWorkspaceDrop} onPointerMove={updatePointer} onPointerUp={stopDragging} onPointerLeave={() => !wireStart && setWirePointer(null)} sx={{ position: 'relative', minHeight: workspaceHeight, overflow: 'hidden', border: 1, borderColor: 'divider', borderRadius: 2, background: 'linear-gradient(180deg, #eef7f7, #fff9ea)', touchAction: 'none' }}>
           <Typography variant="caption" sx={{ position: 'absolute', left: 12, top: 10, color: 'text.secondary', fontWeight: 800, zIndex: 1 }}>CIRCUIT WORKSPACE</Typography>
           <Box component="svg" viewBox="0 0 100 100" preserveAspectRatio="none" sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'visible' }}>
+            {meters.map((meter) => {
+              const positiveTip = meterProbePosition(meter, 'positive')
+              const negativeTip = meterProbePosition(meter, 'negative')
+              const positiveStart = { x: meter.x - 3, y: meter.y + 2 }
+              const negativeStart = { x: meter.x + 3, y: meter.y + 2 }
+              const positiveRoute = wirePath(positiveStart, positiveTip, { x: (positiveStart.x + positiveTip.x) / 2, y: (positiveStart.y + positiveTip.y) / 2 - 4 })
+              const negativeRoute = wirePath(negativeStart, negativeTip, { x: (negativeStart.x + negativeTip.x) / 2, y: (negativeStart.y + negativeTip.y) / 2 + 4 })
+              return <g key={`${meter.id}-leads`}>
+                <path d={positiveRoute.forward} fill="none" stroke="#d64b3f" strokeWidth=".8" strokeLinecap="round" pointerEvents="none" />
+                <path d={negativeRoute.forward} fill="none" stroke="#20252c" strokeWidth=".8" strokeLinecap="round" pointerEvents="none" />
+                <path d={`M ${positiveTip.x} ${positiveTip.y - 2.4} L ${positiveTip.x + 2} ${positiveTip.y + 2} L ${positiveTip.x - 2} ${positiveTip.y + 2} Z`} fill="#d64b3f" stroke="#762820" strokeWidth=".45" onPointerDown={(event) => startProbeDrag(meter.id, 'positive', event)} />
+                <path d={`M ${negativeTip.x} ${negativeTip.y - 2.4} L ${negativeTip.x + 2} ${negativeTip.y + 2} L ${negativeTip.x - 2} ${negativeTip.y + 2} Z`} fill="#20252c" stroke="#080a0c" strokeWidth=".45" onPointerDown={(event) => startProbeDrag(meter.id, 'negative', event)} />
+              </g>
+            })}
             {wires.map((wire) => {
               const from = terminalPositions[wire.from]
               const to = terminalPositions[wire.to]
@@ -383,7 +502,7 @@ const CircuitBuilderActivity: FC<CircuitBuilderProps> = ({ onComplete }) => {
               {terminals.map((item) => <Box key={item} component="button" type="button" aria-label={`Connect ${item}`} onPointerDown={(event) => selectTerminal(item, event)} sx={{ position: 'absolute', left: item === terminals[0] ? -7 : undefined, right: item === terminals[1] ? -7 : undefined, top: '50%', transform: 'translateY(-50%)', width: 14, height: 14, p: 0, border: 2, borderColor: wireStart === item ? 'warning.main' : 'primary.main', borderRadius: '50%', backgroundColor: 'background.paper', cursor: 'crosshair' }} />)}
             </Box>
           })}
-          {meters.map((meter) => <Box key={meter.id} onPointerDown={(event) => startMeterDrag(meter.id, event)} onPointerMove={(event) => draggingMeter === meter.id && updateMeterPosition(meter.id, event)} onPointerUp={stopDragging} sx={{ position: 'absolute', left: `${meter.x}%`, top: `${meter.y}%`, transform: 'translate(-50%, -50%)', zIndex: 4, cursor: draggingMeter === meter.id ? 'grabbing' : 'grab' }}><Paper elevation={2} sx={{ minWidth: 82, p: .75, textAlign: 'center', border: 1, borderColor: meter.type === 'voltmeter' ? 'primary.main' : 'warning.main', backgroundColor: 'background.paper' }}><Typography variant="caption" sx={{ display: 'block', fontWeight: 900 }}>{meter.type === 'voltmeter' ? 'V' : 'A'} {showLabels && paletteLabels[meter.type]}</Typography>{showValues && <Typography variant="body2" sx={{ fontWeight: 900 }}>{meterReading(meter)}</Typography>}</Paper></Box>)}
+          {meters.map((meter) => <Box key={meter.id} onPointerDown={(event) => startMeterDrag(meter.id, event)} onPointerMove={(event) => draggingMeter === meter.id && updateMeterPosition(meter.id, event)} onPointerUp={stopDragging} sx={{ position: 'absolute', left: `${meter.x}%`, top: `${meter.y}%`, transform: 'translate(-50%, -50%)', zIndex: 4, cursor: draggingMeter === meter.id ? 'grabbing' : 'grab' }}><Paper elevation={2} sx={{ minWidth: 104, px: 1, py: .8, textAlign: 'center', border: '2px solid #1d2228', borderRadius: 2.5, background: 'linear-gradient(145deg, #f08b35, #c85a20)', color: '#171b20', boxShadow: '3px 4px 0 rgba(21,25,30,.28)' }}><Typography variant="caption" sx={{ display: 'block', color: '#171b20', fontWeight: 900 }}>{meter.type === 'voltmeter' ? 'Voltage' : 'Current'}</Typography><Box sx={{ mt: .35, px: .5, py: .25, borderRadius: .75, backgroundColor: '#15191d', color: '#f7f1ce', fontFamily: 'monospace', fontWeight: 900, fontSize: 13 }}>{showValues ? meterReading(meter) : '—'}</Box><Typography variant="caption" sx={{ display: 'block', mt: .35, color: '#fff3dc', fontSize: 9 }}>{meter.type === 'ammeter' ? `${meterPointLabel(meter.positivePoint)} · same wire required` : `${meterPointLabel(meter.positivePoint)} ↔ ${meterPointLabel(meter.negativePoint)}`}</Typography></Paper></Box>)}
           {!components.length && <Typography color="text.secondary" sx={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', width: '80%' }}>Drag a battery, bulb, resistor, and switch here to begin.</Typography>}
         </Box>
         <Paper elevation={0} sx={{ p: 1.5, border: 1, borderColor: 'divider', backgroundColor: 'background.default' }}>
