@@ -11,7 +11,7 @@ import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import ReplayIcon from '@mui/icons-material/Replay'
-import { type FC, useMemo, useState } from 'react'
+import { type FC, useEffect, useMemo, useState } from 'react'
 
 export type ParticleHeatProps = { onComplete?: () => void }
 type Phase = 'Solid' | 'Liquid' | 'Gas'
@@ -41,7 +41,14 @@ const ParticleHeatActivity: FC<ParticleHeatProps> = ({ onComplete }) => {
   const [targetPhase, setTargetPhase] = useState<Phase>(() => randomItem(phases))
   const [feedback, setFeedback] = useState<Feedback>('idle')
   const [feedbackVersion, setFeedbackVersion] = useState(0)
+  const [isTransitioning, setIsTransitioning] = useState(false)
   const phase = phaseForTemperature(substance, temperature)
+
+  useEffect(() => {
+    setIsTransitioning(true)
+    const timer = window.setTimeout(() => setIsTransitioning(false), 950)
+    return () => window.clearTimeout(timer)
+  }, [phase, substance.id])
   const rangeMin = -260
   const rangeMax = 120
   const thermometerPercent = Math.min(100, Math.max(0, ((temperature - rangeMin) / (rangeMax - rangeMin)) * 100))
@@ -92,7 +99,7 @@ const ParticleHeatActivity: FC<ParticleHeatProps> = ({ onComplete }) => {
         <Chip label="Physics" color="primary" size="small" /><Chip label="Phase change" variant="outlined" size="small" />
       </Stack>
       <Typography variant="body2" color="text.secondary">Drag the temperature and watch the particle arrangement change at the substance&apos;s freezing and boiling points.</Typography>
-      <Box sx={{ position: 'relative', height: { xs: 270, md: 310 }, overflow: 'hidden', borderRadius: 2, border: 1, borderColor: feedback === 'correct' ? 'success.main' : 'divider', background: phase === 'Solid' ? 'linear-gradient(135deg, #dbeafe, #eff6ff)' : phase === 'Liquid' ? 'linear-gradient(135deg, #d8f3ff, #effcff)' : 'linear-gradient(135deg, #fff0d8, #fff9ed)', transition: 'background .35s ease, border-color .2s ease', animation: feedback === 'correct' ? 'phaseCelebrate .8s ease-in-out infinite alternate' : feedback === 'incorrect' ? 'phaseShake .45s ease-in-out' : 'none', '@keyframes phaseCelebrate': { from: { boxShadow: '0 0 0 rgba(34, 197, 94, 0)' }, to: { boxShadow: '0 0 28px rgba(34, 197, 94, .45)' } }, '@keyframes phaseShake': { '0%, 100%': { transform: 'translateX(0)' }, '25%': { transform: 'translateX(-5px)' }, '75%': { transform: 'translateX(5px)' } } }}>
+      <Box sx={{ position: 'relative', height: { xs: 270, md: 310 }, overflow: 'hidden', borderRadius: 2, border: 1, borderColor: feedback === 'correct' ? 'success.main' : 'divider', background: phase === 'Solid' ? 'linear-gradient(135deg, #dbeafe, #eff6ff)' : phase === 'Liquid' ? 'linear-gradient(135deg, #d8f3ff, #effcff)' : 'linear-gradient(135deg, #fff0d8, #fff9ed)', transition: 'background .9s ease, border-color .35s ease', animation: feedback === 'correct' ? 'phaseCelebrate .8s ease-in-out infinite alternate' : feedback === 'incorrect' ? 'phaseShake .45s ease-in-out' : 'none', '@keyframes phaseCelebrate': { from: { boxShadow: '0 0 0 rgba(34, 197, 94, 0)' }, to: { boxShadow: '0 0 28px rgba(34, 197, 94, .45)' } }, '@keyframes phaseShake': { '0%, 100%': { transform: 'translateX(0)' }, '25%': { transform: 'translateX(-5px)' }, '75%': { transform: 'translateX(5px)' } } }}>
         <Typography variant="caption" sx={{ position: 'absolute', left: 14, top: 12, zIndex: 2, fontWeight: 800, letterSpacing: '.08em', color: 'text.secondary' }}>{substance.name.toUpperCase()} PARTICLES</Typography>
         <Box sx={{ position: 'absolute', left: 14, top: 42, zIndex: 2, px: 1.25, py: .5, borderRadius: 1.5, bgcolor: 'background.paper', border: 1, borderColor: 'divider' }}><Typography variant="body2" sx={{ fontWeight: 800 }}>State: {phase}</Typography></Box>
         {particles.map((particle) => {
@@ -101,7 +108,7 @@ const ParticleHeatActivity: FC<ParticleHeatProps> = ({ onComplete }) => {
           const x = ((particle.id * 17) % 19) - 9
           const y = ((particle.id * 29) % 17) - 8
           const duration = phase === 'Solid' ? 0.28 + (particle.id % 4) * 0.08 : phase === 'Liquid' ? 1.2 + (particle.id % 5) * 0.18 : 2 + (particle.id % 7) * 0.22
-          return <Box key={particle.id} sx={{ position: 'absolute', left: `${particle.left}%`, top: `${particle.top}%`, width: phase === 'Gas' ? 11 : 14, height: phase === 'Gas' ? 11 : 14, borderRadius: '50%', bgcolor: substance.color, border: '2px solid rgba(255,255,255,.8)', boxShadow: `0 2px 5px ${substance.color}66`, animation: `${motionName} ${duration}s ease-in-out ${particle.delay} infinite`, [`@keyframes ${motionName}`]: { '0%': { transform: `translate(${-x}px, ${-y}px) rotate(0deg)` }, '50%': { transform: `translate(${x * 0.4}px, ${y * 0.4}px) rotate(${phase === 'Gas' ? 90 : 15}deg)` }, '100%': { transform: `translate(${x * motionRange / 9}px, ${y * motionRange / 8}px) rotate(${phase === 'Gas' ? 220 : 30}deg)` } }, transition: 'left .45s ease, top .45s ease, width .35s ease, height .35s ease' }} />
+          return <Box key={particle.id} sx={{ position: 'absolute', left: `${particle.left}%`, top: `${particle.top}%`, width: phase === 'Gas' ? 11 : 14, height: phase === 'Gas' ? 11 : 14, borderRadius: '50%', bgcolor: substance.color, border: '2px solid rgba(255,255,255,.8)', boxShadow: `0 2px 5px ${substance.color}66`, animation: isTransitioning ? 'none' : `${motionName} ${duration}s ease-in-out ${particle.delay} infinite`, [`@keyframes ${motionName}`]: { '0%': { transform: `translate(${-x}px, ${-y}px) rotate(0deg)` }, '50%': { transform: `translate(${x * 0.4}px, ${y * 0.4}px) rotate(${phase === 'Gas' ? 90 : 15}deg)` }, '100%': { transform: `translate(${x * motionRange / 9}px, ${y * motionRange / 8}px) rotate(${phase === 'Gas' ? 220 : 30}deg)` } }, transition: 'left .95s cubic-bezier(.22,.61,.36,1), top .95s cubic-bezier(.22,.61,.36,1), width .7s ease, height .7s ease, background-color .5s ease' }} />
         })}
         <Typography sx={{ position: 'absolute', bottom: 12, left: 14, right: 14, textAlign: 'center', color: 'text.secondary', fontSize: 12 }}>{phaseDescription}</Typography>
       </Box>
