@@ -26,6 +26,7 @@ import SpeedRaceActivity from './speed-race-activity'
 import SpeedCalculatorLabActivity from './speed-calculator-lab-activity'
 import ShadowLabActivity from './shadow-lab-activity'
 import WaveSimulatorActivity from './wave-simulator-activity'
+import KinematicsActivity from './kinematics-activity'
 import ParticleHeatActivity from './particle-heat-activity'
 import MagneticPlaygroundActivity from './magnetic-playground-activity'
 import FloatingSinkingActivity from './floating-sinking-activity'
@@ -850,6 +851,7 @@ export const PlatformEnginePreview: FC<{ engineId: PlatformEngineId; onComplete?
   if (engineId === 'speed-calculator-lab' || (engineId === 'physics' && topicTitle === 'Speed & Velocity')) return <SpeedCalculatorLabActivity onComplete={onComplete} />
   if (engineId === 'shadow-lab' || (engineId === 'physics' && topicTitle === 'Light & Shadows')) return <ShadowLabActivity onComplete={onComplete} />
   if (engineId === 'wave-simulator' || (engineId === 'physics' && ['Sound & Vibrations', 'Waves'].includes(topicTitle ?? ''))) return <WaveSimulatorActivity onComplete={onComplete} />
+  if (engineId === 'kinematics' || (engineId === 'physics' && topicTitle === 'Kinematics')) return <KinematicsActivity onComplete={onComplete} />
   if (engineId === 'particle-heat' || (engineId === 'physics' && topicTitle === 'Heat & Cold')) return <ParticleHeatActivity onComplete={onComplete} />
   if (engineId === 'magnetic-playground' || (engineId === 'physics' && topicTitle === 'Magnets')) return <MagneticPlaygroundActivity onComplete={onComplete} />
   if (engineId === 'floating-sinking' || (engineId === 'physics' && topicTitle === 'Floating & Sinking')) return <FloatingSinkingActivity onComplete={onComplete} />
