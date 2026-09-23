@@ -15,6 +15,7 @@ export type PlatformEngineId =
   | 'physics'
   | 'force-playground'
   | 'force-motion-lab'
+  | 'surface-test'
   | 'motion-track'
   | 'speed-race'
   | 'shadow-lab'
@@ -56,6 +57,7 @@ export const PLATFORM_ENGINES: PlatformEngineDefinition[] = [
   { id: 'physics', name: 'Physics Playground', description: 'Legacy physics activity engine for older lessons.', subjects: ['Physics'], examples: ['Legacy physics lessons'], interaction: 'Use a configured physics activity.' },
   { id: 'force-playground', name: 'Force Playground', description: 'Explore how pushing and pulling move objects.', subjects: ['Physics'], examples: ['Pushing everyday objects', 'Comparing weight', 'Heavy and light objects'], interaction: 'Drag objects across a surface and identify which needs the biggest push.' },
   { id: 'force-motion-lab', name: 'Force & Motion Lab', description: 'See how forces cause objects to move.', subjects: ['Physics'], examples: ['Applied force', 'Acceleration', 'Speed'], interaction: 'Apply a measured force and observe a cart accelerate across a surface.' },
+  { id: 'surface-test', name: 'Surface Test', description: 'Compare how friction differs across surfaces.', subjects: ['Physics'], examples: ['Ice', 'Wood', 'Sandpaper'], interaction: 'Apply the same push and compare how friction changes the block\'s motion.' },
   { id: 'motion-track', name: 'Motion Track', description: 'Explore different types of movement.', subjects: ['Physics'], examples: ['Position', 'Speed', 'Movement types'], interaction: 'Control a car and inspect its live motion.' },
   { id: 'speed-race', name: 'Speed Race', description: 'Compare the speeds of moving objects.', subjects: ['Physics'], examples: ['Racing characters', 'Speed comparisons', 'Prediction'], interaction: 'Predict and observe which racer is faster.' },
   { id: 'shadow-lab', name: 'Shadow Lab', description: 'See how light creates shadows.', subjects: ['Physics'], examples: ['Light position', 'Shadow size', 'Shadow direction'], interaction: 'Move a lamp, object, and screen to change a computed shadow.' },
