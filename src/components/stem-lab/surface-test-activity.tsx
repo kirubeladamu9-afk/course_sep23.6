@@ -31,6 +31,30 @@ const createChallenge = (): Challenge => ({ type: (['least', 'most', 'rank'] as 
 const frictionForce = (surface: Surface) => surface.coefficient * MASS * GRAVITY
 const labelForChallenge = (challenge: Challenge) => challenge.type === 'least' ? 'Which surface lets the block slide the farthest?' : challenge.type === 'most' ? 'Which surface needs the most force to keep the block moving?' : 'Rank the surfaces from least to most friction.'
 
+const particleXs = [22, 50, 78, 106, 134, 162, 190, 218]
+const particleCaptions: Record<SurfaceId, string> = {
+  ice: "Ice's smooth particles slide past each other easily.",
+  wood: 'Wood has moderate texture, creating some contact and resistance.',
+  sandpaper: "Sandpaper's rough surface particles interlock with the object, resisting motion.",
+}
+
+const ParticleSurfaceDiagram: FC<{ surface: Surface }> = ({ surface }) => {
+  const materialYs = surface.id === 'ice' ? particleXs.map(() => 54) : surface.id === 'wood' ? [56, 51, 57, 49, 55, 52, 58, 53] : [55, 43, 57, 46, 51, 40, 56, 44]
+  const materialXs = surface.id === 'sandpaper' ? particleXs.map((x, index) => x + (index % 2 ? 6 : -4)) : particleXs
+  const boundaryPoints = surface.id === 'ice' ? '14,44 226,44' : surface.id === 'wood' ? '14,47 44,45 74,48 104,44 134,47 164,45 194,49 226,46' : '14,48 42,37 70,50 100,40 130,46 160,34 190,49 226,38'
+  return <Box sx={{ width: { xs: '100%', sm: 250 }, flexShrink: 0, p: 1, border: 1, borderColor: 'rgba(61,48,40,.22)', borderRadius: 1.5, backgroundColor: 'rgba(255,255,255,.42)' }}>
+    <Typography variant="caption" sx={{ display: 'block', fontWeight: 900, color: '#3d3028' }}>Microscopic contact</Typography>
+    <Box component="svg" viewBox="0 0 240 112" role="img" aria-label={`${surface.name} microscopic particle contact diagram`} sx={{ display: 'block', width: '100%', height: 112, mt: .25 }}>
+      <text x="14" y="12" fontSize="8" fontWeight="700" fill="#5f5148">object particles</text>
+      {particleXs.map((x) => <circle key={`object-${x}`} cx={x} cy="34" r="9" fill="#e79a65" stroke="#a85d34" strokeWidth="1.5" />)}
+      <polyline points={boundaryPoints} fill="none" stroke="#715d50" strokeWidth="1.5" strokeDasharray={surface.id === 'ice' ? undefined : '2 1'} />
+      {materialYs.map((y, index) => <circle key={`material-${index}`} cx={materialXs[index]} cy={y} r="9" fill={surface.id === 'ice' ? '#9bd9ed' : surface.id === 'wood' ? '#b77d4b' : '#9b6e55'} stroke={surface.id === 'ice' ? '#4d9bb3' : '#6e4733'} strokeWidth="1.5" />)}
+      <text x="14" y="103" fontSize="8" fontWeight="700" fill="#5f5148">{surface.name.toLowerCase()} surface particles</text>
+    </Box>
+    <Typography variant="caption" sx={{ display: 'block', color: '#4e3c30', lineHeight: 1.25 }}>{particleCaptions[surface.id]}</Typography>
+  </Box>
+}
+
 const SurfaceTestActivity: FC<SurfaceTestProps> = ({ onComplete }) => {
   const [challenge, setChallenge] = useState(createChallenge)
   const [pushStrength, setPushStrength] = useState(challenge.pushStrength)
@@ -128,6 +152,7 @@ const SurfaceTestActivity: FC<SurfaceTestProps> = ({ onComplete }) => {
                 <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: .8 }}><Typography variant="caption" sx={{ fontWeight: 800 }}>Distance traveled: {distance.toFixed(2)} m</Typography><Typography variant="caption" sx={{ fontWeight: 800 }}>Speed: {result.speed.toFixed(2)} m/s</Typography></Stack>
                 <Typography variant="caption" sx={{ color: '#4e3c30' }}>Force needed to keep it moving: {forceToKeepMoving.toFixed(2)} N</Typography>
               </Box>
+              <ParticleSurfaceDiagram surface={surface} />
               <Button variant="contained" size="small" onClick={() => runSurface(surface)} disabled={result.running} sx={{ alignSelf: { xs: 'flex-start', sm: 'center' }, backgroundColor: '#4e3c30', '&:hover': { backgroundColor: '#35271f' } }}>Push block</Button>
             </Stack>
           </Paper>
