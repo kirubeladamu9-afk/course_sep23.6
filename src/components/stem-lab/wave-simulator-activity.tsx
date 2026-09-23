@@ -159,18 +159,20 @@ const WaveSimulatorActivity: FC<WaveSimulatorProps> = ({ onComplete }) => {
     <Stack spacing={2}>
       <Box><Chip label="Wave Machine" color="primary" variant="outlined" sx={{ mb: 1 }} /><Typography variant="h5">Wave Machine</Typography><Typography color="text.secondary" sx={{ mt: .75 }}>Explore how amplitude and frequency shape a wave.</Typography></Box>
       <Stack direction="row" spacing={1}><Chip label="Physics" color="primary" size="small" /><Chip label="Advanced" variant="outlined" size="small" /></Stack>
-      <Paper elevation={0} sx={{ p: { xs: 1, md: 2 }, backgroundColor: '#edf6fb', border: 1, borderColor: 'divider' }}>
-        <Box component="svg" viewBox="0 0 680 260" role="img" aria-label="Connected point masses on a string wave machine" sx={{ width: '100%', height: { xs: 230, md: 300 }, backgroundColor: 'common.white', borderRadius: 2, border: 1, borderColor: 'divider' }}>
+      <Paper elevation={0} sx={{ p: { xs: 1, md: 2 }, backgroundColor: '#f1f6b8', border: 1, borderColor: '#bdc77b' }}>
+        <Box component="svg" viewBox="0 0 680 260" role="img" aria-label="Connected point masses on a string wave machine" sx={{ width: '100%', height: { xs: 230, md: 300 }, backgroundColor: '#fffec5', borderRadius: 2, border: 1, borderColor: '#c7cc9a' }}>
           {reference && <line x1="30" x2="650" y1={centerY} y2={centerY} stroke="#718096" strokeDasharray="7 6" strokeWidth="1.5" />}
           {rulers && Array.from({ length: 13 }, (_, i) => <g key={i}><line x1={35 + i * 51.5} x2={35 + i * 51.5} y1="236" y2="244" stroke="#334155" /><text x={35 + i * 51.5} y="256" textAnchor="middle" fontSize="11">{i}</text></g>)}
-          <line x1="35" x2="610" y1={centerY} y2={centerY} stroke="#64748b" strokeWidth="3" opacity=".35" />
-          <path d="M 19 97 L 8 112 L 19 127 M 8 112 L 35 112" stroke="#374151" strokeWidth="5" fill="none" strokeLinecap="round" />
-          <circle cx="35" cy={centerY - displacements.current[0] * 48} r="8" fill="#e67e22" stroke="#7c2d12" strokeWidth="3" onPointerDown={handleManualPointer} onPointerMove={handleManualPointer} />
-          <polyline points={points} fill="none" stroke="#2563eb" strokeWidth="2" opacity=".45" />
-          {displacements.current.map((value, index) => <circle key={index} cx={35 + index * 10.3} cy={centerY - value * 48} r={index === 0 ? 5 : 3.5} fill={index === 0 ? '#e67e22' : '#2563eb'} />)}
-          <path d={end === 'No End' ? 'M 628 91 L 628 149' : 'M 625 82 L 625 158 M 633 82 L 633 158'} stroke="#475569" strokeWidth="5" />
-          {end !== 'No End' && <path d="M 626 91 l 10 8 M 626 105 l 10 8 M 626 119 l 10 8 M 626 133 l 10 8" stroke="#94a3b8" strokeWidth="2" />}
-          <text x="35" y="24" textAnchor="middle" fontSize="12" fontWeight="bold">HAND CRANK</text><text x="628" y="24" textAnchor="middle" fontSize="12" fontWeight="bold">{end.toUpperCase()}</text>
+          <line x1="35" x2="610" y1={centerY} y2={centerY} stroke="#6b7280" strokeWidth="3" opacity=".35" />
+          <path d="M 19 97 L 8 112 L 19 127 M 8 112 L 35 112" stroke="#5c6266" strokeWidth="5" fill="none" strokeLinecap="round" />
+          <line x1="35" y1="112" x2="35" y2={centerY} stroke="#686868" strokeWidth="5" />
+          <circle cx="35" cy={centerY - displacements.current[0] * 48} r="7" fill="#22c6df" stroke="#147c91" strokeWidth="2" onPointerDown={handleManualPointer} onPointerMove={handleManualPointer} />
+          <polyline points={points} fill="none" stroke="#df1f2f" strokeWidth="2.5" opacity=".78" />
+          {displacements.current.map((value, index) => <circle key={index} cx={35 + index * 10.3} cy={centerY - value * 48} r={index === 0 ? 5 : 4} fill={index === 0 || index % 8 === 0 ? '#22c6df' : '#df1f2f'} stroke={index === 0 || index % 8 === 0 ? '#147c91' : '#a71320'} strokeWidth="1" />)}
+          <path d={end === 'No End' ? 'M 628 91 L 628 149' : 'M 625 82 L 625 158 M 633 82 L 633 158'} stroke="#30353b" strokeWidth="5" />
+          {end !== 'No End' && <path d="M 626 91 l 10 8 M 626 105 l 10 8 M 626 119 l 10 8 M 626 133 l 10 8" stroke="#8d969d" strokeWidth="2" />}
+          {end !== 'No End' && <path d="M 640 118 h 18 v 32 h -18" fill="none" stroke="#272b30" strokeWidth="5" strokeLinecap="round" />}
+          <text x="35" y="24" textAnchor="middle" fill="#42474b" fontSize="12" fontWeight="bold">HAND CRANK</text><text x="628" y="24" textAnchor="middle" fill="#42474b" fontSize="12" fontWeight="bold">{end.toUpperCase()}</text>
         </Box>
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 1 }}>Each blue dot is a connected point mass. Tension couples its motion to neighboring points.</Typography>
       </Paper>
