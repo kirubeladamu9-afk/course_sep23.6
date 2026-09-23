@@ -7,10 +7,11 @@ import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import ReplayIcon from '@mui/icons-material/Replay'
-import { type FC, useMemo, useState } from 'react'
+import { type FC, useEffect, useMemo, useRef, useState } from 'react'
 
 export type WaveSimulatorProps = { onComplete?: () => void }
 type Feedback = 'idle' | 'correct' | 'incorrect'
+type AudioState = { context: AudioContext; oscillator: OscillatorNode; gain: GainNode }
 
 const randomTarget = () => 3 + Math.floor(Math.random() * 5)
 
@@ -19,17 +20,66 @@ const WaveSimulatorActivity: FC<WaveSimulatorProps> = ({ onComplete }) => {
   const [targetCycles, setTargetCycles] = useState(randomTarget)
   const [feedback, setFeedback] = useState<Feedback>('idle')
   const [feedbackVersion, setFeedbackVersion] = useState(0)
+  const [isSounding, setIsSounding] = useState(false)
+  const audioRef = useRef<AudioState | null>(null)
   const wavePath = useMemo(() => Array.from({ length: 121 }, (_, index) => {
     const x = index * 5
     const y = 90 - Math.sin((index / 120) * frequency * Math.PI * 2) * 48
     return `${index === 0 ? 'M' : 'L'} ${x} ${y}`
   }).join(' '), [frequency])
+  useEffect(() => {
+    const audio = audioRef.current
+    if (audio) audio.oscillator.frequency.setTargetAtTime(frequency * 110, audio.context.currentTime, .03)
+  }, [frequency])
+
+  useEffect(() => () => {
+    const audio = audioRef.current
+    if (audio) {
+      audio.oscillator.stop()
+      audio.oscillator.disconnect()
+      audio.gain.disconnect()
+      void audio.context.close()
+    }
+  }, [])
+
+  const stopSound = () => {
+    const audio = audioRef.current
+    if (!audio) return
+    audio.oscillator.stop()
+    audio.oscillator.disconnect()
+    audio.gain.disconnect()
+    void audio.context.close()
+    audioRef.current = null
+    setIsSounding(false)
+  }
+
+  const toggleSound = async () => {
+    if (audioRef.current) {
+      stopSound()
+      return
+    }
+    const context = new AudioContext()
+    await context.resume()
+    const oscillator = context.createOscillator()
+    const gain = context.createGain()
+    oscillator.type = 'sine'
+    oscillator.frequency.value = frequency * 110
+    gain.gain.setValueAtTime(.0001, context.currentTime)
+    gain.gain.exponentialRampToValueAtTime(.08, context.currentTime + .04)
+    oscillator.connect(gain)
+    gain.connect(context.destination)
+    oscillator.start()
+    audioRef.current = { context, oscillator, gain }
+    setIsSounding(true)
+  }
+
   const checkActivity = () => {
     const correct = frequency === targetCycles
     setFeedback(correct ? 'correct' : 'incorrect')
     setFeedbackVersion((version) => version + 1)
   }
   const reset = () => {
+    stopSound()
     setFrequency(3)
     setTargetCycles(randomTarget())
     setFeedback('idle')
@@ -50,7 +100,8 @@ const WaveSimulatorActivity: FC<WaveSimulatorProps> = ({ onComplete }) => {
       </Paper>
       <Typography variant="h6" sx={{ textAlign: 'center' }}>Frequency: {frequency} Hz</Typography>
       <Slider min={1} max={8} step={1} value={frequency} onChange={(_, next) => { setFrequency(Array.isArray(next) ? next[0] : next); setFeedback('idle') }} valueLabelDisplay="auto" aria-label="Frequency" />
-      <Paper role="status" elevation={0} sx={{ p: 1.5, backgroundColor: 'action.hover', textAlign: 'center' }}><Typography variant="body2" sx={{ fontWeight: 700 }}>{pitchMessage}</Typography></Paper>
+      <Stack direction="row" justifyContent="center"><Button variant={isSounding ? 'outlined' : 'contained'} onClick={() => void toggleSound()}>{isSounding ? 'Stop sound' : 'Play sound'}</Button></Stack>
+      <Paper role="status" elevation={0} sx={{ p: 1.5, backgroundColor: 'action.hover', textAlign: 'center' }}><Typography variant="body2" sx={{ fontWeight: 700 }}>{pitchMessage}</Typography><Typography variant="caption" color="text.secondary">Press Play sound to hear the pitch change with the frequency.</Typography></Paper>
       <Paper key={feedbackVersion} elevation={0} sx={{ p: 2, border: 1, borderColor: feedback === 'correct' ? 'success.main' : feedback === 'incorrect' ? 'warning.main' : 'divider', animation: feedback === 'correct' ? 'waveCelebrate .7s ease-in-out infinite alternate' : feedback === 'incorrect' ? 'waveShake .45s ease-in-out' : 'none', '@keyframes waveCelebrate': { from: { transform: 'scale(1)' }, to: { transform: 'scale(1.015)' } }, '@keyframes waveShake': { '0%, 100%': { transform: 'translateX(0)' }, '25%': { transform: 'translateX(-6px)' }, '75%': { transform: 'translateX(6px)' } } }}>
         <Typography sx={{ fontWeight: 800 }}>Challenge: Set the frequency so the wave has {targetCycles} full cycles across the screen.</Typography>
         {feedback === 'correct' && <Typography role="status" color="success.main" sx={{ mt: 1, fontWeight: 800 }}>Right! A higher frequency means the wave repeats more often.</Typography>}
