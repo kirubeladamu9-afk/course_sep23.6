@@ -61,6 +61,7 @@ import TangentLineActivity from './tangent-line-activity'
 import AreaUnderCurveActivity from './area-under-curve-activity'
 import EquationChallengeActivity from './equation-challenge-activity'
 import { type PlatformEngineId } from './platform-engine-library'
+import FaradaySimulation from '@/components/admin/faraday-simulation'
 import LivingOrNotActivity from './living-or-not-activity'
 import PlantLabelingActivity from './plant-labeling-activity'
 import HumanBodyPartsActivity from './human-body-parts-activity'
@@ -807,6 +808,7 @@ const MathActivityEngine: FC<{ topic: MathTopic; onComplete?: () => void }> = ({
 
 export const PlatformEnginePreview: FC<{ engineId: PlatformEngineId; onComplete?: () => void; mathTopic?: MathTopic; topicTitle?: string }> = ({ engineId, onComplete, mathTopic, topicTitle }) => {
   if (mathTopic) return <MathActivityEngine topic={mathTopic} onComplete={onComplete} />
+  if (topicTitle === 'Electromagnetic Induction') return <FaradaySimulation onComplete={onComplete} />
   if (topicTitle === 'Forces & Motion') return <ForceMotionLabActivity onComplete={onComplete} />
   if (topicTitle === 'Friction') return <SurfaceTestActivity onComplete={onComplete} />
   if (topicTitle === 'Gravity') return <DropZoneActivity onComplete={onComplete} />

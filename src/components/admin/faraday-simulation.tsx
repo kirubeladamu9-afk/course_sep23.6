@@ -6,6 +6,7 @@ import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import Switch from '@mui/material/Switch'
 import Typography from '@mui/material/Typography'
+import Button from '@mui/material/Button'
 import RestartAltIcon from '@mui/icons-material/RestartAlt'
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz'
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
@@ -14,7 +15,7 @@ import { alpha, useTheme } from '@mui/material/styles'
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
 
-const FaradaySimulation: FC = () => {
+const FaradaySimulation: FC<{ onComplete?: () => void }> = ({ onComplete }) => {
   const theme = useTheme()
   const [magnetPosition, setMagnetPosition] = useState(0.18)
   const [magnetPolarity, setMagnetPolarity] = useState<'NS' | 'SN'>('NS')
@@ -105,7 +106,13 @@ const FaradaySimulation: FC = () => {
           sx={{ position: 'relative', height: { xs: 300, sm: 330 }, overflow: 'hidden', borderRadius: 2.5, border: 1, borderColor: 'divider', background: theme.palette.mode === 'dark' ? 'linear-gradient(180deg, #162b3c 0%, #0f1e2c 100%)' : 'linear-gradient(180deg, #edf7f7 0%, #f8fbfc 100%)', touchAction: 'none', cursor: dragStart.current ? 'grabbing' : 'grab', userSelect: 'none' }}>
           <Typography sx={{ position: 'absolute', top: 14, left: 16, color: 'text.secondary', fontSize: 12, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase' }}>Drag magnet or use ← →</Typography>
           <Box sx={{ position: 'absolute', left: '7%', right: '7%', bottom: 42, height: 2, bgcolor: alpha(theme.palette.text.primary, 0.15) }} />
-          {[...Array(showFieldLines ? 4 : 0)].map((_, index) => <Box key={index} sx={{ position: 'absolute', left: `${18 - index * 2}%`, top: `${34 + index * 5}%`, width: '20%', height: `${34 + index * 5}%`, border: `1px solid ${alpha(theme.palette.info.main, 0.28 - index * 0.04)}`, borderLeftColor: 'transparent', borderRightColor: 'transparent', borderRadius: '50%', transform: 'rotate(-8deg)' }} />)}
+          {showFieldLines && [0, 1, 2].map((index) => <Box key={index} sx={{ position: 'absolute', left: `${magnetLeft}%`, top: '49%', width: `${170 + index * 28}px`, height: `${92 + index * 24}px`, transform: 'translate(-50%, -50%)', border: `1px solid ${alpha(theme.palette.info.main, 0.42 - index * 0.09)}`, borderRadius: '50%', zIndex: 1 }} />)}
+          <Box component="svg" viewBox="0 0 1000 330" preserveAspectRatio="none" aria-label="Wires connecting the induction lamp and coils" sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }}>
+            <path d="M116 150 H250 V80 H418" fill="none" stroke="#9a4b32" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M116 178 H272 V112 H438" fill="none" stroke="#9a4b32" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+            {coilCount === 2 && <><path d="M116 188 H205 V238 H688" fill="none" stroke="#9a4b32" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" /><path d="M116 212 H230 V266 H714" fill="none" stroke="#9a4b32" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" /></>}
+            <circle cx="116" cy="150" r="5" fill="#d98b45" /><circle cx="116" cy="178" r="5" fill="#d98b45" />
+          </Box>
           <Typography sx={{ position: 'absolute', left: '8%', bottom: 16, color: 'text.secondary', fontSize: 11 }}>low field</Typography>
           <Typography sx={{ position: 'absolute', right: '8%', bottom: 16, color: 'text.secondary', fontSize: 11 }}>high field</Typography>
 
@@ -145,6 +152,7 @@ const FaradaySimulation: FC = () => {
             <FormControlLabel control={<Checkbox size="small" checked={showFieldLines} onChange={(event) => setShowFieldLines(event.target.checked)} />} label={<Typography variant="body2">Field lines</Typography>} />
             <FormControlLabel control={<Switch size="small" checked={showVoltmeter} onChange={(event) => setShowVoltmeter(event.target.checked)} />} label={<Typography variant="body2">Voltmeter</Typography>} />
             <Box component="button" type="button" onClick={reset} aria-label="Reset simulation" sx={{ display: 'flex', alignItems: 'center', gap: .5, border: 0, bgcolor: 'transparent', color: 'text.secondary', font: 'inherit', fontSize: 13, cursor: 'pointer' }}><RestartAltIcon fontSize="small" /> Reset</Box>
+            {onComplete && <Button size="small" variant="contained" onClick={onComplete}>Finish activity</Button>}
           </Stack>
         </Stack>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 2, pt: 1.75, borderTop: 1, borderColor: 'divider' }}>
