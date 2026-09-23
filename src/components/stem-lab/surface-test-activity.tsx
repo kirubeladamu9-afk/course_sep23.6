@@ -2,169 +2,135 @@ import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Chip from '@mui/material/Chip'
 import Paper from '@mui/material/Paper'
-import Slider from '@mui/material/Slider'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import ReplayIcon from '@mui/icons-material/Replay'
-import { type FC, useEffect, useState } from 'react'
+import { type FC, type PointerEvent, useEffect, useRef, useState } from 'react'
 
 export type SurfaceTestProps = { onComplete?: () => void }
-type SurfaceId = 'ice' | 'wood' | 'sandpaper'
-type ChallengeType = 'least' | 'most' | 'rank'
 type Feedback = 'idle' | 'correct' | 'incorrect'
-type Surface = { id: SurfaceId; name: string; coefficient: number; texture: string; color: string }
-type Result = { position: number; speed: number; time: number; running: boolean; pushed: boolean }
-type Challenge = { type: ChallengeType; pushStrength: number }
 
-const MASS = 2
-const GRAVITY = 9.81
-const PUSH_DURATION = .45
-const surfaces: Surface[] = [
-  { id: 'ice', name: 'Ice', coefficient: .05, texture: 'repeating-linear-gradient(135deg, rgba(255,255,255,.85) 0 7px, rgba(139,207,235,.5) 7px 14px)', color: '#c9edf8' },
-  { id: 'wood', name: 'Wood', coefficient: .3, texture: 'repeating-linear-gradient(0deg, rgba(145,91,48,.18) 0 3px, transparent 3px 13px)', color: '#d9b17b' },
-  { id: 'sandpaper', name: 'Sandpaper', coefficient: .65, texture: 'radial-gradient(rgba(86,56,38,.42) .8px, transparent .9px)', color: '#c99f7b' },
-]
+const BASE_TEMPERATURE = 22
+const TARGET_TEMPERATURE = 50
+const MAX_TEMPERATURE = 70
+const PARTICLE_POINTS = [20, 48, 76, 104, 132, 160, 188, 216, 244, 272]
+const TOP_PARTICLE_OFFSETS = [0, 1, -1, 1, 0, -1, 1, 0, -1, 0]
+const BOTTOM_PARTICLE_OFFSETS = [0, -11, 4, -9, 2, -13, 3, -10, 4, -8]
 
-const createResults = (): Record<SurfaceId, Result> => Object.fromEntries(surfaces.map((surface) => [surface.id, { position: 0, speed: 0, time: 0, running: false, pushed: false }])) as Record<SurfaceId, Result>
-const createChallenge = (): Challenge => ({ type: (['least', 'most', 'rank'] as ChallengeType[])[Math.floor(Math.random() * 3)], pushStrength: 8 + Math.floor(Math.random() * 11) })
-const frictionForce = (surface: Surface) => surface.coefficient * MASS * GRAVITY
-const labelForChallenge = (challenge: Challenge) => challenge.type === 'least' ? 'Which surface lets the block slide the farthest?' : challenge.type === 'most' ? 'Which surface needs the most force to keep the block moving?' : 'Rank the surfaces from least to most friction.'
-
-const particleXs = [22, 50, 78, 106, 134, 162, 190, 218]
-const particleCaptions: Record<SurfaceId, string> = {
-  ice: "Ice's smooth particles slide past each other easily.",
-  wood: 'Wood has moderate texture, creating some contact and resistance.',
-  sandpaper: "Sandpaper's rough surface particles interlock with the object, resisting motion.",
-}
-
-const ParticleSurfaceDiagram: FC<{ surface: Surface }> = ({ surface }) => {
-  const materialYs = surface.id === 'ice' ? particleXs.map(() => 54) : surface.id === 'wood' ? [56, 51, 57, 49, 55, 52, 58, 53] : [55, 43, 57, 46, 51, 40, 56, 44]
-  const materialXs = surface.id === 'sandpaper' ? particleXs.map((x, index) => x + (index % 2 ? 6 : -4)) : particleXs
-  const boundaryPoints = surface.id === 'ice' ? '14,44 226,44' : surface.id === 'wood' ? '14,47 44,45 74,48 104,44 134,47 164,45 194,49 226,46' : '14,48 42,37 70,50 100,40 130,46 160,34 190,49 226,38'
-  return <Box sx={{ width: { xs: '100%', sm: 250 }, flexShrink: 0, p: 1, border: 1, borderColor: 'rgba(61,48,40,.22)', borderRadius: 1.5, backgroundColor: 'rgba(255,255,255,.42)' }}>
-    <Typography variant="caption" sx={{ display: 'block', fontWeight: 900, color: '#3d3028' }}>Microscopic contact</Typography>
-    <Box component="svg" viewBox="0 0 240 112" role="img" aria-label={`${surface.name} microscopic particle contact diagram`} sx={{ display: 'block', width: '100%', height: 112, mt: .25 }}>
-      <text x="14" y="12" fontSize="8" fontWeight="700" fill="#5f5148">object particles</text>
-      {particleXs.map((x) => <circle key={`object-${x}`} cx={x} cy="34" r="9" fill="#e79a65" stroke="#a85d34" strokeWidth="1.5" />)}
-      <polyline points={boundaryPoints} fill="none" stroke="#715d50" strokeWidth="1.5" strokeDasharray={surface.id === 'ice' ? undefined : '2 1'} />
-      {materialYs.map((y, index) => <circle key={`material-${index}`} cx={materialXs[index]} cy={y} r="9" fill={surface.id === 'ice' ? '#9bd9ed' : surface.id === 'wood' ? '#b77d4b' : '#9b6e55'} stroke={surface.id === 'ice' ? '#4d9bb3' : '#6e4733'} strokeWidth="1.5" />)}
-      <text x="14" y="103" fontSize="8" fontWeight="700" fill="#5f5148">{surface.name.toLowerCase()} surface particles</text>
-    </Box>
-    <Typography variant="caption" sx={{ display: 'block', color: '#4e3c30', lineHeight: 1.25 }}>{particleCaptions[surface.id]}</Typography>
+const FrictionParticleDiagram: FC<{ intensity: number }> = ({ intensity }) => <Box sx={{ flex: 1, minWidth: { md: 310 }, p: { xs: 1.5, md: 2 }, border: 1, borderColor: 'rgba(61,48,40,.24)', borderRadius: 2, backgroundColor: '#f8f1e9', '@keyframes particleJostle': { '0%, 100%': { transform: 'translate(0, 0) rotate(0deg)' }, '25%': { transform: 'translate(1px, -1px) rotate(-2deg)' }, '50%': { transform: 'translate(-1px, 1px) rotate(2deg)' }, '75%': { transform: 'translate(1px, 1px) rotate(-1deg)' } } }}>
+  <Typography sx={{ fontWeight: 800, color: '#3d3028' }}>Zoomed-in contact boundary</Typography>
+  <Typography variant="caption" color="text.secondary">Object particles meet the surface particles below.</Typography>
+  <Box sx={{ position: 'relative', height: 178, mt: 1.5, borderRadius: 1.5, backgroundColor: '#fffaf4', overflow: 'hidden' }}>
+    <Typography variant="caption" sx={{ position: 'absolute', top: 8, left: 12, fontWeight: 800, color: '#8d5633' }}>TOP OBJECT</Typography>
+    <Typography variant="caption" sx={{ position: 'absolute', bottom: 8, left: 12, fontWeight: 800, color: '#4a7082' }}>BOTTOM SURFACE</Typography>
+    {PARTICLE_POINTS.map((left, index) => <Box key={`top-${left}`} sx={{ position: 'absolute', left, top: 51 + TOP_PARTICLE_OFFSETS[index], width: 25, height: 25, borderRadius: '50%', backgroundColor: '#e79a65', border: '2px solid #a85d34', animation: intensity > .04 ? `particleJostle ${Math.max(.18, .55 - intensity * .3)}s ease-in-out infinite` : 'none', animationDelay: `${index * -35}ms` }} />)}
+    {PARTICLE_POINTS.map((left, index) => <Box key={`bottom-${left}`} sx={{ position: 'absolute', left: left + (index % 2 ? 4 : -2), top: 82 + BOTTOM_PARTICLE_OFFSETS[index] - intensity * 6, width: 25, height: 25, borderRadius: '50%', backgroundColor: '#8ec9df', border: '2px solid #4d91aa', animation: intensity > .04 ? `particleJostle ${Math.max(.16, .48 - intensity * .28)}s ease-in-out infinite reverse` : 'none', animationDelay: `${index * -45}ms` }} />)}
+    <Box sx={{ position: 'absolute', top: 91, left: 12, right: 12, borderTop: '2px dashed rgba(91,72,58,.45)' }} />
   </Box>
+  <Typography variant="body2" sx={{ mt: 1, color: '#4e3c30' }}>The jagged particle edges interlock. Rubbing makes them bump and vibrate faster, converting motion into heat.</Typography>
+</Box>
+
+const Thermometer: FC<{ temperature: number; glowing: boolean }> = ({ temperature, glowing }) => {
+  const fill = Math.max(0, Math.min(100, ((temperature - BASE_TEMPERATURE) / (MAX_TEMPERATURE - BASE_TEMPERATURE)) * 100))
+  return <Stack alignItems="center" spacing={1} sx={{ width: 86, flexShrink: 0 }}>
+    <Typography variant="caption" sx={{ fontWeight: 900, color: '#6b3f35' }}>HEAT</Typography>
+    <Box sx={{ position: 'relative', width: 34, height: 178, display: 'flex', justifyContent: 'center' }}>
+      <Box sx={{ position: 'absolute', top: 6, width: 18, height: 142, border: '3px solid #8b6b60', borderRadius: 10, backgroundColor: '#f7e8df', overflow: 'hidden', boxShadow: glowing ? '0 0 18px rgba(225,72,52,.7)' : 'none', transition: 'box-shadow .3s ease' }}>
+        <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: `${fill}%`, backgroundColor: temperature >= TARGET_TEMPERATURE ? '#e64e3c' : '#ed8055', transition: 'height .2s ease' }} />
+      </Box>
+      <Box sx={{ position: 'absolute', bottom: 0, width: 42, height: 42, borderRadius: '50%', backgroundColor: temperature >= TARGET_TEMPERATURE ? '#e64e3c' : '#ed8055', border: '3px solid #8b4b40', boxShadow: glowing ? '0 0 18px rgba(225,72,52,.7)' : 'none', transition: 'background-color .3s ease, box-shadow .3s ease' }} />
+      {[0, 25, 50, 75, 100].map((tick) => <Typography key={tick} variant="caption" sx={{ position: 'absolute', right: -34, bottom: `${8 + tick * 1.38}%`, color: '#765b52', fontSize: 10 }}>{Math.round(BASE_TEMPERATURE + (MAX_TEMPERATURE - BASE_TEMPERATURE) * tick / 100)}°</Typography>)}
+    </Box>
+    <Typography variant="body2" sx={{ fontWeight: 900, color: temperature >= TARGET_TEMPERATURE ? 'error.main' : '#6b3f35', textAlign: 'center' }}>Temperature: {temperature.toFixed(0)}°C</Typography>
+  </Stack>
 }
 
 const SurfaceTestActivity: FC<SurfaceTestProps> = ({ onComplete }) => {
-  const [challenge, setChallenge] = useState(createChallenge)
-  const [pushStrength, setPushStrength] = useState(challenge.pushStrength)
-  const [results, setResults] = useState<Record<SurfaceId, Result>>(createResults)
+  const [temperature, setTemperature] = useState(BASE_TEMPERATURE)
+  const [objectPosition, setObjectPosition] = useState(0)
+  const [dragging, setDragging] = useState(false)
+  const [dragIntensity, setDragIntensity] = useState(0)
   const [feedback, setFeedback] = useState<Feedback>('idle')
-  const [feedbackVersion, setFeedbackVersion] = useState(0)
+  const lastPointerX = useRef<number | null>(null)
 
   useEffect(() => {
-    let frame = 0
-    let previous = performance.now()
-    const tick = (now: number) => {
-      const delta = Math.min(.032, Math.max(.001, (now - previous) / 1000))
-      previous = now
-      setResults((current) => {
-        const next = { ...current }
-        surfaces.forEach((surface) => {
-          const result = current[surface.id]
-          if (!result.running) return
-          const deceleration = surface.coefficient * GRAVITY
-          const nextSpeed = Math.max(0, result.speed - deceleration * delta)
-          const nextPosition = result.position + ((result.speed + nextSpeed) / 2) * delta
-          const nextResult = { position: nextPosition, speed: nextSpeed, time: result.time + delta, running: nextSpeed > .005, pushed: true }
-          next[surface.id] = nextResult
-        })
-        return next
-      })
-      frame = requestAnimationFrame(tick)
-    }
-    frame = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(frame)
+    const timer = window.setInterval(() => {
+      setTemperature((current) => Math.max(BASE_TEMPERATURE, current - .16))
+      setDragIntensity((current) => Math.max(0, current - .08))
+    }, 100)
+    return () => window.clearInterval(timer)
   }, [])
 
-  const runSurface = (surface: Surface) => {
-    const netForce = Math.max(0, pushStrength * 1 - frictionForce(surface))
-    const initialSpeed = netForce / MASS * PUSH_DURATION
-    setResults((current) => ({ ...current, [surface.id]: { position: 0, speed: initialSpeed, time: 0, running: initialSpeed > 0, pushed: true } }))
+  const startDragging = (event: PointerEvent<HTMLButtonElement>) => {
+    event.currentTarget.setPointerCapture(event.pointerId)
+    lastPointerX.current = event.clientX
+    setDragging(true)
     setFeedback('idle')
   }
 
-  const resetResultsForPush = (value: number) => {
-    setPushStrength(value)
-    setResults(createResults())
-    setFeedback('idle')
+  const dragObject = (event: PointerEvent<HTMLButtonElement>) => {
+    if (!dragging || lastPointerX.current === null) return
+    const distance = event.clientX - lastPointerX.current
+    lastPointerX.current = event.clientX
+    if (Math.abs(distance) < .1) return
+    setObjectPosition((current) => Math.max(-38, Math.min(38, current + distance * .08)))
+    setTemperature((current) => Math.min(MAX_TEMPERATURE, current + Math.abs(distance) * .12))
+    setDragIntensity((current) => Math.min(1, Math.max(current, Math.min(1, Math.abs(distance) / 12))))
   }
 
-  const allMeasured = surfaces.every((surface) => results[surface.id].pushed && !results[surface.id].running)
-  const orderedIds = [...surfaces].sort((a, b) => results[b.id].position - results[a.id].position).map((surface) => surface.id)
-  const mostDistant = orderedIds[0]
-  const leastDistant = orderedIds[orderedIds.length - 1]
-  const expectedRank: SurfaceId[] = ['ice', 'wood', 'sandpaper']
-  const challengeCorrect = allMeasured && (challenge.type === 'least' ? mostDistant === 'ice' : challenge.type === 'most' ? leastDistant === 'sandpaper' : orderedIds.every((id, index) => id === expectedRank[index]))
-  const completed = feedback === 'correct' && challengeCorrect
-
-  const checkActivity = () => {
-    setFeedback(challengeCorrect ? 'correct' : 'incorrect')
-    setFeedbackVersion((version) => version + 1)
+  const stopDragging = (event: PointerEvent<HTMLButtonElement>) => {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId)
+    lastPointerX.current = null
+    setDragging(false)
   }
 
+  const checkActivity = () => setFeedback(temperature >= TARGET_TEMPERATURE ? 'correct' : 'incorrect')
   const reset = () => {
-    const nextChallenge = createChallenge()
-    setChallenge(nextChallenge)
-    setPushStrength(nextChallenge.pushStrength)
-    setResults(createResults())
+    setTemperature(BASE_TEMPERATURE)
+    setObjectPosition(0)
+    setDragging(false)
+    setDragIntensity(0)
     setFeedback('idle')
-    setFeedbackVersion((version) => version + 1)
+    lastPointerX.current = null
   }
+  const completed = feedback === 'correct'
 
   return <Paper elevation={0} sx={{ p: { xs: 2.5, md: 3 }, border: 1, borderColor: 'divider' }}>
     <Stack spacing={2}>
       <Box>
         <Chip label="Platform engine" color="primary" variant="outlined" sx={{ mb: 1 }} />
         <Typography variant="h5">Surface Test</Typography>
-        <Typography color="text.secondary" sx={{ mt: .75 }}>Compare how friction differs across surfaces.</Typography>
+        <Typography color="text.secondary" sx={{ mt: .75 }}>Explore how friction converts motion into heat.</Typography>
       </Box>
       <Stack direction="row" spacing={1}><Chip label="Physics" color="primary" size="small" /><Chip label="Foundation" variant="outlined" size="small" /></Stack>
-      <Typography variant="body2" color="text.secondary">Push the same wooden block across each lane with the same strength. The block slows according to each surface&apos;s measured friction coefficient.</Typography>
-      <Paper elevation={0} sx={{ p: 2, border: 1, borderColor: 'divider' }}>
-        <Typography variant="body2" sx={{ fontWeight: 800 }}>Push strength: {pushStrength.toFixed(1)} N</Typography>
-        <Slider min={5} max={18} step={.5} value={pushStrength} onChange={(_, value) => resetResultsForPush(Array.isArray(value) ? value[0] : value)} aria-label="Push strength" valueLabelDisplay="auto" valueLabelFormat={(value) => `${Number(value).toFixed(1)} N`} />
-        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap><Chip label={`Block mass: ${MASS.toFixed(1)} kg`} variant="outlined" /><Chip label={`Push duration: ${PUSH_DURATION.toFixed(2)} s`} variant="outlined" /><Chip label="Same push on every lane" color="primary" /></Stack>
+      <Typography variant="body2" color="text.secondary">Drag the top object back and forth across the bottom surface. The microscopic particles interlock, bump, and vibrate as rubbing creates heat.</Typography>
+      <Paper elevation={0} sx={{ p: { xs: 1.5, md: 2.5 }, border: 1, borderColor: 'divider', backgroundColor: '#f5eee7' }}>
+        <Stack direction={{ xs: 'column', md: 'row' }} spacing={{ xs: 2, md: 3 }} alignItems="center">
+          <Box sx={{ position: 'relative', flex: 1, width: '100%', minHeight: 300, borderRadius: 2, background: 'linear-gradient(180deg, #fffaf5 0%, #f0e1d4 100%)', overflow: 'hidden', border: 1, borderColor: 'rgba(61,48,40,.18)' }}>
+            <Typography variant="caption" sx={{ position: 'absolute', top: 14, left: 16, color: '#5f5148', fontWeight: 900, letterSpacing: .4 }}>FRICTION CONTACT MODEL</Typography>
+            <Box sx={{ position: 'absolute', left: '8%', right: '8%', bottom: 38, height: 92, borderRadius: 1.5, backgroundColor: '#8e6c50', border: '4px solid #5d402e', boxShadow: 'inset 0 15px 0 rgba(255,255,255,.12)' }}>
+              <Typography sx={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', color: '#fff8ef', fontWeight: 900, letterSpacing: 1 }}>BOTTOM SURFACE</Typography>
+            </Box>
+            <Box sx={{ position: 'absolute', left: `calc(50% + ${objectPosition}px)`, bottom: 130, transform: 'translateX(-50%)', width: { xs: 190, sm: 240 }, height: 88, borderRadius: 1.5, backgroundColor: '#d3915e', border: '4px solid #754827', boxShadow: dragging ? '0 10px 0 rgba(88,52,33,.16)' : '0 7px 0 rgba(88,52,33,.16)', transition: dragging ? 'none' : 'left .25s ease, box-shadow .2s ease' }}>
+              <Typography component="span" sx={{ display: 'grid', placeItems: 'center', height: '100%', color: '#fff8ef', fontWeight: 900, letterSpacing: 1 }}>DRAG ME</Typography>
+            </Box>
+            <Box sx={{ position: 'absolute', left: '50%', bottom: 118, transform: 'translateX(-50%)', width: '82%', borderTop: '2px dashed rgba(91,72,58,.45)' }} />
+            <Typography variant="caption" sx={{ position: 'absolute', bottom: 14, left: 16, color: '#5f5148' }}>Two solids in contact · drag in either direction</Typography>
+            <Box component="button" type="button" aria-label="Drag the top object back and forth" onPointerDown={startDragging} onPointerMove={dragObject} onPointerUp={stopDragging} onPointerCancel={stopDragging} sx={{ position: 'absolute', left: `calc(50% + ${objectPosition}px)`, bottom: 130, transform: 'translateX(-50%)', width: { xs: 190, sm: 240 }, height: 88, opacity: 0, cursor: dragging ? 'grabbing' : 'grab', border: 0, background: 'none', touchAction: 'none' }} />
+          </Box>
+          <Thermometer temperature={temperature} glowing={feedback === 'correct'} />
+        </Stack>
       </Paper>
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.25}>
-        {surfaces.map((surface) => {
-          const result = results[surface.id]
-          const distance = result.position
-          const forceToKeepMoving = frictionForce(surface)
-          const objectLeft = `${Math.min(92, 8 + distance * 7)}%`
-          return <Paper key={surface.id} elevation={0} sx={{ flex: 1, p: 1.5, border: 1, borderColor: result.pushed && !result.running ? 'success.main' : 'divider', backgroundColor: surface.color, backgroundImage: surface.texture, backgroundSize: surface.id === 'sandpaper' ? '7px 7px' : 'auto' }}>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ xs: 'stretch', sm: 'center' }}>
-              <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Stack direction="row" justifyContent="space-between" alignItems="center"><Typography sx={{ fontWeight: 900, color: '#3d3028' }}>{surface.name}</Typography><Chip size="small" label={`μ = ${surface.coefficient.toFixed(2)}`} /></Stack>
-                <Box sx={{ position: 'relative', mt: 1, height: 54, borderBottom: '4px solid rgba(61,48,40,.45)', overflow: 'hidden' }}>
-                  <Box sx={{ position: 'absolute', left: objectLeft, bottom: 6, transform: 'translateX(-50%)', width: 56, height: 34, display: 'grid', placeItems: 'center', borderRadius: 1, backgroundColor: '#b87542', border: '3px solid #70401f', color: 'common.white', fontSize: 9, fontWeight: 900, transition: result.running ? 'none' : 'left .25s ease', animation: feedback === 'correct' ? 'surfaceBounce .65s ease-in-out infinite alternate' : 'none', '@keyframes surfaceBounce': { from: { transform: 'translateX(-50%) translateY(0)' }, to: { transform: 'translateX(-50%) translateY(-7px)' } } }}>BLOCK</Box>
-                </Box>
-                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: .8 }}><Typography variant="caption" sx={{ fontWeight: 800 }}>Distance traveled: {distance.toFixed(2)} m</Typography><Typography variant="caption" sx={{ fontWeight: 800 }}>Speed: {result.speed.toFixed(2)} m/s</Typography></Stack>
-                <Typography variant="caption" sx={{ color: '#4e3c30' }}>Force needed to keep it moving: {forceToKeepMoving.toFixed(2)} N</Typography>
-              </Box>
-              <ParticleSurfaceDiagram surface={surface} />
-              <Button variant="contained" size="small" onClick={() => runSurface(surface)} disabled={result.running} sx={{ alignSelf: { xs: 'flex-start', sm: 'center' }, backgroundColor: '#4e3c30', '&:hover': { backgroundColor: '#35271f' } }}>Push block</Button>
-            </Stack>
-          </Paper>
-        })}
-      </Stack>
-      <Paper role="status" elevation={0} sx={{ p: 1.5, backgroundColor: 'action.hover' }}><Typography sx={{ fontWeight: 800 }}>{allMeasured ? 'All surfaces measured — compare the distances and forces.' : 'Push the block once on each lane to compare its real motion.'}</Typography><Typography variant="caption" color="text.secondary">Lower friction produces less deceleration, so the same push carries the block farther.</Typography></Paper>
-      <Paper key={feedbackVersion} elevation={0} sx={{ p: 2, border: 1, borderColor: feedback === 'correct' ? 'success.main' : feedback === 'incorrect' ? 'warning.main' : 'divider', animation: feedback === 'correct' ? 'surfaceCelebrate .65s ease' : feedback === 'incorrect' ? 'surfaceShake .45s ease-in-out' : 'none', '@keyframes surfaceCelebrate': { '0%': { transform: 'scale(1)' }, '45%': { transform: 'scale(1.025)' }, '100%': { transform: 'scale(1)' } }, '@keyframes surfaceShake': { '0%, 100%': { transform: 'translateX(0)' }, '25%': { transform: 'translateX(-5px)' }, '75%': { transform: 'translateX(5px)' } } }}>
-        <Typography sx={{ fontWeight: 800 }}>Challenge: {labelForChallenge(challenge)}</Typography>
-        {feedback === 'correct' && <Typography role="status" color="success.main" sx={{ mt: 1, fontWeight: 800 }}>Right! Sandpaper has the most friction, so it takes the most force to slide something across it.</Typography>}
-        {feedback === 'incorrect' && <Typography role="status" color="warning.main" sx={{ mt: 1, fontWeight: 700 }}>Hint: Compare the measured distances and the force-needed readouts again. The surfaces do not slow the block equally.</Typography>}
+      <FrictionParticleDiagram intensity={dragIntensity} />
+      <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', fontStyle: 'italic' }}>Rubbing surfaces together makes their particles bump into each other faster, which creates heat.</Typography>
+      <Paper elevation={0} sx={{ p: 2, backgroundColor: 'action.hover' }}>
+        <Typography sx={{ fontWeight: 800 }}>Challenge</Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: .5 }}>Rub the object until the temperature reaches {TARGET_TEMPERATURE}°C.</Typography>
       </Paper>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}><Button variant="outlined" onClick={checkActivity} disabled={!allMeasured}>Check Activity</Button><Button variant="contained" disabled={!completed} onClick={onComplete} startIcon={<CheckCircleOutlineIcon />}>Complete Activity</Button><Button variant="text" onClick={reset} startIcon={<ReplayIcon />}>Reset</Button></Stack>
+      {feedback === 'correct' && <Paper role="status" elevation={0} sx={{ position: 'relative', p: 2, overflow: 'hidden', border: 1, borderColor: 'success.main', '@keyframes steam': { '0%': { opacity: 0, transform: 'translateY(10px) scale(.8)' }, '50%': { opacity: 1 }, '100%': { opacity: 0, transform: 'translateY(-18px) scale(1.2)' } } }}><Box sx={{ position: 'absolute', right: 30, top: 8, fontSize: 28, color: '#d8d8d8', animation: 'steam 1.2s ease-out infinite' }}>∿</Box><Typography color="success.main" sx={{ fontWeight: 800 }}>Right! Friction between surfaces converts motion into heat.</Typography><Typography variant="body2" color="text.secondary">The thermometer reached {TARGET_TEMPERATURE}°C because rubbing increased particle motion.</Typography></Paper>}
+      {feedback === 'incorrect' && <Paper role="status" elevation={0} sx={{ p: 1.5, border: 1, borderColor: 'warning.main' }}><Typography color="warning.dark" sx={{ fontWeight: 700 }}>Keep rubbing the object back and forth. More contact motion is needed to reach the target temperature.</Typography></Paper>}
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}><Button variant="outlined" onClick={checkActivity}>Check Activity</Button><Button variant="contained" disabled={!completed} onClick={onComplete} startIcon={<CheckCircleOutlineIcon />}>Complete Activity</Button><Button variant="text" onClick={reset} startIcon={<ReplayIcon />}>Reset</Button></Stack>
     </Stack>
   </Paper>
 }
