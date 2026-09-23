@@ -10,6 +10,7 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import { type FC, type PointerEvent, type ReactNode, useState } from 'react'
 import ForcePlaygroundActivity from './force-playground-activity'
+import ForceMotionLabActivity from './force-motion-lab-activity'
 import MotionTrackActivity from './motion-track-activity'
 import SpeedRaceActivity from './speed-race-activity'
 import ShadowLabActivity from './shadow-lab-activity'
@@ -792,6 +793,7 @@ const MathActivityEngine: FC<{ topic: MathTopic; onComplete?: () => void }> = ({
 
 export const PlatformEnginePreview: FC<{ engineId: PlatformEngineId; onComplete?: () => void; mathTopic?: MathTopic; topicTitle?: string }> = ({ engineId, onComplete, mathTopic, topicTitle }) => {
   if (mathTopic) return <MathActivityEngine topic={mathTopic} onComplete={onComplete} />
+  if (topicTitle === 'Forces & Motion') return <ForceMotionLabActivity onComplete={onComplete} />
   if (engineId === 'drag-drop') return <DragDropEngine config={{ title: 'Sort living and non-living things', prompt: 'Place each example into the correct category.', categories: ['Living', 'Non-living'], items: [{ id: 'tree', label: 'Tree', correctCategory: 'Living' }, { id: 'rock', label: 'Rock', correctCategory: 'Non-living' }, { id: 'dog', label: 'Dog', correctCategory: 'Living' }, { id: 'water', label: 'Water', correctCategory: 'Non-living' }] }} onComplete={onComplete ?? (() => undefined)} />
   if (engineId === 'living-or-not') return <LivingOrNotActivity onComplete={onComplete} />
   if (engineId === 'plant-labeling') return <PlantLabelingActivity onComplete={onComplete} />
@@ -811,6 +813,7 @@ export const PlatformEnginePreview: FC<{ engineId: PlatformEngineId; onComplete?
   if (engineId === 'data-chart') return <DataChartEngine onComplete={onComplete} />
   if (engineId === 'simulation') return <SimulationEngine onComplete={onComplete} />
   if (engineId === 'force-playground' || (engineId === 'physics' && topicTitle === 'Push & Pull')) return <ForcePlaygroundActivity onComplete={onComplete} />
+  if (engineId === 'force-motion-lab' || (engineId === 'physics' && topicTitle === 'Forces & Motion')) return <ForceMotionLabActivity onComplete={onComplete} />
   if (engineId === 'motion-track' || (engineId === 'physics' && topicTitle === 'Movement')) return <MotionTrackActivity onComplete={onComplete} />
   if (engineId === 'speed-race' || (engineId === 'physics' && topicTitle === 'Fast & Slow')) return <SpeedRaceActivity onComplete={onComplete} />
   if (engineId === 'shadow-lab' || (engineId === 'physics' && topicTitle === 'Light & Shadows')) return <ShadowLabActivity onComplete={onComplete} />
