@@ -12,6 +12,7 @@ import { type FC, type PointerEvent, type ReactNode, useState } from 'react'
 import ForcePlaygroundActivity from './force-playground-activity'
 import ForceMotionLabActivity from './force-motion-lab-activity'
 import SurfaceTestActivity from './surface-test-activity'
+import DropZoneActivity from './drop-zone-activity'
 import MotionTrackActivity from './motion-track-activity'
 import SpeedRaceActivity from './speed-race-activity'
 import ShadowLabActivity from './shadow-lab-activity'
@@ -796,6 +797,7 @@ export const PlatformEnginePreview: FC<{ engineId: PlatformEngineId; onComplete?
   if (mathTopic) return <MathActivityEngine topic={mathTopic} onComplete={onComplete} />
   if (topicTitle === 'Forces & Motion') return <ForceMotionLabActivity onComplete={onComplete} />
   if (topicTitle === 'Friction') return <SurfaceTestActivity onComplete={onComplete} />
+  if (topicTitle === 'Gravity') return <DropZoneActivity onComplete={onComplete} />
   if (engineId === 'drag-drop') return <DragDropEngine config={{ title: 'Sort living and non-living things', prompt: 'Place each example into the correct category.', categories: ['Living', 'Non-living'], items: [{ id: 'tree', label: 'Tree', correctCategory: 'Living' }, { id: 'rock', label: 'Rock', correctCategory: 'Non-living' }, { id: 'dog', label: 'Dog', correctCategory: 'Living' }, { id: 'water', label: 'Water', correctCategory: 'Non-living' }] }} onComplete={onComplete ?? (() => undefined)} />
   if (engineId === 'living-or-not') return <LivingOrNotActivity onComplete={onComplete} />
   if (engineId === 'plant-labeling') return <PlantLabelingActivity onComplete={onComplete} />
@@ -817,6 +819,7 @@ export const PlatformEnginePreview: FC<{ engineId: PlatformEngineId; onComplete?
   if (engineId === 'force-playground' || (engineId === 'physics' && topicTitle === 'Push & Pull')) return <ForcePlaygroundActivity onComplete={onComplete} />
   if (engineId === 'force-motion-lab' || (engineId === 'physics' && topicTitle === 'Forces & Motion')) return <ForceMotionLabActivity onComplete={onComplete} />
   if (engineId === 'surface-test' || (engineId === 'physics' && topicTitle === 'Friction')) return <SurfaceTestActivity onComplete={onComplete} />
+  if (engineId === 'drop-zone' || (engineId === 'physics' && topicTitle === 'Gravity')) return <DropZoneActivity onComplete={onComplete} />
   if (engineId === 'motion-track' || (engineId === 'physics' && topicTitle === 'Movement')) return <MotionTrackActivity onComplete={onComplete} />
   if (engineId === 'speed-race' || (engineId === 'physics' && topicTitle === 'Fast & Slow')) return <SpeedRaceActivity onComplete={onComplete} />
   if (engineId === 'shadow-lab' || (engineId === 'physics' && topicTitle === 'Light & Shadows')) return <ShadowLabActivity onComplete={onComplete} />

@@ -99,6 +99,7 @@ export const engineForTopic = (subject: string, topic: string): PlatformEngineId
     if (value === 'floating & sinking') return 'floating-sinking'
     if (value === 'forces & motion') return 'force-motion-lab'
     if (value === 'friction') return 'surface-test'
+    if (value === 'gravity') return 'drop-zone'
     return 'physics'
   }
   if (subject === 'Chemistry') {
