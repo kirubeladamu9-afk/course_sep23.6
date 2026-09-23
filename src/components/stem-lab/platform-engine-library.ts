@@ -22,6 +22,7 @@ export type PlatformEngineId =
   | 'drop-zone'
   | 'light-ray'
   | 'light-through-materials'
+  | 'vector-playground-physics'
   | 'motion-track'
   | 'speed-race'
   | 'speed-calculator-lab'
@@ -71,6 +72,7 @@ export const PLATFORM_ENGINES: PlatformEngineDefinition[] = [
   { id: 'drop-zone', name: 'Drop Zone', description: 'Explore how gravity pulls objects downward.', subjects: ['Physics'], examples: ['Gravity', 'Air resistance', 'Falling objects'], interaction: 'Drop objects and compare equal gravity acceleration with feather air resistance.' },
   { id: 'light-ray', name: 'Light Ray Simulator', description: 'See how light reflects off mirrors.', subjects: ['Physics'], examples: ['Reflection', 'Mirror angle', 'Law of reflection'], interaction: 'Rotate a mirror and observe the incoming and reflected ray update live.' },
   { id: 'light-through-materials', name: 'Light Through Materials', description: 'See how light bends through different materials.', subjects: ['Physics'], examples: ['Snell’s law', 'Air, water, and glass', 'Angles of refraction'], interaction: 'Adjust an incident ray and compare its computed bend across material boundaries.' },
+  { id: 'vector-playground-physics', name: 'Vector Playground', description: 'Explore the difference between vectors and scalars.', subjects: ['Physics'], examples: ['Vector components', 'Resultants', 'Scalars and vectors'], interaction: 'Drag vector tips, combine components, and inspect the computed resultant.' },
   { id: 'motion-track', name: 'Motion Track', description: 'Explore different types of movement.', subjects: ['Physics'], examples: ['Position', 'Speed', 'Movement types'], interaction: 'Control a car and inspect its live motion.' },
   { id: 'speed-race', name: 'Speed Race', description: 'Compare the speeds of moving objects.', subjects: ['Physics'], examples: ['Racing characters', 'Speed comparisons', 'Prediction'], interaction: 'Predict and observe which racer is faster.' },
   { id: 'speed-calculator-lab', name: 'Speed Calculator Lab', description: 'Calculate and compare speed and velocity.', subjects: ['Physics'], examples: ['Distance and time', 'Speed calculations', 'Direction and velocity'], interaction: 'Adjust distance and time, then validate the calculated speed and direction.' },

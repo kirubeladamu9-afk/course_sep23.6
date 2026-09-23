@@ -103,6 +103,7 @@ export const engineForTopic = (subject: string, topic: string): PlatformEngineId
     if (value === 'gravity') return 'drop-zone'
     if (value === 'reflection') return 'light-ray'
     if (value === 'refraction') return 'light-through-materials'
+    if (value === 'vectors & scalars') return 'vector-playground-physics'
     if (value === 'simple machines') return 'machine-playground'
     if (value === 'energy') return 'energy-roller-coaster'
     if (value === 'electricity') return 'circuit-builder'

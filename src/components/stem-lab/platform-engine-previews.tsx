@@ -18,6 +18,7 @@ import SurfaceTestActivity from './surface-test-activity'
 import DropZoneActivity from './drop-zone-activity'
 import LightRaySimulatorActivity from './light-ray-simulator-activity'
 import LightThroughMaterialsActivity from './light-through-materials-activity'
+import VectorPlaygroundPhysicsActivity from './vector-playground-physics-activity'
 import MotionTrackActivity from './motion-track-activity'
 import SpeedRaceActivity from './speed-race-activity'
 import SpeedCalculatorLabActivity from './speed-calculator-lab-activity'
@@ -806,6 +807,7 @@ export const PlatformEnginePreview: FC<{ engineId: PlatformEngineId; onComplete?
   if (topicTitle === 'Gravity') return <DropZoneActivity onComplete={onComplete} />
   if (topicTitle === 'Reflection') return <LightRaySimulatorActivity onComplete={onComplete} />
   if (topicTitle === 'Refraction') return <LightThroughMaterialsActivity onComplete={onComplete} />
+  if (topicTitle === 'Vectors & Scalars') return <VectorPlaygroundPhysicsActivity onComplete={onComplete} />
   if (topicTitle === 'Simple Machines') return <MachinePlaygroundActivity onComplete={onComplete} />
   if (topicTitle === 'Energy') return <EnergyRollerCoasterActivity onComplete={onComplete} />
   if (topicTitle === 'Electricity') return <CircuitBuilderActivity onComplete={onComplete} />
@@ -836,6 +838,7 @@ export const PlatformEnginePreview: FC<{ engineId: PlatformEngineId; onComplete?
   if (engineId === 'drop-zone' || (engineId === 'physics' && topicTitle === 'Gravity')) return <DropZoneActivity onComplete={onComplete} />
   if (engineId === 'light-ray' || (engineId === 'physics' && topicTitle === 'Reflection')) return <LightRaySimulatorActivity onComplete={onComplete} />
   if (engineId === 'light-through-materials' || (engineId === 'physics' && topicTitle === 'Refraction')) return <LightThroughMaterialsActivity onComplete={onComplete} />
+  if (engineId === 'vector-playground-physics' || (engineId === 'physics' && topicTitle === 'Vectors & Scalars')) return <VectorPlaygroundPhysicsActivity onComplete={onComplete} />
   if (engineId === 'motion-track' || (engineId === 'physics' && topicTitle === 'Movement')) return <MotionTrackActivity onComplete={onComplete} />
   if (engineId === 'speed-race' || (engineId === 'physics' && topicTitle === 'Fast & Slow')) return <SpeedRaceActivity onComplete={onComplete} />
   if (engineId === 'speed-calculator-lab' || (engineId === 'physics' && topicTitle === 'Speed & Velocity')) return <SpeedCalculatorLabActivity onComplete={onComplete} />
