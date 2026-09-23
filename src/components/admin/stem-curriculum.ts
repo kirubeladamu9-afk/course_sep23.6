@@ -92,6 +92,7 @@ export const engineForTopic = (subject: string, topic: string): PlatformEngineId
     if (value === 'push & pull') return 'force-playground'
     if (value === 'movement') return 'motion-track'
     if (value === 'fast & slow') return 'speed-race'
+    if (value === 'speed & velocity') return 'speed-calculator-lab'
     if (value === 'light & shadows') return 'shadow-lab'
     if (value === 'sound & vibrations') return 'wave-simulator'
     if (value === 'heat & cold') return 'particle-heat'

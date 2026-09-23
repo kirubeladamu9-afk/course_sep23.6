@@ -23,6 +23,7 @@ export type PlatformEngineId =
   | 'light-ray'
   | 'motion-track'
   | 'speed-race'
+  | 'speed-calculator-lab'
   | 'shadow-lab'
   | 'wave-simulator'
   | 'particle-heat'
@@ -70,6 +71,7 @@ export const PLATFORM_ENGINES: PlatformEngineDefinition[] = [
   { id: 'light-ray', name: 'Light Ray Simulator', description: 'See how light reflects off mirrors.', subjects: ['Physics'], examples: ['Reflection', 'Mirror angle', 'Law of reflection'], interaction: 'Rotate a mirror and observe the incoming and reflected ray update live.' },
   { id: 'motion-track', name: 'Motion Track', description: 'Explore different types of movement.', subjects: ['Physics'], examples: ['Position', 'Speed', 'Movement types'], interaction: 'Control a car and inspect its live motion.' },
   { id: 'speed-race', name: 'Speed Race', description: 'Compare the speeds of moving objects.', subjects: ['Physics'], examples: ['Racing characters', 'Speed comparisons', 'Prediction'], interaction: 'Predict and observe which racer is faster.' },
+  { id: 'speed-calculator-lab', name: 'Speed Calculator Lab', description: 'Calculate and compare speed and velocity.', subjects: ['Physics'], examples: ['Distance and time', 'Speed calculations', 'Direction and velocity'], interaction: 'Adjust distance and time, then validate the calculated speed and direction.' },
   { id: 'shadow-lab', name: 'Shadow Lab', description: 'See how light creates shadows.', subjects: ['Physics'], examples: ['Light position', 'Shadow size', 'Shadow direction'], interaction: 'Move a lamp, object, and screen to change a computed shadow.' },
   { id: 'wave-simulator', name: 'Wave Simulator', description: 'Explore how vibrations create sound.', subjects: ['Physics'], examples: ['Frequency', 'Wavelength', 'Pitch'], interaction: 'Adjust frequency and observe a synchronized sound wave.' },
   { id: 'particle-heat', name: 'Particle Heat Simulator', description: 'See how heat affects particle movement.', subjects: ['Physics'], examples: ['Temperature', 'Particle motion', 'Heating and cooling'], interaction: 'Adjust temperature and observe particles move faster or slower.' },

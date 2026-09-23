@@ -19,6 +19,7 @@ import DropZoneActivity from './drop-zone-activity'
 import LightRaySimulatorActivity from './light-ray-simulator-activity'
 import MotionTrackActivity from './motion-track-activity'
 import SpeedRaceActivity from './speed-race-activity'
+import SpeedCalculatorLabActivity from './speed-calculator-lab-activity'
 import ShadowLabActivity from './shadow-lab-activity'
 import WaveSimulatorActivity from './wave-simulator-activity'
 import ParticleHeatActivity from './particle-heat-activity'
@@ -834,6 +835,7 @@ export const PlatformEnginePreview: FC<{ engineId: PlatformEngineId; onComplete?
   if (engineId === 'light-ray' || (engineId === 'physics' && topicTitle === 'Reflection')) return <LightRaySimulatorActivity onComplete={onComplete} />
   if (engineId === 'motion-track' || (engineId === 'physics' && topicTitle === 'Movement')) return <MotionTrackActivity onComplete={onComplete} />
   if (engineId === 'speed-race' || (engineId === 'physics' && topicTitle === 'Fast & Slow')) return <SpeedRaceActivity onComplete={onComplete} />
+  if (engineId === 'speed-calculator-lab' || (engineId === 'physics' && topicTitle === 'Speed & Velocity')) return <SpeedCalculatorLabActivity onComplete={onComplete} />
   if (engineId === 'shadow-lab' || (engineId === 'physics' && topicTitle === 'Light & Shadows')) return <ShadowLabActivity onComplete={onComplete} />
   if (engineId === 'wave-simulator' || (engineId === 'physics' && topicTitle === 'Sound & Vibrations')) return <WaveSimulatorActivity onComplete={onComplete} />
   if (engineId === 'particle-heat' || (engineId === 'physics' && topicTitle === 'Heat & Cold')) return <ParticleHeatActivity onComplete={onComplete} />
