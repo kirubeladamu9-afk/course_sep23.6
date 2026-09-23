@@ -33,7 +33,7 @@ const createRound = (): Round => {
     mass,
     targets: {
       lever: randomInt(Math.max(8, Math.round(weight * 0.16)), Math.max(12, Math.round(weight * 0.32))),
-      pulley: randomInt(Math.max(10, Math.round(weight * 0.18)), Math.max(14, Math.round(weight * 0.52))),
+      pulley: randomInt(Math.max(8, Math.round(weight * 0.10)), Math.max(12, Math.round(weight * 0.30))),
       ramp: randomInt(Math.max(10, Math.round(weight * 0.18)), Math.max(14, Math.round(weight * 0.48))),
     },
   }
@@ -55,7 +55,7 @@ const MachineVisual: FC<{
   const loadArm = Math.max(.05, fulcrum - .2)
   const effortArm = Math.max(.05, .8 - fulcrum)
   const leverForce = weight * loadArm / effortArm
-  const supportingSegments = 1 + movablePulleys
+  const supportingSegments = movablePulleys === 0 ? 1 : movablePulleys * 2
   const pulleyForce = weight / supportingSegments
   const rampForce = weight * Math.sin((angle * Math.PI) / 180)
   const idealForce = machine === 'lever' ? leverForce : machine === 'pulley' ? pulleyForce : rampForce
@@ -66,8 +66,14 @@ const MachineVisual: FC<{
   const movableY = 136 - motionProgress * 38
   const loadY = 178 - motionProgress * 38
   const rampProgress = motionProgress
-  const rampBoxX = 150 + rampProgress * 270
-  const rampBoxY = 166 - rampProgress * 82
+  const rampLength = 350
+  const rampAngleRadians = (angle * Math.PI) / 180
+  const rampStartX = 135
+  const rampStartY = 210
+  const rampEndX = rampStartX + Math.cos(rampAngleRadians) * rampLength
+  const rampEndY = rampStartY - Math.sin(rampAngleRadians) * rampLength
+  const rampBoxX = rampStartX + rampProgress * Math.cos(rampAngleRadians) * 245
+  const rampBoxY = rampStartY - rampProgress * Math.sin(rampAngleRadians) * 245
 
   if (machine === 'lever') return <Box component="svg" viewBox="0 0 640 260" sx={{ width: '100%', minHeight: 230, borderRadius: 2, background: 'linear-gradient(180deg, #e7f4f5, #f6f0df)' }} role="img" aria-label="Seesaw lever with adjustable fulcrum">
     <line x1="55" x2="585" y1="210" y2="210" stroke="#a3b8b8" strokeWidth="5" />
@@ -84,27 +90,39 @@ const MachineVisual: FC<{
     <text x="320" y="244" textAnchor="middle" fill="#526568" fontSize="14">Drag the fulcrum slider to change both lever arms</text>
   </Box>
 
-  if (machine === 'pulley') return <Box component="svg" viewBox="0 0 640 260" sx={{ width: '100%', minHeight: 230, borderRadius: 2, background: 'linear-gradient(180deg, #edf2fb, #f7f0df)' }} role="img" aria-label={`${fixedPulleys} fixed and ${movablePulleys} movable pulleys`}>
-    <line x1="80" x2="560" y1="35" y2="35" stroke="#536b83" strokeWidth="12" />
-    <text x="320" y="22" textAnchor="middle" fill="#526568" fontSize="14">ceiling support</text>
-    {Array.from({ length: fixedPulleys }, (_, index) => { const x = 180 + index * 62; return <g key={`fixed-${x}`}><circle cx={x} cy="84" r="27" fill="#94a9c4" stroke="#536b83" strokeWidth="5" /><circle cx={x} cy="84" r="7" fill="#fff" stroke="#536b83" strokeWidth="3" /><text x={x} y="125" textAnchor="middle" fill="#526568" fontSize="11">fixed</text></g> })}
-    {Array.from({ length: movablePulleys }, (_, index) => { const x = 300 + index * 62; return <g key={`movable-${x}`}><circle cx={x} cy={movableY} r="27" fill="#d9a441" stroke="#805f1b" strokeWidth="5" /><circle cx={x} cy={movableY} r="7" fill="#fff" stroke="#805f1b" strokeWidth="3" /><text x={x} y={movableY + 42} textAnchor="middle" fill="#526568" fontSize="11">movable</text></g> })}
-    <path d={`M 120 84 ${fixedPulleys ? `L ${180 + (fixedPulleys - 1) * 62} 84 ` : ''}Q ${300} ${movableY + 35} ${300 + movablePulleys * 62} ${movableY} L 535 84 L 535 ${loadY}`} fill="none" stroke="#bd6b42" strokeWidth="5" />
-    <rect x="505" y={loadY} width="60" height="42" rx="7" fill="#c98b4c" stroke="#7d542b" strokeWidth="4" style={{ transition: 'y .1s linear' }} />
-    <text x="535" y={loadY + 26} textAnchor="middle" fill="#fff" fontSize="14" fontWeight="700">BOX</text>
-    <text x="535" y="232" textAnchor="middle" fill="#526568" fontSize="14">{mass} kg load</text>
-    <text x="410" y="112" fill="#526568" fontSize="14">pull rope ↓</text>
-    <text x="320" y="248" textAnchor="middle" fill="#526568" fontSize="13">{supportingSegments} supporting rope segment{supportingSegments === 1 ? '' : 's'} · fixed pulleys redirect force only</text>
-  </Box>
+  if (machine === 'pulley') {
+    const fixedX = Array.from({ length: fixedPulleys }, (_, index) => 180 + index * 64)
+    const movableX = Array.from({ length: movablePulleys }, (_, index) => 280 + index * 58)
+    const firstMovableX = movableX[0] ?? 300
+    const lastFixedX = fixedX[fixedX.length - 1] ?? 180
+    const ropeParts = movablePulleys === 0
+      ? `M 120 84 L ${lastFixedX} 84 L 535 84 L 535 ${loadY}`
+      : `M 120 84 L ${lastFixedX} 84 L ${firstMovableX} ${movableY - 27} L ${firstMovableX} ${movableY + 27} L ${lastFixedX} 84 M ${firstMovableX} ${movableY + 27} ${movableX.slice(1).map((x) => `L ${x} ${movableY + 27} L ${x} ${movableY - 27}`).join(' ')} L 535 84 L 535 ${loadY}`
+    return <Box component="svg" viewBox="0 0 640 260" sx={{ width: '100%', minHeight: 230, borderRadius: 2, background: 'linear-gradient(180deg, #edf2fb, #f7f0df)' }} role="img" aria-label={`${fixedPulleys} fixed and ${movablePulleys} movable pulleys`}>
+      <line x1="80" x2="560" y1="35" y2="35" stroke="#536b83" strokeWidth="12" strokeLinecap="round" />
+      <text x="320" y="22" textAnchor="middle" fill="#526568" fontSize="14">ceiling support</text>
+      {fixedX.map((x) => <g key={`fixed-${x}`}><line x1={x} x2={x} y1="35" y2="57" stroke="#536b83" strokeWidth="5" /><circle cx={x} cy="84" r="27" fill="#b5c8dc" stroke="#536b83" strokeWidth="5" /><circle cx={x} cy="84" r="7" fill="#fff" stroke="#536b83" strokeWidth="3" /><text x={x} y="125" textAnchor="middle" fill="#526568" fontSize="11">fixed</text></g>)}
+      {movableX.map((x) => <g key={`movable-${x}`}><line x1={x} x2={x} y1={movableY - 48} y2={movableY - 27} stroke="#805f1b" strokeWidth="5" /><circle cx={x} cy={movableY} r="27" fill="#e8b94f" stroke="#805f1b" strokeWidth="5" /><circle cx={x} cy={movableY} r="7" fill="#fff" stroke="#805f1b" strokeWidth="3" /><text x={x} y={movableY + 42} textAnchor="middle" fill="#526568" fontSize="11">movable</text></g>)}
+      <path d={ropeParts} fill="none" stroke="#b65f3b" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
+      <rect x="505" y={loadY} width="60" height="42" rx="7" fill="#c98b4c" stroke="#7d542b" strokeWidth="4" style={{ transition: 'y .1s linear' }} />
+      <text x="535" y={loadY + 26} textAnchor="middle" fill="#fff" fontSize="14" fontWeight="700">{mass} kg</text>
+      <text x="410" y="112" fill="#526568" fontSize="14">free end ↓</text>
+      <text x="320" y="248" textAnchor="middle" fill="#526568" fontSize="13">{supportingSegments} supporting rope segments · fixed pulleys redirect force</text>
+    </Box>
+  }
 
+  const rampPoints = `${rampStartX},${rampStartY} ${rampEndX},${rampEndY} ${rampEndX},${rampStartY}`
+  const boxWidth = 64
+  const boxHeight = 42
+  const boxAngle = -angle
   return <Box component="svg" viewBox="0 0 640 260" sx={{ width: '100%', minHeight: 230, borderRadius: 2, background: 'linear-gradient(180deg, #edf6ee, #f8f0df)' }} role="img" aria-label={`Ramp set to ${angle} degrees`}>
-    <line x1="75" x2="575" y1="210" y2="210" stroke="#8b9c84" strokeWidth="6" />
-    <polygon points="115,210 515,210 515,78" fill="#d8e7d3" stroke="#587457" strokeWidth="5" />
-    <line x1="180" x2="500" y1="188" y2="92" stroke="#587457" strokeWidth="5" strokeDasharray="8 7" />
-    <g style={{ transform: `translate(${rampBoxX}px, ${rampBoxY}px)`, transition: 'transform .1s linear' }}><rect x="0" y="0" width="72" height="48" rx="8" fill="#c98b4c" stroke="#7d542b" strokeWidth="4" /><text x="36" y="30" textAnchor="middle" fill="#fff" fontSize="14" fontWeight="700">BOX</text></g>
-    <text x="320" y="244" textAnchor="middle" fill="#526568" fontSize="14">{angle}° incline · {mass} kg load</text>
-    <text x="493" y="74" textAnchor="middle" fill="#526568" fontSize="14">1 m rise</text>
-    <line x1="522" x2="522" y1="210" y2="78" stroke="#526568" strokeWidth="2" strokeDasharray="5 5" />
+    <line x1="70" x2="585" y1="210" y2="210" stroke="#8b9c84" strokeWidth="6" />
+    <polygon points={rampPoints} fill="#d8e7d3" stroke="#587457" strokeWidth="5" />
+    <line x1={rampStartX} x2={rampEndX} y1={rampStartY} y2={rampEndY} stroke="#587457" strokeWidth="5" />
+    <g style={{ transform: `translate(${rampBoxX}px, ${rampBoxY}px) rotate(${boxAngle}deg)`, transformOrigin: `${boxWidth / 2}px ${boxHeight / 2}px`, transition: 'transform .1s linear' }}><rect x="0" y="0" width={boxWidth} height={boxHeight} rx="8" fill="#c98b4c" stroke="#7d542b" strokeWidth="4" /><text x={boxWidth / 2} y="27" textAnchor="middle" fill="#fff" fontSize="13" fontWeight="700">{mass} kg</text></g>
+    <line x1={rampEndX} x2={rampEndX} y1={rampStartY} y2={rampEndY} stroke="#526568" strokeWidth="2" strokeDasharray="5 5" />
+    <text x="320" y="238" textAnchor="middle" fill="#526568" fontSize="14">{angle}° incline · push parallel to the track</text>
+    <text x={rampEndX - 18} y={rampEndY - 8} textAnchor="end" fill="#526568" fontSize="13">1 m rise</text>
   </Box>
 }
 
@@ -123,7 +141,7 @@ const MachinePlaygroundActivity: FC<MachinePlaygroundProps> = ({ onComplete }) =
   const weight = roundState.mass * GRAVITY
   const loadArm = Math.max(.05, fulcrum - 0.2)
   const effortArm = Math.max(.05, 0.8 - fulcrum)
-  const supportingSegments = 1 + movablePulleys
+  const supportingSegments = movablePulleys === 0 ? 1 : movablePulleys * 2
   const idealLeverForce = weight * loadArm / effortArm
   const idealPulleyForce = weight / supportingSegments
   const idealRampForce = weight * Math.sin((angle * Math.PI) / 180)
@@ -140,7 +158,7 @@ const MachinePlaygroundActivity: FC<MachinePlaygroundProps> = ({ onComplete }) =
   const speedLabel = machine === 'ramp'
     ? `${round(distanceNeeded)} m of travel for 1 m rise`
     : machine === 'pulley'
-      ? `${supportingSegments} rope segments · ${round(distanceNeeded)} m pull`
+      ? `${supportingSegments} supporting rope segments · ${round(distanceNeeded)} m pull`
       : `${round(distanceNeeded)} m effort travel for 1 m lift`
 
   useEffect(() => {
