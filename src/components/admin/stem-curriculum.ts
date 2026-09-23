@@ -110,6 +110,7 @@ export const engineForTopic = (subject: string, topic: string): PlatformEngineId
     if (value === 'simple machines') return 'machine-playground'
     if (value === 'energy') return 'energy-roller-coaster'
     if (value === 'electricity') return 'circuit-builder'
+    if (value === 'semiconductor electronics') return 'semiconductor'
     return 'physics'
   }
   if (subject === 'Chemistry') {
