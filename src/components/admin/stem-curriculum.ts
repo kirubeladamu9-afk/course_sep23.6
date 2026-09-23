@@ -100,6 +100,7 @@ export const engineForTopic = (subject: string, topic: string): PlatformEngineId
     if (value === 'forces & motion') return 'force-motion-lab'
     if (value === 'friction') return 'surface-test'
     if (value === 'gravity') return 'drop-zone'
+    if (value === 'reflection') return 'light-ray'
     return 'physics'
   }
   if (subject === 'Chemistry') {

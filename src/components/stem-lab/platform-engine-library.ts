@@ -17,6 +17,7 @@ export type PlatformEngineId =
   | 'force-motion-lab'
   | 'surface-test'
   | 'drop-zone'
+  | 'light-ray'
   | 'motion-track'
   | 'speed-race'
   | 'shadow-lab'
@@ -60,6 +61,7 @@ export const PLATFORM_ENGINES: PlatformEngineDefinition[] = [
   { id: 'force-motion-lab', name: 'Force & Motion Lab', description: 'See how forces cause objects to move.', subjects: ['Physics'], examples: ['Applied force', 'Acceleration', 'Speed'], interaction: 'Apply a measured force and observe a cart accelerate across a surface.' },
   { id: 'surface-test', name: 'Surface Test', description: 'Compare how friction differs across surfaces.', subjects: ['Physics'], examples: ['Ice', 'Wood', 'Sandpaper'], interaction: 'Apply the same push and compare how friction changes the block\'s motion.' },
   { id: 'drop-zone', name: 'Drop Zone', description: 'Explore how gravity pulls objects downward.', subjects: ['Physics'], examples: ['Gravity', 'Air resistance', 'Falling objects'], interaction: 'Drop objects and compare equal gravity acceleration with feather air resistance.' },
+  { id: 'light-ray', name: 'Light Ray Simulator', description: 'See how light reflects off mirrors.', subjects: ['Physics'], examples: ['Reflection', 'Mirror angle', 'Law of reflection'], interaction: 'Rotate a mirror and observe the incoming and reflected ray update live.' },
   { id: 'motion-track', name: 'Motion Track', description: 'Explore different types of movement.', subjects: ['Physics'], examples: ['Position', 'Speed', 'Movement types'], interaction: 'Control a car and inspect its live motion.' },
   { id: 'speed-race', name: 'Speed Race', description: 'Compare the speeds of moving objects.', subjects: ['Physics'], examples: ['Racing characters', 'Speed comparisons', 'Prediction'], interaction: 'Predict and observe which racer is faster.' },
   { id: 'shadow-lab', name: 'Shadow Lab', description: 'See how light creates shadows.', subjects: ['Physics'], examples: ['Light position', 'Shadow size', 'Shadow direction'], interaction: 'Move a lamp, object, and screen to change a computed shadow.' },
