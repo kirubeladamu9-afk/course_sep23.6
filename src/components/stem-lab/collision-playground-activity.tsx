@@ -6,6 +6,7 @@ import FormControlLabel from '@mui/material/FormControlLabel'
 import Paper from '@mui/material/Paper'
 import Slider from '@mui/material/Slider'
 import Stack from '@mui/material/Stack'
+import TextField from '@mui/material/TextField'
 import ToggleButton from '@mui/material/ToggleButton'
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import Typography from '@mui/material/Typography'
@@ -13,182 +14,222 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import PauseIcon from '@mui/icons-material/Pause'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import ReplayIcon from '@mui/icons-material/Replay'
-import { type FC, useEffect, useRef, useState } from 'react'
+import SkipNextIcon from '@mui/icons-material/SkipNext'
+import { type FC, type PointerEvent, useEffect, useRef, useState } from 'react'
 
 export type CollisionPlaygroundProps = { onComplete?: () => void }
+type LawMode = 'first' | 'second' | 'third'
+type BallId = 'one' | 'two'
 type Feedback = 'idle' | 'correct' | 'incorrect'
 type MassOption = { id: string; name: string; mass: number; color: string }
-type Simulation = { position: number; velocity: number; elapsed: number; running: boolean }
-type VisibleReadouts = { sum: boolean; values: boolean; speed: boolean }
-type Challenge = { targetSpeed: number; time: number }
+type BallState = { position: number; velocity: number; mass: number }
+type Challenge = { target: number }
+type Readouts = { velocity: boolean; momentum: boolean; deltaMomentum: boolean; centerOfMass: boolean; kineticEnergy: boolean; values: boolean }
 
+type AdvanceResult = { first: BallState; second: BallState; touching: boolean; didCollide: boolean; impulse: number }
 const MASS_OPTIONS: MassOption[] = [
   { id: 'box', name: 'Light box', mass: 2, color: '#e3a15e' },
   { id: 'crate', name: 'Medium crate', mass: 5, color: '#b97845' },
   { id: 'fridge', name: 'Heavy fridge', mass: 12, color: '#8ca1aa' },
 ]
-const MAX_FORCE = 500
-const TRACK_HALF_LENGTH = 8
+const TRACK_START = 2
+const TRACK_END = 22
+const BALL_RADIUS = .75
+const COLLISION_TIME = .08
 const randomItem = <T,>(items: T[]) => items[Math.floor(Math.random() * items.length)]
-const createChallenge = (): Challenge => ({ targetSpeed: randomItem([4, 5, 6]), time: randomItem([2, 3, 4]) })
+const createChallenge = (mode: LawMode): Challenge => ({ target: mode === 'first' ? randomItem([2, 3, 4]) : mode === 'second' ? randomItem([3, 5, 7]) : randomItem([2, 3, 4, 5]) })
+const initialBalls = (mode: LawMode): { one: BallState; two: BallState } => mode === 'first'
+  ? { one: { position: 7, velocity: 3, mass: 2 }, two: { position: 18, velocity: 0, mass: 2 } }
+  : mode === 'second'
+    ? { one: { position: 7, velocity: 0, mass: 2 }, two: { position: 18, velocity: 0, mass: 2 } }
+    : { one: { position: 7, velocity: 2.5, mass: .5 }, two: { position: 18, velocity: -1, mass: 1.5 } }
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
-
-const Team: FC<{ side: 'left' | 'right'; force: number }> = ({ side, force }) => <Stack alignItems={side === 'left' ? 'flex-end' : 'flex-start'} spacing={.5} sx={{ width: { xs: 88, sm: 118 }, flexShrink: 0 }}>
-  <Typography variant="caption" sx={{ fontWeight: 900, color: side === 'left' ? '#336d82' : '#a34d43' }}>{side === 'left' ? 'LEFT TEAM' : 'RIGHT TEAM'}</Typography>
-  <Stack direction={side === 'left' ? 'row-reverse' : 'row'} spacing={.5}>
-    {[0, 1, 2].map((member) => <Box key={member} sx={{ position: 'relative', width: 25, height: 43 }}>
-      <Box sx={{ position: 'absolute', left: 7, top: 0, width: 12, height: 12, borderRadius: '50%', backgroundColor: side === 'left' ? '#62a9bf' : '#de755f', border: '2px solid #fff' }} />
-      <Box sx={{ position: 'absolute', left: 3, top: 13, width: 20, height: 27, borderRadius: '10px 10px 4px 4px', backgroundColor: side === 'left' ? '#397f98' : '#b95248', transform: side === 'left' ? 'rotate(-8deg)' : 'rotate(8deg)' }} />
-    </Box>)}
-  </Stack>
-  <Typography variant="caption" sx={{ fontWeight: 800 }}>{force.toFixed(0)} N</Typography>
-</Stack>
-
-const SpeedDial: FC<{ speed: number; velocity: number }> = ({ speed, velocity }) => {
-  const dialAngle = clamp(speed / 20, 0, 1) * 240 - 120
-  return <Stack alignItems="center" spacing={.5} sx={{ minWidth: 142 }}>
-    <Typography variant="caption" sx={{ fontWeight: 900, color: '#4b5968' }}>SPEEDOMETER</Typography>
-    <Box sx={{ position: 'relative', width: 118, height: 68, overflow: 'hidden' }}>
-      <Box sx={{ position: 'absolute', left: 9, top: 0, width: 100, height: 100, borderRadius: '50%', border: '9px solid #d7e0e6', borderBottomColor: '#e8a346', transform: 'rotate(-45deg)' }} />
-      <Box sx={{ position: 'absolute', left: 57, top: 47, width: 4, height: 42, borderRadius: 2, backgroundColor: '#3c556c', transformOrigin: '50% 3px', transform: `rotate(${dialAngle}deg)` , transition: 'transform .12s linear' }} />
-      <Box sx={{ position: 'absolute', left: 52, top: 42, width: 14, height: 14, borderRadius: '50%', backgroundColor: '#3c556c' }} />
-    </Box>
-    <Typography variant="h6" sx={{ fontWeight: 900 }}>{speed.toFixed(2)} m/s</Typography>
-    <Typography variant="caption" color="text.secondary">{velocity > .01 ? 'moving left' : velocity < -.01 ? 'moving right' : 'at rest'}</Typography>
-  </Stack>
+const format = (value: number) => value.toFixed(2)
+const momentum = (ball: BallState) => ball.mass * ball.velocity
+const kineticEnergy = (ball: BallState) => .5 * ball.mass * ball.velocity * ball.velocity
+const modeLabel: Record<LawMode, string> = { first: 'First Law (Inertia)', second: 'Second Law (F = ma)', third: 'Third Law (Action-Reaction)' }
+const modePrompt: Record<LawMode, string> = {
+  first: 'No force is acting — the ball keeps moving at a constant speed.',
+  second: 'Apply a force to Ball 1 and compare how its mass changes acceleration.',
+  third: 'Play the collision and watch equal-and-opposite forces appear at impact.',
 }
 
-const CollisionPlaygroundActivity: FC<CollisionPlaygroundProps> = ({ onComplete }) => {
-  const [challenge, setChallenge] = useState<Challenge>(createChallenge)
-  const [appliedForce, setAppliedForce] = useState(0)
-  const [mass, setMass] = useState(2)
-  const [simulation, setSimulation] = useState<Simulation>({ position: 0, velocity: 0, elapsed: 0, running: false })
-  const [selectedMass, setSelectedMass] = useState('box')
-  const [visible, setVisible] = useState<VisibleReadouts>({ sum: true, values: true, speed: true })
-  const [feedback, setFeedback] = useState<Feedback>('idle')
-  const challengeRef = useRef(challenge)
-  const forceRef = useRef(appliedForce)
-  const massRef = useRef(mass)
-  const simulationRef = useRef(simulation)
+const Arrow: FC<{ x: number; y: number; length: number; color: string; label: string; dashed?: boolean }> = ({ x, y, length, color, label, dashed }) => <>
+  <Box sx={{ position: 'absolute', left: `${x}%`, top: `${y}%`, width: `${Math.abs(length)}%`, height: dashed ? 0 : 3, borderTop: dashed ? `2px dashed ${color}` : 'none', backgroundColor: dashed ? 'transparent' : color, transform: `translateY(-50%) scaleX(${length < 0 ? -1 : 1})`, transformOrigin: length < 0 ? 'right' : 'left', borderRadius: 2 }} />
+  <Typography variant="caption" sx={{ position: 'absolute', left: `${x + length / 2}%`, top: `${y - 7}%`, transform: 'translateX(-50%)', color, fontWeight: 800, fontSize: 10 }}>{label}</Typography>
+</>
 
-  forceRef.current = appliedForce
-  massRef.current = mass
-  simulationRef.current = simulation
+const Team = ({ side }: { side: 'left' | 'right' }) => <Stack alignItems={side === 'left' ? 'flex-end' : 'flex-start'} spacing={.5} sx={{ width: { xs: 90, sm: 118 } }}><Typography variant="caption" sx={{ fontWeight: 900, color: side === 'left' ? '#336d82' : '#a34d43' }}>{side === 'left' ? 'LAW 1' : 'LAW 2/3'}</Typography><Stack direction={side === 'left' ? 'row-reverse' : 'row'} spacing={.5}>{[0, 1, 2].map((member) => <Box key={member} sx={{ position: 'relative', width: 24, height: 42 }}><Box sx={{ position: 'absolute', left: 6, top: 0, width: 12, height: 12, borderRadius: '50%', backgroundColor: side === 'left' ? '#62a9bf' : '#de755f', border: '2px solid #fff' }} /><Box sx={{ position: 'absolute', left: 2, top: 13, width: 20, height: 27, borderRadius: '10px 10px 4px 4px', backgroundColor: side === 'left' ? '#397f98' : '#b95248' }} /></Box>)}</Stack></Stack>
+
+const CollisionPlaygroundActivity: FC<CollisionPlaygroundProps> = ({ onComplete }) => {
+  const [mode, setMode] = useState<LawMode>('third')
+  const initial = initialBalls('third')
+  const [challenge, setChallenge] = useState<Challenge>(() => createChallenge('third'))
+  const [ballOne, setBallOne] = useState<BallState>(initial.one)
+  const [ballTwo, setBallTwo] = useState<BallState>(initial.two)
+  const [elasticity, setElasticity] = useState(100)
+  const [appliedForce, setAppliedForce] = useState(20)
+  const [playing, setPlaying] = useState(false)
+  const [slow, setSlow] = useState(false)
+  const [time, setTime] = useState(0)
+  const [collisionHappened, setCollisionHappened] = useState(false)
+  const [impactImpulse, setImpactImpulse] = useState(0)
+  const [feedback, setFeedback] = useState<Feedback>('idle')
+  const [moreData, setMoreData] = useState(false)
+  const [readouts, setReadouts] = useState<Readouts>({ velocity: true, momentum: true, deltaMomentum: false, centerOfMass: false, kineticEnergy: false, values: true })
+  const lastFrame = useRef<number | null>(null)
+  const trackRef = useRef<HTMLDivElement>(null)
+  const ballOneRef = useRef(ballOne)
+  const ballTwoRef = useRef(ballTwo)
+  const playingRef = useRef(playing)
+  const collisionRef = useRef(collisionHappened)
+
+  ballOneRef.current = ballOne
+  ballTwoRef.current = ballTwo
+  playingRef.current = playing
+  collisionRef.current = collisionHappened
+
+  const resetForMode = (nextMode: LawMode) => {
+    const next = initialBalls(nextMode)
+    setMode(nextMode)
+    setChallenge(createChallenge(nextMode))
+    setBallOne(next.one)
+    setBallTwo(next.two)
+    setPlaying(false)
+    setTime(0)
+    setCollisionHappened(false)
+    setImpactImpulse(0)
+    setFeedback('idle')
+    lastFrame.current = null
+  }
+
+  const resolveCollision = (first: BallState, second: BallState) => {
+    const relativeVelocity = second.velocity - first.velocity
+    const impulse = (1 + elasticity / 100) * relativeVelocity / (1 / first.mass + 1 / second.mass)
+    const midpoint = (first.position + second.position) / 2
+    const separation = BALL_RADIUS * 2 + .12
+    return { first: { ...first, position: midpoint - separation / 2, velocity: first.velocity + impulse / first.mass }, second: { ...second, position: midpoint + separation / 2, velocity: second.velocity - impulse / second.mass }, impulse }
+  }
+
+  const advance = (first: BallState, second: BallState, delta: number): AdvanceResult => {
+    const acceleration = mode === 'second' ? appliedForce / first.mass : 0
+    let nextFirst = { ...first, position: first.position + first.velocity * delta + .5 * acceleration * delta * delta, velocity: first.velocity + acceleration * delta }
+    let nextSecond = { ...second, position: second.position + second.velocity * delta }
+    const touching = nextFirst.position + BALL_RADIUS >= nextSecond.position - BALL_RADIUS
+    const shouldCollide = mode === 'third' && touching && !collisionRef.current && nextFirst.velocity > nextSecond.velocity
+    let impulse = 0
+    if (shouldCollide) {
+      const result = resolveCollision(nextFirst, nextSecond)
+      nextFirst = result.first
+      nextSecond = result.second
+      impulse = result.impulse
+    }
+    nextFirst.position = clamp(nextFirst.position, TRACK_START, TRACK_END)
+    nextSecond.position = clamp(nextSecond.position, TRACK_START, TRACK_END)
+    return { first: nextFirst, second: nextSecond, touching, didCollide: shouldCollide, impulse }
+  }
 
   useEffect(() => {
     let frame = 0
-    let previous = performance.now()
     const tick = (now: number) => {
-      const delta = Math.min(.032, Math.max(.001, (now - previous) / 1000))
-      previous = now
-      setSimulation((current) => {
-        if (!current.running) return current
-        const acceleration = forceRef.current / massRef.current
-        const nextElapsed = Math.min(challengeRef.current.time, current.elapsed + delta)
-        const nextVelocity = current.velocity + acceleration * delta
-        const nextPosition = current.position + current.velocity * delta + .5 * acceleration * delta * delta
-        const next = { position: nextPosition, velocity: nextVelocity, elapsed: nextElapsed, running: nextElapsed < challengeRef.current.time }
-        simulationRef.current = next
-        return next
-      })
+      const previous = lastFrame.current ?? now
+      const delta = Math.min(.032, Math.max(.001, (now - previous) / 1000)) * (slow ? .35 : 1)
+      lastFrame.current = now
+      if (playingRef.current) {
+        const next = advance(ballOneRef.current, ballTwoRef.current, delta)
+        if (next.didCollide) {
+          setCollisionHappened(true)
+          setImpactImpulse(next.impulse)
+        }
+        if (!next.touching && collisionRef.current) setCollisionHappened(false)
+        setBallOne(next.first)
+        setBallTwo(next.second)
+        setTime((current) => current + delta)
+      }
       frame = window.requestAnimationFrame(tick)
     }
     frame = window.requestAnimationFrame(tick)
     return () => window.cancelAnimationFrame(frame)
-  }, [])
+  }, [mode, appliedForce, elasticity, slow])
 
-  const leftForce = Math.max(0, -appliedForce)
-  const rightForce = Math.max(0, appliedForce)
-  const netForce = leftForce - rightForce
-  const acceleration = netForce / mass
-  const speed = Math.abs(simulation.velocity)
-  const targetReached = simulation.elapsed >= challenge.time - .05 && Math.abs(speed - challenge.targetSpeed) <= .2
+  const trackPosition = (position: number) => 8 + ((position - TRACK_START) / (TRACK_END - TRACK_START)) * 84
+  const pointerPosition = (event: PointerEvent<HTMLDivElement>) => {
+    const bounds = trackRef.current?.getBoundingClientRect()
+    return bounds ? 8 + ((event.clientX - bounds.left) / bounds.width) * 84 : 50
+  }
+  const setVelocityFromPointer = (id: BallId, event: PointerEvent<HTMLDivElement>) => {
+    const current = id === 'one' ? ballOneRef.current : ballTwoRef.current
+    const pointerWorld = TRACK_START + ((pointerPosition(event) - 8) / 84) * (TRACK_END - TRACK_START)
+    const nextVelocity = clamp((pointerWorld - current.position) * .55, -8, 8)
+    if (id === 'one') setBallOne((value) => ({ ...value, velocity: nextVelocity }))
+    else setBallTwo((value) => ({ ...value, velocity: nextVelocity }))
+    setFeedback('idle')
+  }
+  const toggleReadout = (key: keyof Readouts) => setReadouts((current) => ({ ...current, [key]: !current[key] }))
+  const changeMass = (id: BallId, mass: number) => {
+    if (id === 'one') setBallOne((value) => ({ ...value, mass }))
+    else setBallTwo((value) => ({ ...value, mass }))
+    setFeedback('idle')
+  }
+  const step = () => {
+    setPlaying(false)
+    const next = advance(ballOneRef.current, ballTwoRef.current, .05)
+    if (next.didCollide) { setCollisionHappened(true); setImpactImpulse(next.impulse) }
+    if (!next.touching && collisionRef.current) setCollisionHappened(false)
+    setBallOne(next.first)
+    setBallTwo(next.second)
+    setTime((current) => current + .05)
+  }
+  const reset = () => resetForMode(mode)
+
+  const totalMomentum = momentum(ballOne) + momentum(ballTwo)
+  const totalKineticEnergy = kineticEnergy(ballOne) + kineticEnergy(ballTwo)
+  const centerOfMass = (ballOne.mass * ballOne.position + ballTwo.mass * ballTwo.position) / (ballOne.mass + ballTwo.mass)
+  const acceleration = appliedForce / ballOne.mass
+  const speed = Math.abs(ballOne.velocity)
+  const targetReached = mode === 'first'
+    ? time >= 1 && Math.abs(speed - challenge.target) <= .1
+    : mode === 'second'
+      ? time >= 1 && Math.abs(acceleration - challenge.target) <= .1
+      : collisionHappened && Math.abs(totalMomentum - challenge.target) <= .08
   const completed = feedback === 'correct' && targetReached
-  const cartLeft = `${50 + clamp(simulation.position / TRACK_HALF_LENGTH, -1, 1) * 38}%`
+  const checkDisabled = mode === 'first' ? time < 1 : mode === 'second' ? time < 1 : !collisionHappened
+  const modeDescription = mode === 'first' ? 'Friction is removed. A moving ball continues at constant velocity because no net force acts on it.' : mode === 'second' ? 'A force acts on Ball 1. Its acceleration is calculated live as force ÷ mass.' : 'The balls collide and exchange momentum according to their masses, velocities, and elasticity.'
 
-  const updateForce = (value: number) => {
-    setAppliedForce(value)
-    setFeedback('idle')
-  }
-
-  const selectMass = (option: MassOption) => {
-    setSelectedMass(option.id)
-    setMass(option.mass)
-    setFeedback('idle')
-  }
-
-  const toggleReadout = (key: keyof VisibleReadouts) => setVisible((current) => ({ ...current, [key]: !current[key] }))
-  const toggleSimulation = () => {
-    if (simulation.elapsed >= challenge.time) return
-    setFeedback('idle')
-    setSimulation((current) => ({ ...current, running: !current.running }))
-  }
   const checkActivity = () => setFeedback(targetReached ? 'correct' : 'incorrect')
-  const reset = () => {
-    const nextChallenge = createChallenge()
-    challengeRef.current = nextChallenge
-    setChallenge(nextChallenge)
-    setAppliedForce(0)
-    setMass(2)
-    setSelectedMass('box')
-    setSimulation({ position: 0, velocity: 0, elapsed: 0, running: false })
-    setFeedback('idle')
-  }
+  const hint = mode === 'first' ? 'Hint: Drag Ball 1’s velocity arrow and let it run with no force acting.' : mode === 'second' ? 'Hint: Increase the applied force or choose a lighter Ball 1 to raise acceleration.' : collisionHappened ? 'Hint: Adjust a ball’s mass or velocity so the total momentum before impact moves toward the target.' : 'Hint: Start the collision and let both balls meet before checking the result.'
 
   return <Paper elevation={0} sx={{ p: { xs: 2.5, md: 3 }, border: 1, borderColor: 'divider' }}>
     <Stack spacing={2}>
-      <Box>
-        <Chip label="Platform engine" color="primary" variant="outlined" sx={{ mb: 1 }} />
-        <Typography variant="h5">Collision Playground</Typography>
-        <Typography color="text.secondary" sx={{ mt: .75 }}>Explore how force, mass, and motion relate.</Typography>
-      </Box>
+      <Box><Chip label="Platform engine" color="primary" variant="outlined" sx={{ mb: 1 }} /><Typography variant="h5">Collision Playground</Typography><Typography color="text.secondary" sx={{ mt: .75 }}>Explore how force, mass, and motion relate.</Typography></Box>
       <Stack direction="row" spacing={1}><Chip label="Physics" color="primary" size="small" /><Chip label="Core" variant="outlined" size="small" /></Stack>
-      <Typography variant="body2" color="text.secondary">Two teams pull against the cart. The net force and selected mass determine acceleration using Newton&apos;s second law: F = ma.</Typography>
-      <Paper elevation={0} sx={{ p: 2, backgroundColor: 'action.hover' }}>
-        <Typography sx={{ fontWeight: 800 }}>Challenge</Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: .5 }}>Set the forces and mass so the object reaches a speed of {challenge.targetSpeed} m/s within {challenge.time} seconds.</Typography>
-      </Paper>
-      <Box sx={{ position: 'relative', minHeight: 300, p: { xs: 1.5, sm: 2.5 }, border: 1, borderColor: 'divider', borderRadius: 2, background: 'linear-gradient(180deg, #f9fbfd 0%, #edf2f5 100%)', overflow: 'hidden' }}>
-        <Stack direction="row" alignItems="flex-end" justifyContent="space-between" sx={{ position: 'absolute', top: 18, left: { xs: 10, sm: 24 }, right: { xs: 10, sm: 24 } }}><Team side="left" force={leftForce} /><Team side="right" force={rightForce} /></Stack>
-        <Box sx={{ position: 'absolute', left: '8%', right: '8%', bottom: 62, borderBottom: '6px solid #758795' }} />
-        <Box sx={{ position: 'absolute', left: '50%', bottom: 49, height: 42, borderLeft: '2px dashed #c49438' }}><Typography variant="caption" sx={{ position: 'absolute', top: 42, left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap', color: '#896d2d', fontWeight: 800 }}>center</Typography></Box>
-        <Box sx={{ position: 'absolute', left: cartLeft, bottom: 70, transform: 'translateX(-50%)', transition: simulation.running ? 'none' : 'left .2s ease', animation: feedback === 'correct' ? 'cartCelebrate .55s ease-in-out infinite alternate' : 'none', '@keyframes cartCelebrate': { from: { transform: 'translateX(-50%) translateY(0)' }, to: { transform: 'translateX(-50%) translateY(-9px)' } } }}>
-          <Box sx={{ position: 'relative', width: 84, height: 52, display: 'grid', placeItems: 'center', borderRadius: 1.5, backgroundColor: MASS_OPTIONS.find((option) => option.id === selectedMass)?.color, border: '4px solid #445765', color: 'common.white', fontWeight: 900, boxShadow: '0 7px 0 rgba(61,77,88,.18)' }}>CART<Box sx={{ position: 'absolute', left: 8, bottom: -13, width: 18, height: 18, borderRadius: '50%', backgroundColor: '#263238', border: '3px solid white' }} /><Box sx={{ position: 'absolute', right: 8, bottom: -13, width: 18, height: 18, borderRadius: '50%', backgroundColor: '#263238', border: '3px solid white' }} /></Box>
-        </Box>
-        {visible.values && <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ position: 'absolute', bottom: 14, left: 18 }}><Typography variant="body2" sx={{ fontWeight: 800 }}>Mass: {mass.toFixed(1)} kg</Typography><Typography variant="body2" color="text.secondary">Acceleration: {acceleration.toFixed(2)} m/s²</Typography><Typography variant="body2" color="text.secondary">Time: {simulation.elapsed.toFixed(2)} s</Typography></Stack>}
+      <ToggleButtonGroup exclusive value={mode} onChange={(_, next: LawMode | null) => next && resetForMode(next)} fullWidth aria-label="Newton law mode"><ToggleButton value="first">First Law (Inertia)</ToggleButton><ToggleButton value="second">Second Law (F = ma)</ToggleButton><ToggleButton value="third">Third Law (Action-Reaction)</ToggleButton></ToggleButtonGroup>
+      <Paper elevation={0} sx={{ p: 1.5, backgroundColor: 'primary.light' }}><Typography sx={{ fontWeight: 800 }}>{modeLabel[mode]}</Typography><Typography variant="body2" sx={{ mt: .5 }}>{modeDescription}</Typography><Typography variant="body2" sx={{ mt: .75, fontWeight: 700 }}>{modePrompt[mode]}</Typography></Paper>
+      <Paper elevation={0} sx={{ p: 2, backgroundColor: 'action.hover' }}><Typography sx={{ fontWeight: 800 }}>Challenge</Typography><Typography variant="body2" color="text.secondary" sx={{ mt: .5 }}>{mode === 'first' ? `Set Ball 1’s speed to ${challenge.target} m/s and observe constant motion for at least one second.` : mode === 'second' ? `Set the force and mass so Ball 1 accelerates at ${challenge.target} m/s².` : `Set the masses and velocities so total momentum before collision equals ${challenge.target} kg·m/s, then collide the balls.`}</Typography></Paper>
+      <Box ref={trackRef} sx={{ position: 'relative', height: { xs: 285, md: 330 }, border: 1, borderColor: feedback === 'correct' ? 'success.main' : 'divider', borderRadius: 2, background: 'linear-gradient(180deg, #f8fbfd, #e9f0f4)', overflow: 'hidden' }}>
+        <Typography variant="caption" sx={{ position: 'absolute', top: 14, left: 16, fontWeight: 900, color: '#536776' }}>TWO-BALL COLLISION TRACK</Typography>
+        <Box sx={{ position: 'absolute', left: '6%', right: '6%', top: '62%', borderBottom: '5px solid #7b8d99' }} />
+        <Box sx={{ position: 'absolute', left: '50%', top: '55%', height: 48, borderLeft: '2px dashed #c49438' }}><Typography variant="caption" sx={{ position: 'absolute', top: 48, left: '50%', transform: 'translateX(-50%)', color: '#896d2d', fontWeight: 800 }}>center</Typography></Box>
+        <Typography variant="caption" sx={{ position: 'absolute', top: 40, right: 16, fontWeight: 800, color: '#536776' }}>Time: {time.toFixed(2)} s</Typography>
+        <Box sx={{ position: 'absolute', left: `${trackPosition(ballOne.position)}%`, top: '62%', width: 42, height: 42, transform: 'translate(-50%, -50%)', borderRadius: '50%', backgroundColor: '#4c83c3', border: '4px solid #285781', boxShadow: collisionHappened ? '0 0 18px #f0b23e' : '0 6px 0 rgba(40,50,60,.14)', transition: playing ? 'none' : 'left .2s ease' }}><Typography sx={{ display: 'grid', placeItems: 'center', height: '100%', color: 'white', fontWeight: 900 }}>1</Typography></Box>
+        <Box sx={{ position: 'absolute', left: `${trackPosition(ballTwo.position)}%`, top: '62%', width: 42, height: 42, transform: 'translate(-50%, -50%)', borderRadius: '50%', backgroundColor: '#e26b56', border: '4px solid #963f38', boxShadow: collisionHappened ? '0 0 18px #f0b23e' : '0 6px 0 rgba(40,50,60,.14)', transition: playing ? 'none' : 'left .2s ease' }}><Typography sx={{ display: 'grid', placeItems: 'center', height: '100%', color: 'white', fontWeight: 900 }}>2</Typography></Box>
+        {readouts.velocity && <><Arrow x={trackPosition(ballOne.position)} y={43} length={ballOne.velocity * 3} color="#2f6fb2" label={`v₁ ${format(ballOne.velocity)} m/s`} /><Arrow x={trackPosition(ballTwo.position)} y={80} length={ballTwo.velocity * 3} color="#bb463b" label={`v₂ ${format(ballTwo.velocity)} m/s`} /></>}
+        {readouts.momentum && <><Arrow x={trackPosition(ballOne.position)} y={51} length={momentum(ballOne) * 3} color="#8e5eb5" label={`p₁ ${format(momentum(ballOne))}`} dashed /><Arrow x={trackPosition(ballTwo.position)} y={72} length={momentum(ballTwo) * 3} color="#d28b2f" label={`p₂ ${format(momentum(ballTwo))}`} dashed /></>}
+        {mode === 'second' && <><Arrow x={trackPosition(ballOne.position)} y={32} length={appliedForce / 35} color="#d04b42" label={`F ${appliedForce.toFixed(0)} N`} /><Typography variant="caption" sx={{ position: 'absolute', left: 16, top: 64, color: '#7d423d', fontWeight: 800 }}>{appliedForce.toFixed(0)} N ÷ {ballOne.mass.toFixed(1)} kg = {acceleration.toFixed(2)} m/s² acceleration</Typography></>}
+        {mode === 'third' && collisionHappened && <><Arrow x={trackPosition(ballOne.position)} y={31} length={impactImpulse / 10} color="#d04b42" label={`Force on Ball 1: ${(impactImpulse / COLLISION_TIME).toFixed(1)} N`} /><Arrow x={trackPosition(ballTwo.position)} y={91} length={-impactImpulse / 10} color="#d04b42" label={`Force on Ball 2: ${(-impactImpulse / COLLISION_TIME).toFixed(1)} N`} /></>}
+        {readouts.centerOfMass && <><Box sx={{ position: 'absolute', left: `${trackPosition(centerOfMass)}%`, top: '20%', bottom: '29%', borderLeft: '2px dashed #6e5ba6' }} /><Typography variant="caption" sx={{ position: 'absolute', left: `${trackPosition(centerOfMass)}%`, top: '14%', transform: 'translateX(-50%)', color: '#6e5ba6', fontWeight: 800 }}>center of mass</Typography></>}
+        <Box component="div" role="slider" tabIndex={0} aria-label="Ball 1 velocity arrow tip" onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); setVelocityFromPointer('one', event) }} onPointerMove={(event) => event.currentTarget.hasPointerCapture(event.pointerId) && setVelocityFromPointer('one', event)} onPointerUp={(event) => event.currentTarget.releasePointerCapture(event.pointerId)} sx={{ position: 'absolute', left: `${trackPosition(ballOne.position) + ballOne.velocity * 3}%`, top: '43%', width: 18, height: 18, borderRadius: '50%', backgroundColor: '#2f6fb2', cursor: 'grab', transform: 'translate(-50%, -50%)', '&:focus-visible': { outline: '3px solid', outlineColor: 'primary.main' } }} />
+        <Box component="div" role="slider" tabIndex={0} aria-label="Ball 2 velocity arrow tip" onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); setVelocityFromPointer('two', event) }} onPointerMove={(event) => event.currentTarget.hasPointerCapture(event.pointerId) && setVelocityFromPointer('two', event)} onPointerUp={(event) => event.currentTarget.releasePointerCapture(event.pointerId)} sx={{ position: 'absolute', left: `${trackPosition(ballTwo.position) + ballTwo.velocity * 3}%`, top: '80%', width: 18, height: 18, borderRadius: '50%', backgroundColor: '#bb463b', cursor: 'grab', transform: 'translate(-50%, -50%)', '&:focus-visible': { outline: '3px solid', outlineColor: 'primary.main' } }} />
+        {readouts.values && <Typography variant="caption" sx={{ position: 'absolute', left: 16, bottom: 12, fontWeight: 800 }}>Values · Ball 1: {format(ballOne.velocity)} m/s · Ball 2: {format(ballTwo.velocity)} m/s</Typography>}
       </Box>
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-        <Paper elevation={0} sx={{ p: 2, flex: 1, border: 1, borderColor: 'divider' }}>
-          <Typography sx={{ fontWeight: 800 }}>Applied Force: {appliedForce.toFixed(0)} N</Typography>
-          <Slider min={-MAX_FORCE} max={MAX_FORCE} step={1} value={appliedForce} onChange={(_, value) => updateForce(Array.isArray(value) ? value[0] : value)} valueLabelDisplay="auto" valueLabelFormat={(value) => `${Number(value).toFixed(0)} N`} aria-label="Applied Force" />
-          <Stack direction="row" justifyContent="space-between"><Typography variant="caption">−500 N · left</Typography><Typography variant="caption">0 N</Typography><Typography variant="caption">+500 N · right</Typography></Stack>
-        </Paper>
-        <Paper elevation={0} sx={{ p: 2, flex: 1, border: 1, borderColor: 'divider' }}>
-          <Typography sx={{ fontWeight: 800, mb: .75 }}>Choose object mass</Typography>
-          <Stack direction="row" spacing={.75} flexWrap="wrap" useFlexGap>{MASS_OPTIONS.map((option) => <Button key={option.id} size="small" variant={selectedMass === option.id ? 'contained' : 'outlined'} onClick={() => selectMass(option)}>{option.name} · {option.mass} kg</Button>)}</Stack>
-        </Paper>
-      </Stack>
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'center' }}>
-        <Paper elevation={0} sx={{ p: 1.5, flex: 1, backgroundColor: 'action.hover' }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: .5 }}>Live values</Typography>
-          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-            {visible.sum && <Chip color="primary" label={`Sum of Forces: ${netForce.toFixed(0)} N`} />}
-            {visible.values && <Chip variant="outlined" label={`Left Force: ${leftForce.toFixed(0)} N · Right Force: ${rightForce.toFixed(0)} N`} />}
-            {visible.speed && <Chip color="secondary" label={`Speed: ${speed.toFixed(2)} m/s`} />}
-          </Stack>
-        </Paper>
-        {visible.speed && <SpeedDial speed={speed} velocity={simulation.velocity} />}
-      </Stack>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }}>
-        <Typography variant="body2" sx={{ fontWeight: 800 }}>Show labels:</Typography>
-        <FormControlLabel control={<Checkbox checked={visible.sum} onChange={() => toggleReadout('sum')} size="small" />} label="Sum of Forces" />
-        <FormControlLabel control={<Checkbox checked={visible.values} onChange={() => toggleReadout('values')} size="small" />} label="Values" />
-        <FormControlLabel control={<Checkbox checked={visible.speed} onChange={() => toggleReadout('speed')} size="small" />} label="Speed" />
-      </Stack>
-      <Paper role="status" elevation={0} sx={{ p: 1.5, backgroundColor: simulation.running ? 'rgba(25,118,210,.1)' : 'action.hover' }}><Typography sx={{ fontWeight: 800 }}>{simulation.running ? `The cart is accelerating at ${acceleration.toFixed(2)} m/s².` : simulation.elapsed >= challenge.time ? `The ${challenge.time} second trial is complete.` : 'Set the applied force and mass, then start the simulation.'}</Typography><Typography variant="caption" color="text.secondary">Acceleration = net force ÷ mass. A heavier object responds more slowly to the same net force.</Typography></Paper>
-      {feedback === 'correct' && <Paper role="status" elevation={0} sx={{ p: 2, border: 1, borderColor: 'success.main', animation: 'teamCelebrate .65s ease', '@keyframes teamCelebrate': { '0%': { transform: 'scale(1)' }, '45%': { transform: 'scale(1.025)' }, '100%': { transform: 'scale(1)' } } }}><Typography color="success.main" sx={{ fontWeight: 800 }}>Right! A bigger net force on a lighter object gives faster acceleration.</Typography><Typography variant="body2" color="text.secondary">The cart reached {challenge.targetSpeed} m/s in the {challenge.time}-second trial using F = ma.</Typography></Paper>}
-      {feedback === 'incorrect' && <Paper role="status" elevation={0} sx={{ p: 1.5, border: 1, borderColor: 'warning.main' }}><Typography color="warning.dark" sx={{ fontWeight: 700 }}>{speed < challenge.targetSpeed ? 'Hint: Increase the applied force or choose a lighter object.' : 'Hint: Reduce the applied force or choose a heavier object.'}</Typography></Paper>}
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}><Button variant="contained" onClick={toggleSimulation} disabled={simulation.elapsed >= challenge.time} startIcon={simulation.running ? <PauseIcon /> : <PlayArrowIcon />}>{simulation.running ? 'Pause' : simulation.elapsed > 0 ? 'Resume' : 'Start'} Simulation</Button><Button variant="outlined" onClick={checkActivity} disabled={simulation.running || simulation.elapsed < challenge.time}>Check Activity</Button><Button variant="contained" disabled={!completed} onClick={onComplete} startIcon={<CheckCircleOutlineIcon />}>Complete Activity</Button><Button variant="text" onClick={reset} startIcon={<ReplayIcon />}>Reset</Button></Stack>
+      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>{([{ id: 'one' as BallId, ball: ballOne, color: '#4c83c3', label: 'Ball 1' }, { id: 'two' as BallId, ball: ballTwo, color: '#e26b56', label: 'Ball 2' }]).map(({ id, ball, color, label }) => <Paper key={id} elevation={0} sx={{ p: 1.5, flex: 1, border: 1, borderColor: color }}><Typography sx={{ color, fontWeight: 800 }}>{label} · Mass (kg)</Typography><TextField fullWidth size="small" type="number" value={ball.mass} onChange={(event) => changeMass(id, clamp(Number(event.target.value), .1, 12))} inputProps={{ min: .1, max: 12, step: .1, 'aria-label': `${label} mass in kilograms` }} sx={{ mt: 1 }} /><Slider min={.1} max={12} step={.1} value={ball.mass} onChange={(_, value) => changeMass(id, Array.isArray(value) ? value[0] : value)} valueLabelDisplay="auto" valueLabelFormat={(value) => `${Number(value).toFixed(2)} kg`} aria-label={`${label} mass`} /><Typography variant="caption" color="text.secondary">Drag the colored velocity tip to set the initial velocity.</Typography></Paper>)}</Stack>
+      {mode === 'second' && <Paper elevation={0} sx={{ p: 1.5, border: 1, borderColor: 'divider' }}><Typography sx={{ fontWeight: 800 }}>Applied Force: {appliedForce.toFixed(0)} N</Typography><Slider min={0} max={100} step={1} value={appliedForce} onChange={(_, value) => { setAppliedForce(Array.isArray(value) ? value[0] : value); setFeedback('idle') }} valueLabelDisplay="auto" valueLabelFormat={(value) => `${value} N`} aria-label="Applied Force" /></Paper>}
+      <Paper elevation={0} sx={{ p: 1.5, border: 1, borderColor: 'divider' }}><Typography sx={{ fontWeight: 800 }}>Elasticity: {elasticity}%</Typography><Slider min={0} max={100} step={1} value={elasticity} onChange={(_, value) => setElasticity(Array.isArray(value) ? value[0] : value)} valueLabelDisplay="auto" valueLabelFormat={(value) => `${value}%`} aria-label="Elasticity" /><Stack direction="row" justifyContent="space-between"><Typography variant="caption">0% · inelastic / stick</Typography><Typography variant="caption">100% · elastic / bounce</Typography></Stack></Paper>
+      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="stretch"><Paper elevation={0} sx={{ p: 1.5, flex: 1, backgroundColor: 'action.hover' }}><Typography sx={{ fontWeight: 800 }}>More Data</Typography><Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: .75 }}><Chip label={`Total momentum: ${format(totalMomentum)} kg·m/s`} color="primary" /><Chip label={`Kinetic energy: ${format(totalKineticEnergy)} J`} variant="outlined" />{readouts.deltaMomentum && <Chip label={`Change in momentum: ${format(impactImpulse)} kg·m/s`} />}</Stack>{moreData && <Stack spacing={.25} sx={{ mt: 1 }}><Typography variant="caption">Ball 1 · position {format(ballOne.position)} m · velocity {format(ballOne.velocity)} m/s · momentum {format(momentum(ballOne))} kg·m/s</Typography><Typography variant="caption">Ball 2 · position {format(ballTwo.position)} m · velocity {format(ballTwo.velocity)} m/s · momentum {format(momentum(ballTwo))} kg·m/s</Typography><Typography variant="caption">Center of mass: {format(centerOfMass)} m · time: {time.toFixed(2)} s</Typography></Stack>}</Paper><Button variant="outlined" onClick={() => setMoreData((current) => !current)}>{moreData ? 'Hide More Data' : 'More Data'}</Button></Stack>
+      <Paper elevation={0} sx={{ p: 1.5, backgroundColor: 'background.default', border: 1, borderColor: 'divider' }}><Typography variant="subtitle2" sx={{ fontWeight: 800 }}>Settings</Typography><Stack direction="row" flexWrap="wrap" useFlexGap><FormControlLabel control={<Checkbox checked={readouts.velocity} onChange={() => toggleReadout('velocity')} size="small" />} label="Velocity" /><FormControlLabel control={<Checkbox checked={readouts.momentum} onChange={() => toggleReadout('momentum')} size="small" />} label="Momentum" /><FormControlLabel control={<Checkbox checked={readouts.deltaMomentum} onChange={() => toggleReadout('deltaMomentum')} size="small" />} label="Change in Momentum" /><FormControlLabel control={<Checkbox checked={readouts.centerOfMass} onChange={() => toggleReadout('centerOfMass')} size="small" />} label="Center of Mass" /><FormControlLabel control={<Checkbox checked={readouts.kineticEnergy} onChange={() => toggleReadout('kineticEnergy')} size="small" />} label="Kinetic Energy" /><FormControlLabel control={<Checkbox checked={readouts.values} onChange={() => toggleReadout('values')} size="small" />} label="Values" /></Stack></Paper>
+      {feedback === 'correct' && <Paper role="status" elevation={0} sx={{ p: 2, border: 1, borderColor: 'success.main', animation: 'lawCelebrate .7s ease', '@keyframes lawCelebrate': { '0%': { transform: 'scale(1)' }, '45%': { transform: 'scale(1.025)' }, '100%': { transform: 'scale(1)' } } }}><Typography color="success.main" sx={{ fontWeight: 800 }}>{mode === 'first' ? 'Right! With no net force, an object in motion keeps a constant velocity.' : mode === 'second' ? 'Right! Acceleration equals force divided by mass.' : 'Right! The action and reaction forces are equal and opposite.'}</Typography></Paper>}
+      {feedback === 'incorrect' && <Paper role="status" elevation={0} sx={{ p: 1.5, border: 1, borderColor: 'warning.main' }}><Typography color="warning.dark" sx={{ fontWeight: 700 }}>{hint}</Typography></Paper>}
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}><Button variant="contained" onClick={() => { setPlaying((current) => !current); setFeedback('idle') }} startIcon={playing ? <PauseIcon /> : <PlayArrowIcon />}>{playing ? 'Pause' : 'Play'}</Button><Button variant="outlined" onClick={step} startIcon={<SkipNextIcon />}>Step</Button><ToggleButtonGroup exclusive value={slow ? 'slow' : 'normal'} onChange={(_, value: 'normal' | 'slow' | null) => value && setSlow(value === 'slow')} size="small" aria-label="Simulation speed"><ToggleButton value="normal">Normal</ToggleButton><ToggleButton value="slow">Slow</ToggleButton></ToggleButtonGroup><Button variant="outlined" onClick={checkActivity} disabled={checkDisabled}>Check Activity</Button><Button variant="contained" disabled={!completed} onClick={onComplete} startIcon={<CheckCircleOutlineIcon />}>Complete Activity</Button><Button variant="text" onClick={reset} startIcon={<ReplayIcon />}>Reset</Button></Stack>
     </Stack>
   </Paper>
 }
