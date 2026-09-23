@@ -24,6 +24,7 @@ export type PlatformEngineId =
   | 'light-through-materials'
   | 'vector-playground-physics'
   | 'collision-playground'
+  | 'momentum-lab'
   | 'motion-track'
   | 'speed-race'
   | 'speed-calculator-lab'
@@ -75,6 +76,7 @@ export const PLATFORM_ENGINES: PlatformEngineDefinition[] = [
   { id: 'light-through-materials', name: 'Light Through Materials', description: 'See how light bends through different materials.', subjects: ['Physics'], examples: ['Snell’s law', 'Air, water, and glass', 'Angles of refraction'], interaction: 'Adjust an incident ray and compare its computed bend across material boundaries.' },
   { id: 'vector-playground-physics', name: 'Vector Playground', description: 'Explore the difference between vectors and scalars.', subjects: ['Physics'], examples: ['Vector components', 'Resultants', 'Scalars and vectors'], interaction: 'Drag vector tips, combine components, and inspect the computed resultant.' },
   { id: 'collision-playground', name: 'Collision Playground', description: 'Explore how force, mass, and motion relate.', subjects: ['Physics'], examples: ['Newton’s second law', 'Mass and acceleration', 'Net force'], interaction: 'Balance teams, choose a mass, and simulate how net force changes motion.' },
+  { id: 'momentum-lab', name: 'Momentum Lab', description: 'Explore how momentum transfers in collisions.', subjects: ['Physics'], examples: ['Momentum conservation', 'Elastic collisions', 'Mass and velocity'], interaction: 'Set mass, velocity, and elasticity, then observe a calculated two-ball collision.' },
   { id: 'motion-track', name: 'Motion Track', description: 'Explore different types of movement.', subjects: ['Physics'], examples: ['Position', 'Speed', 'Movement types'], interaction: 'Control a car and inspect its live motion.' },
   { id: 'speed-race', name: 'Speed Race', description: 'Compare the speeds of moving objects.', subjects: ['Physics'], examples: ['Racing characters', 'Speed comparisons', 'Prediction'], interaction: 'Predict and observe which racer is faster.' },
   { id: 'speed-calculator-lab', name: 'Speed Calculator Lab', description: 'Calculate and compare speed and velocity.', subjects: ['Physics'], examples: ['Distance and time', 'Speed calculations', 'Direction and velocity'], interaction: 'Adjust distance and time, then validate the calculated speed and direction.' },
