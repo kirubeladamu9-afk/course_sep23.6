@@ -47,7 +47,7 @@ const KinematicsActivity: FC<KinematicsActivityProps> = ({ onComplete }) => {
     setElapsed(state.elapsed)
     if (recording) {
       const nextSample = { time: state.elapsed, position: state.position, velocity: state.velocity, acceleration: state.acceleration }
-      samplesRef.current = [...samplesRef.current.slice(-119), nextSample]
+      samplesRef.current = [...samplesRef.current.slice(-599), nextSample]
       setSamples(samplesRef.current)
     }
   }, [recording])
@@ -119,16 +119,15 @@ const KinematicsActivity: FC<KinematicsActivityProps> = ({ onComplete }) => {
   const graphPaths = useMemo(() => {
     const graph = (field: keyof Sample, min: number, max: number) => {
       if (!samples.length) return ''
-      const startTime = Math.max(0, elapsed - 8)
-      const visible = samples.filter((sample) => sample.time >= startTime)
-      return visible.map((sample, index) => {
-        const x = 34 + ((sample.time - startTime) / 8) * 586
+      const graphDuration = Math.max(8, challenge.time + 2)
+      return samples.map((sample, index) => {
+        const x = 34 + (sample.time / graphDuration) * 586
         const y = 52 - ((sample[field] as number - min) / (max - min)) * 42
         return `${index === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${clamp(y, 8, 58).toFixed(1)}`
       }).join(' ')
     }
     return { position: graph('position', 0, TRACK_MAX), velocity: graph('velocity', -10, 10), acceleration: graph('acceleration', -10, 10) }
-  }, [elapsed, samples])
+  }, [challenge.time, elapsed, samples])
 
   const graph = (label: string, path: string, color: string, unit: string) => <Box><Typography variant="caption" sx={{ fontWeight: 700 }}>{label} ({unit})</Typography><Box component="svg" viewBox="0 0 640 70" role="img" aria-label={`${label} graph`} sx={{ display: 'block', width: '100%', height: 82, backgroundColor: 'common.white', border: 1, borderColor: 'divider', borderRadius: 1 }}><line x1="34" x2="620" y1="52" y2="52" stroke="#cbd5e1" /><line x1="34" x2="34" y1="8" y2="58" stroke="#94a3b8" /><path d={path} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" /></Box></Box>
 
