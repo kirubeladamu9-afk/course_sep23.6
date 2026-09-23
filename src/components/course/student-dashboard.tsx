@@ -65,7 +65,7 @@ import SimulationLesson from './simulation-lesson'
 import StemLab from '@/components/stem-lab/stem-lab'
 import { type StemTopic } from '@/components/stem-lab/stem-lab-data'
 import { type SimulationConfig } from '@/components/admin/admin-data'
-import { getCurriculumTopicKey, getMathTopic, type MathTopic } from '@/components/admin/stem-curriculum'
+import { getCurriculumTopicKey, getMathTopic, STEM_CURRICULUM, type MathTopic } from '@/components/admin/stem-curriculum'
 import { getPlatformEngine, type PlatformEngineId } from '@/components/stem-lab/platform-engine-library'
 import { PlatformEnginePreview } from '@/components/stem-lab/platform-engine-previews'
 import { Logo } from '@/components/logo'
@@ -258,8 +258,7 @@ const getClassSessionState = (classRecord: DashboardClass, now: Date) => {
 const getLessons = (course: DashboardCourse) => course.modules.flatMap((module) => module.lessons)
 const getCompletionLessons = (course: DashboardCourse) => getLessons(course).filter((lesson) => lesson.type !== 'practice')
 const getEnrollmentContentId = (enrollment: MyEnrollment) => enrollment.classId ?? enrollment.courseId ?? enrollment.id
-const physicsActivityTopicKeys = ['Push & Pull', 'Movement', 'Fast & Slow', 'Light & Shadows', 'Sound & Vibrations', 'Heat & Cold'].map((title) => [title, getCurriculumTopicKey('Physics', title)] as const)
-const getPhysicsActivityTopic = (curriculumTopic: string | undefined, title: string) => physicsActivityTopicKeys.find(([, key]) => key === curriculumTopic)?.[0] ?? title
+const getPhysicsActivityTopic = (curriculumTopic: string | undefined, title: string) => STEM_CURRICULUM.Physics.find((topic) => getCurriculumTopicKey('Physics', topic) === curriculumTopic) ?? title
 const mapEnrollmentCourse = (enrollment: MyEnrollment): DashboardCourse => ({
   id: getEnrollmentContentId(enrollment),
   title: enrollment.classTitle || enrollment.courseTitle || 'Enrolled class',

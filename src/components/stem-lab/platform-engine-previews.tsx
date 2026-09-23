@@ -10,6 +10,9 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import { type FC, type PointerEvent, type ReactNode, useState } from 'react'
 import ForcePlaygroundActivity from './force-playground-activity'
+import MachinePlaygroundActivity from './machine-playground-activity'
+import EnergyRollerCoasterActivity from './energy-roller-coaster-activity'
+import CircuitBuilderActivity from './circuit-builder-activity'
 import ForceMotionLabActivity from './force-motion-lab-activity'
 import SurfaceTestActivity from './surface-test-activity'
 import DropZoneActivity from './drop-zone-activity'
@@ -800,6 +803,9 @@ export const PlatformEnginePreview: FC<{ engineId: PlatformEngineId; onComplete?
   if (topicTitle === 'Friction') return <SurfaceTestActivity onComplete={onComplete} />
   if (topicTitle === 'Gravity') return <DropZoneActivity onComplete={onComplete} />
   if (topicTitle === 'Reflection') return <LightRaySimulatorActivity onComplete={onComplete} />
+  if (topicTitle === 'Simple Machines') return <MachinePlaygroundActivity onComplete={onComplete} />
+  if (topicTitle === 'Energy') return <EnergyRollerCoasterActivity onComplete={onComplete} />
+  if (topicTitle === 'Electricity') return <CircuitBuilderActivity onComplete={onComplete} />
   if (engineId === 'drag-drop') return <DragDropEngine config={{ title: 'Sort living and non-living things', prompt: 'Place each example into the correct category.', categories: ['Living', 'Non-living'], items: [{ id: 'tree', label: 'Tree', correctCategory: 'Living' }, { id: 'rock', label: 'Rock', correctCategory: 'Non-living' }, { id: 'dog', label: 'Dog', correctCategory: 'Living' }, { id: 'water', label: 'Water', correctCategory: 'Non-living' }] }} onComplete={onComplete ?? (() => undefined)} />
   if (engineId === 'living-or-not') return <LivingOrNotActivity onComplete={onComplete} />
   if (engineId === 'plant-labeling') return <PlantLabelingActivity onComplete={onComplete} />
@@ -818,6 +824,9 @@ export const PlatformEnginePreview: FC<{ engineId: PlatformEngineId; onComplete?
   if (engineId === 'timeline') return <TimelineEngine onComplete={onComplete} />
   if (engineId === 'data-chart') return <DataChartEngine onComplete={onComplete} />
   if (engineId === 'simulation') return <SimulationEngine onComplete={onComplete} />
+  if (engineId === 'machine-playground') return <MachinePlaygroundActivity onComplete={onComplete} />
+  if (engineId === 'energy-roller-coaster') return <EnergyRollerCoasterActivity onComplete={onComplete} />
+  if (engineId === 'circuit-builder') return <CircuitBuilderActivity onComplete={onComplete} />
   if (engineId === 'force-playground' || (engineId === 'physics' && topicTitle === 'Push & Pull')) return <ForcePlaygroundActivity onComplete={onComplete} />
   if (engineId === 'force-motion-lab' || (engineId === 'physics' && topicTitle === 'Forces & Motion')) return <ForceMotionLabActivity onComplete={onComplete} />
   if (engineId === 'surface-test' || (engineId === 'physics' && topicTitle === 'Friction')) return <SurfaceTestActivity onComplete={onComplete} />
