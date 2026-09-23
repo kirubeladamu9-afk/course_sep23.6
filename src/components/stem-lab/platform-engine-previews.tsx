@@ -9,6 +9,10 @@ import Typography from '@mui/material/Typography'
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import { type FC, type PointerEvent, type ReactNode, useState } from 'react'
+import ForcePlaygroundActivity from './force-playground-activity'
+import MotionTrackActivity from './motion-track-activity'
+import SpeedRaceActivity from './speed-race-activity'
+import ShadowLabActivity from './shadow-lab-activity'
 import DragDropEngine from './drag-drop-engine'
 import MatchingEngine from './matching-engine'
 import PercentageBatteryActivity from './percentage-battery-activity'
@@ -123,11 +127,7 @@ const SimulationEngine: FC<EnginePreviewProps> = ({ onComplete }) => {
   return <EngineFrame name="Simulation Engine" description="Change an input, run the model, and inspect the calculated output."><Typography variant="body2">Temperature: {temperature}°C</Typography><Slider min={0} max={100} value={temperature} onChange={(_, next) => { setTemperature(Array.isArray(next) ? next[0] : next); setRan(false) }} aria-label="Temperature" /><Button variant="contained" onClick={() => setRan(true)} startIcon={<PlayArrowIcon />} sx={{ alignSelf: 'flex-start' }}>Run simulation</Button>{ran && <Paper role="status" elevation={0} sx={{ p: 2, backgroundColor: 'background.default' }}><Typography variant="h4" color="primary.main">{output}</Typography><Typography variant="caption" color="text.secondary">Model output units</Typography></Paper>}<CompleteButton disabled={!ran} onComplete={onComplete} /></EngineFrame>
 }
 
-const PhysicsEngine: FC<EnginePreviewProps> = ({ onComplete }) => {
-  const [velocity, setVelocity] = useState(50)
-  const [run, setRun] = useState(0)
-  return <EngineFrame name="Physics Playground" description="Change the launch velocity and observe motion across the track."><Box sx={{ position: 'relative', height: 100, overflow: 'hidden', borderRadius: 2, backgroundColor: 'background.default', border: 1, borderColor: 'divider' }}><Box key={run} sx={{ position: 'absolute', left: 10, top: 38, width: 24, height: 24, borderRadius: '50%', backgroundColor: 'secondary.main', animation: run ? 'physicsTravel 1.8s linear forwards' : 'none', '@keyframes physicsTravel': { from: { transform: 'translateX(0)' }, to: { transform: 'translateX(calc(100% + 320px))' } } }} /></Box><Typography variant="body2">Launch velocity: {velocity} m/s</Typography><Slider min={10} max={100} value={velocity} onChange={(_, next) => setVelocity(Array.isArray(next) ? next[0] : next)} aria-label="Launch velocity" /><Button variant="contained" onClick={() => setRun((current) => current + 1)} startIcon={<PlayArrowIcon />} sx={{ alignSelf: 'flex-start' }}>Run physics model</Button><CompleteButton disabled={!run} onComplete={onComplete} /></EngineFrame>
-}
+const PhysicsEngine: FC<EnginePreviewProps> = ({ onComplete }) => <ForcePlaygroundActivity onComplete={onComplete} />
 
 const VirtualLabEngine: FC<EnginePreviewProps> = ({ onComplete }) => {
   const [mixed, setMixed] = useState(false)
@@ -786,7 +786,7 @@ const MathActivityEngine: FC<{ topic: MathTopic; onComplete?: () => void }> = ({
   return frame(<><Paper sx={{ p: 2, textAlign: 'center' }}><Typography variant="h4">{topic.title}</Typography><Typography>Interactive model value: {value}</Typography></Paper><Slider min={0} max={Math.max(topic.target, 10)} value={value} onChange={(_, next) => update(Array.isArray(next) ? next[0] : next)} aria-label={`${topic.title} visual control`} /><Typography>{getMathActivityPrompt(topic)}</Typography></>)
 }
 
-export const PlatformEnginePreview: FC<{ engineId: PlatformEngineId; onComplete?: () => void; mathTopic?: MathTopic }> = ({ engineId, onComplete, mathTopic }) => {
+export const PlatformEnginePreview: FC<{ engineId: PlatformEngineId; onComplete?: () => void; mathTopic?: MathTopic; topicTitle?: string }> = ({ engineId, onComplete, mathTopic, topicTitle }) => {
   if (mathTopic) return <MathActivityEngine topic={mathTopic} onComplete={onComplete} />
   if (engineId === 'drag-drop') return <DragDropEngine config={{ title: 'Sort living and non-living things', prompt: 'Place each example into the correct category.', categories: ['Living', 'Non-living'], items: [{ id: 'tree', label: 'Tree', correctCategory: 'Living' }, { id: 'rock', label: 'Rock', correctCategory: 'Non-living' }, { id: 'dog', label: 'Dog', correctCategory: 'Living' }, { id: 'water', label: 'Water', correctCategory: 'Non-living' }] }} onComplete={onComplete ?? (() => undefined)} />
   if (engineId === 'living-or-not') return <LivingOrNotActivity onComplete={onComplete} />
@@ -806,6 +806,9 @@ export const PlatformEnginePreview: FC<{ engineId: PlatformEngineId; onComplete?
   if (engineId === 'timeline') return <TimelineEngine onComplete={onComplete} />
   if (engineId === 'data-chart') return <DataChartEngine onComplete={onComplete} />
   if (engineId === 'simulation') return <SimulationEngine onComplete={onComplete} />
+  if (engineId === 'physics' && topicTitle === 'Movement') return <MotionTrackActivity onComplete={onComplete} />
+  if (engineId === 'physics' && topicTitle === 'Fast & Slow') return <SpeedRaceActivity onComplete={onComplete} />
+  if (engineId === 'physics' && topicTitle === 'Light & Shadows') return <ShadowLabActivity onComplete={onComplete} />
   if (engineId === 'physics') return <PhysicsEngine onComplete={onComplete} />
   if (engineId === 'virtual-lab') return <VirtualLabEngine onComplete={onComplete} />
   return <PredictionExperimentEngine onComplete={onComplete} />
