@@ -258,7 +258,7 @@ const getClassSessionState = (classRecord: DashboardClass, now: Date) => {
 const getLessons = (course: DashboardCourse) => course.modules.flatMap((module) => module.lessons)
 const getCompletionLessons = (course: DashboardCourse) => getLessons(course).filter((lesson) => lesson.type !== 'practice')
 const getEnrollmentContentId = (enrollment: MyEnrollment) => enrollment.classId ?? enrollment.courseId ?? enrollment.id
-const getPhysicsActivityTopic = (curriculumTopic: string | undefined, title: string) => STEM_CURRICULUM.Physics.find((topic) => getCurriculumTopicKey('Physics', topic) === curriculumTopic) ?? title
+const getPhysicsActivityTopic = (curriculumTopic: string | undefined, title: string) => STEM_CURRICULUM.Physics.includes(title) ? title : STEM_CURRICULUM.Physics.find((topic) => getCurriculumTopicKey('Physics', topic) === curriculumTopic) ?? title
 const mapEnrollmentCourse = (enrollment: MyEnrollment): DashboardCourse => ({
   id: getEnrollmentContentId(enrollment),
   title: enrollment.classTitle || enrollment.courseTitle || 'Enrolled class',

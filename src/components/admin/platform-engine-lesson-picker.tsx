@@ -38,7 +38,7 @@ type TopicOption = {
 type PlatformEngineLessonPickerProps = {
   lesson: AdminLesson
   updateLessonDraft: (lesson: AdminLesson) => void
-  onSave: () => void
+  onSave: (lesson?: AdminLesson) => void
 }
 
 const subjectDescription: Record<Exclude<SubjectFilter, 'All'>, string> = {
@@ -76,17 +76,23 @@ const PlatformEngineLessonPicker: FC<PlatformEngineLessonPickerProps> = ({ lesso
   const [search, setSearch] = useState('')
   const [legacyTopicDismissed, setLegacyTopicDismissed] = useState(false)
   const options = useMemo(topicOptions, [])
-  const selectedKey = lesson.curriculumTopic ?? (legacyTopicDismissed ? null : options.find((option) => option.subject === 'Mathematics' && option.title === lesson.title)?.key) ?? null
+  const selectedKey = legacyTopicDismissed ? null : options.find((option) => option.title === lesson.title)?.key ?? lesson.curriculumTopic ?? null
   const filteredOptions = options.filter((option) => (subject === 'All' || option.subject === subject) && (stage === 'All' || option.stage === stage) && `${option.title} ${option.subject} ${option.description}`.toLowerCase().includes(search.trim().toLowerCase()))
   const selectedOption = options.find((option) => option.key === selectedKey)
   const selectTopic = (option: TopicOption) => { setLegacyTopicDismissed(false); updateLessonDraft({ ...lesson, title: lesson.title.startsWith('New ') ? option.title : lesson.title, curriculumTopic: option.key, platformEngineId: option.platformEngineId, simulationToolId: option.simulation?.id ?? option.platformEngineId, simulation: option.simulation?.config }) }
+  const saveSelectedTopic = () => {
+    if (!selectedOption) return
+    const normalizedLesson = { ...lesson, curriculumTopic: selectedOption.key, platformEngineId: selectedOption.platformEngineId, simulationToolId: selectedOption.simulation?.id ?? selectedOption.platformEngineId, simulation: selectedOption.simulation?.config }
+    updateLessonDraft(normalizedLesson)
+    onSave(normalizedLesson)
+  }
 
   if (selectedOption) return <Stack spacing={2}>
     <Button variant="text" startIcon={<ArrowBackIcon />} onClick={() => { setLegacyTopicDismissed(true); updateLessonDraft({ ...lesson, curriculumTopic: undefined, platformEngineId: undefined, simulationToolId: '', simulation: undefined }) }} sx={{ alignSelf: 'flex-start' }}>Back to topic library</Button>
     <Paper elevation={0} sx={{ p: 2, border: 1, borderColor: 'primary.main', backgroundColor: 'action.selected' }}><Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={1}><Box><Typography variant="overline" color="primary.main" sx={{ fontWeight: 800 }}>Curriculum topic</Typography><Typography variant="h6">{selectedOption.title}</Typography><Typography variant="body2" color="text.secondary">{selectedOption.description}</Typography></Box><Stack direction="row" spacing={.75}><Chip label={selectedOption.subject} color="primary" /><Chip label={selectedOption.stage} variant="outlined" /></Stack></Stack></Paper>
     <PlatformEnginePreview engineId={selectedOption.platformEngineId} mathTopic={selectedOption.activity} topicTitle={selectedOption.title} />
     {selectedOption.simulation && <Paper elevation={0} sx={{ p: 2, border: 1, borderColor: 'divider' }}><Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Guided activity ready</Typography><Typography variant="body2" color="text.secondary">{selectedOption.simulation.config.overview}</Typography></Paper>}
-    <Button variant="contained" startIcon={<SaveOutlinedIcon />} onClick={onSave} disabled={!lesson.title.trim()}>Save topic as lesson</Button>
+    <Button variant="contained" startIcon={<SaveOutlinedIcon />} onClick={saveSelectedTopic} disabled={!lesson.title.trim()}>Save topic as lesson</Button>
   </Stack>
 
   return <Stack spacing={1.5}>

@@ -335,18 +335,19 @@ export const CourseEditor: FC<{ course: AdminCourse; onChange: (course: AdminCou
     if (lessonPanel?.lesson.id === lessonId) setLessonPanel(null)
   }
 
-  const saveLesson = () => {
+  const saveLesson = (draftLesson?: AdminLesson) => {
     if (!lessonPanel) return
+    const currentLesson = draftLesson ?? lessonPanel.lesson
     const existingLessons = course.modules.flatMap((module) => module.lessons)
-    const sessionDate = lessonPanel.lesson.scheduledAt?.slice(0, 10) ?? ''
-    if (lessonPanel.lesson.type === 'live' && classSchedule) {
-      const availableDates = getAvailableClassSessionDates(classSchedule, existingLessons, lessonPanel.isNew ? undefined : lessonPanel.lesson.id)
+    const sessionDate = currentLesson.scheduledAt?.slice(0, 10) ?? ''
+    if (currentLesson.type === 'live' && classSchedule) {
+      const availableDates = getAvailableClassSessionDates(classSchedule, existingLessons, lessonPanel.isNew ? undefined : currentLesson.id)
       if (!availableDates.includes(sessionDate)) {
         toast.add({ title: 'Choose an available session date', description: 'Select an unused date from the class schedule.', type: 'error' })
         return
       }
     }
-    const lesson = { ...lessonPanel.lesson, title: lessonPanel.lesson.title.trim(), ...(lessonPanel.lesson.type === 'live' && classSchedule ? getClassLiveLessonSettings(classSchedule, classMeetingLink, sessionDate) : {}) }
+    const lesson = { ...currentLesson, title: currentLesson.title.trim(), ...(currentLesson.type === 'live' && classSchedule ? getClassLiveLessonSettings(classSchedule, classMeetingLink, sessionDate) : {}) }
     if (!lesson.title) return
     onChange({ ...course, modules: course.modules.map((module) => module.id === lessonPanel.moduleId ? { ...module, lessons: lessonPanel.isNew ? [...module.lessons, lesson] : module.lessons.map((currentLesson) => currentLesson.id === lesson.id ? lesson : currentLesson) } : module) })
     setLessonPanel(null)
