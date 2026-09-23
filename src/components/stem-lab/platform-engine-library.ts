@@ -31,6 +31,7 @@ export type PlatformEngineId =
   | 'shadow-lab'
   | 'wave-simulator'
   | 'kinematics'
+  | 'projectile-motion'
   | 'particle-heat'
   | 'magnetic-playground'
   | 'floating-sinking'
@@ -84,6 +85,7 @@ export const PLATFORM_ENGINES: PlatformEngineDefinition[] = [
   { id: 'shadow-lab', name: 'Shadow Lab', description: 'See how light creates shadows.', subjects: ['Physics'], examples: ['Light position', 'Shadow size', 'Shadow direction'], interaction: 'Move a lamp, object, and screen to change a computed shadow.' },
   { id: 'wave-simulator', name: 'Wave Machine', description: 'Explore how amplitude and frequency shape a wave.', subjects: ['Physics'], examples: ['Point-mass string', 'Wavelength', 'Reflection'], interaction: 'Adjust tension, damping, frequency, and end conditions to model a real wave.' },
   { id: 'kinematics', name: 'Kinematics Lab', description: 'Analyze motion using position, velocity, and acceleration.', subjects: ['Physics'], examples: ['Position-time graphs', 'Velocity', 'Acceleration'], interaction: 'Move an object and compare its measured motion with kinematic equations.' },
+  { id: 'projectile-motion', name: 'Projectile Motion Lab', description: 'Adjust launch conditions and calculate the horizontal range of a projectile.', subjects: ['Physics'], examples: ['Launch angle', 'Range', 'Air resistance'], interaction: 'Fire a projectile and compare its measured trajectory with physics equations.' },
   { id: 'particle-heat', name: 'Particle Heat Simulator', description: 'See how heat affects particle movement.', subjects: ['Physics'], examples: ['Temperature', 'Particle motion', 'Heating and cooling'], interaction: 'Adjust temperature and observe particles move faster or slower.' },
   { id: 'magnetic-playground', name: 'Magnetic Playground', description: 'Explore how magnets attract and repel.', subjects: ['Physics'], examples: ['Magnetic poles', 'Attraction', 'Repulsion'], interaction: 'Drag magnets together and observe their magnetic interaction.' },
   { id: 'floating-sinking', name: 'Buoyancy Simulator', description: 'Discover why some objects float and others sink.', subjects: ['Physics'], examples: ['Water', 'Objects', 'Density'], interaction: 'Adjust mass and volume, then compare density with water as the object floats or sinks.' },

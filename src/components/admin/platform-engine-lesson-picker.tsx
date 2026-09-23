@@ -66,7 +66,7 @@ const topicOptions = (): TopicOption[] => {
   ]
   return [...topics, ...labs.map((lab) => {
     const simulation = STEM_TOOL_LIBRARY.find((tool) => tool.id === lab.toolId)
-    return { key: `lab-${lab.toolId}`, title: lab.title, description: simulation?.description ?? subjectDescription[lab.subject], subject: lab.subject, stage: 'Applied lab' as const, platformEngineId: lab.subject === 'Chemistry' || lab.title === 'Osmosis' ? 'virtual-lab' as const : 'physics' as const, simulation }
+    return { key: `lab-${lab.toolId}`, title: lab.title, description: simulation?.description ?? subjectDescription[lab.subject], subject: lab.subject, stage: 'Applied lab' as const, platformEngineId: lab.title === 'Projectile Motion' ? 'projectile-motion' as const : lab.subject === 'Chemistry' || lab.title === 'Osmosis' ? 'virtual-lab' as const : 'physics' as const, simulation }
   })]
 }
 
