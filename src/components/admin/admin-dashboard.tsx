@@ -238,7 +238,7 @@ type LessonPanelState = { moduleId: number; lesson: AdminLesson; isNew: boolean;
 export const CourseEditor: FC<{ course: AdminCourse; onChange: (course: AdminCourse) => void; isClassLinked?: boolean; curriculumOnly?: boolean; allowedLessonTypes?: LessonType[]; classSchedule?: ClassLessonSchedule; classMeetingLink?: string }> = ({ course, onChange, isClassLinked = false, curriculumOnly = false, allowedLessonTypes, classSchedule, classMeetingLink = '' }) => {
   const [draggedModule, setDraggedModule] = useState<number | null>(null)
   const [draggedLesson, setDraggedLesson] = useState<{ moduleId: number; index: number } | null>(null)
-  const [expandedModuleIds, setExpandedModuleIds] = useState<number[]>(() => course.modules.map((module) => module.id))
+  const [expandedModuleIds, setExpandedModuleIds] = useState<number[]>([])
   const [isAddingModule, setIsAddingModule] = useState(false)
   const [newModuleTitle, setNewModuleTitle] = useState('')
   const [editingModuleId, setEditingModuleId] = useState<number | null>(null)
@@ -246,17 +246,17 @@ export const CourseEditor: FC<{ course: AdminCourse; onChange: (course: AdminCou
   const [addingLessonModuleId, setAddingLessonModuleId] = useState<number | null>(null)
   const [lessonPanel, setLessonPanel] = useState<LessonPanelState | null>(null)
   const [videoUploadProgress, setVideoUploadProgress] = useState(0)
-  const [expandedSections, setExpandedSections] = useState<string[]>(['curriculum'])
+  const [expandedSections, setExpandedSections] = useState<string[]>([])
 
   useEffect(() => {
-    setExpandedModuleIds(course.modules.map((module) => module.id))
+    setExpandedModuleIds([])
     setIsAddingModule(false)
     setNewModuleTitle('')
     setEditingModuleId(null)
     setAddingLessonModuleId(null)
     setLessonPanel(null)
     setVideoUploadProgress(0)
-    setExpandedSections(['curriculum'])
+    setExpandedSections([])
   }, [course.id])
 
   const toggleSection = (section: string) => {
