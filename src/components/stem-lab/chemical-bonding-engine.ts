@@ -212,7 +212,14 @@ export const createMolecule = (symbols: string[]): { atoms: EngineAtom[]; angleT
     const distance = referenceFor(first.symbol, second.symbol).lengthPm
     positions = symbols.map((_, index) => vec((index - (symbols.length - 1) / 2) * distance, 0, 0))
   }
-  const atoms = symbols.map((symbol, index) => ({ id: index, symbol, position: positions[index] ?? vec(index * 100, 0, 0), velocity: vec(), force: vec(), charge: PARTIAL_CHARGES[symbol] ?? 0 }))
+  const templateSymbols = formula === 'HHO' ? ['O', 'H', 'H'] : formula === 'HHHN' ? ['N', 'H', 'H', 'H'] : formula === 'CHHHH' ? ['C', 'H', 'H', 'H', 'H'] : formula === 'COO' ? ['C', 'O', 'O'] : symbols
+  const usedTemplateIndexes = new Set<number>()
+  const atoms = symbols.map((symbol, index) => {
+    const templateIndex = templateSymbols.findIndex((candidate, candidateIndex) => candidate === symbol && !usedTemplateIndexes.has(candidateIndex))
+    const positionIndex = templateIndex >= 0 ? templateIndex : index
+    if (templateIndex >= 0) usedTemplateIndexes.add(templateIndex)
+    return { id: index, symbol, position: positions[positionIndex] ?? vec(index * 100, 0, 0), velocity: vec(), force: vec(), charge: PARTIAL_CHARGES[symbol] ?? 0 }
+  })
   return { atoms, angleTargetDeg }
 }
 
