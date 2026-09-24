@@ -96,7 +96,7 @@ export const engineForTopic = (subject: string, topic: string): PlatformEngineId
     if (value === 'light & shadows') return 'shadow-lab'
     if (value === 'sound & vibrations' || value === 'waves') return 'wave-simulator'
     if (value === 'kinematics') return 'kinematics'
-    if (value === 'heat & cold') return 'particle-heat'
+    if (value === 'heat & cold') return 'particle-state-simulator'
     if (value === 'magnets') return 'magnetic-playground'
     if (value === 'floating & sinking') return 'floating-sinking'
     if (value === 'forces & motion') return 'force-motion-lab'
@@ -116,6 +116,7 @@ export const engineForTopic = (subject: string, topic: string): PlatformEngineId
   if (subject === 'Chemistry') {
     if (value === 'materials around us') return 'material-sorter'
     if (value === 'solids/liquids/gases') return 'state-sorter'
+    if (value === 'states of matter') return 'particle-state-simulator'
     if (value === 'properties of materials') return 'materials-properties'
     if (/atom|molecule|periodic|bond|organic|hydrocarbon|alcohol|aldehyde|polymer/.test(value)) return 'molecule-atom'
     if (/equation|formula|stoichiometry|redox|oxidation/.test(value)) return 'equation-balance'

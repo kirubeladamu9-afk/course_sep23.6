@@ -1,6 +1,7 @@
 export type PlatformEngineId =
   | 'material-sorter'
   | 'state-sorter'
+  | 'particle-state-simulator'
   | 'materials-properties'
   | 'drag-drop'
   | 'living-or-not'
@@ -103,6 +104,7 @@ export const PLATFORM_ENGINES: PlatformEngineDefinition[] = [
   { id: 'prediction-experiment', name: 'Prediction → Experiment → Result', description: 'Wrap any engine in a prediction, test, observation, and explanation flow.', subjects: ['Math', 'Physics', 'Chemistry', 'Biology'], examples: ['Predict projectile range', 'Predict pH', 'Predict population change'], interaction: 'Choose a prediction, run the embedded engine, and compare outcomes.' },
   { id: 'material-sorter', name: 'Material Sorter', description: 'Explore the everyday materials that make up our world.', subjects: ['Chemistry'], examples: ['Wood, metal, plastic, and glass', 'Everyday objects', 'Material classification'], interaction: 'Drag or tap objects into their matching material bins.' },
   { id: 'state-sorter', name: 'State Sorter', description: 'Explore the three states of matter.', subjects: ['Chemistry'], examples: ['Solids, liquids, and gases', 'Particle behavior', 'Room-temperature substances'], interaction: 'Drag substances into simulated particle containers.' },
+  { id: 'particle-state-simulator', name: 'Particle State Simulator', description: 'Heat and cool water to observe real particle phase changes.', subjects: ['Chemistry', 'Physics'], examples: ['Melting and freezing', 'Boiling and condensation', 'Particle motion'], interaction: 'Drag the temperature slider and validate a target state.' },
   { id: 'materials-properties', name: 'Property Tester + Mixing Lab', description: "Compare materials by their physical properties, and explore what happens when they're mixed.", subjects: ['Chemistry'], examples: ['Flexibility, hardness, and shininess', 'Dissolving and mixtures', 'Layer separation'], interaction: 'Test material properties, then combine substances and predict the outcome.' },
 ]
 
