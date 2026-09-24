@@ -121,6 +121,7 @@ export const engineForTopic = (subject: string, topic: string): PlatformEngineId
     if (value === 'acids & bases') return 'acid-base-lab'
     if (value === 'water chemistry') return 'water-properties-lab'
     if (value === 'atomic structure') return 'atom-builder'
+    if (value === 'elements & compounds') return 'element-compound-sorter'
     if (value === 'properties of materials') return 'materials-properties'
     if (/atom|molecule|periodic|bond|organic|hydrocarbon|alcohol|aldehyde|polymer/.test(value)) return 'molecule-atom'
     if (/equation|formula|stoichiometry|redox|oxidation/.test(value)) return 'equation-balance'
