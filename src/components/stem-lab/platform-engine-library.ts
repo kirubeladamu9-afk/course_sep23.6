@@ -136,7 +136,7 @@ export const engineForStemTool: Record<string, PlatformEngineId> = {
   'Chemical Equation': 'equation-balance',
   Calculator: 'simulation',
   'Interactive Diagram': 'biology-explorer',
-  'Periodic Table': 'molecule-atom',
+  'Periodic Table': 'periodic-table',
   'Pendulum Lab': 'physics',
   'Projectile Motion Lab': 'physics',
   'Neutralization Lab': 'virtual-lab',
