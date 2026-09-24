@@ -114,6 +114,7 @@ export const engineForTopic = (subject: string, topic: string): PlatformEngineId
     return 'physics'
   }
   if (subject === 'Chemistry') {
+    if (value === 'chemical bonding') return 'chemical-bonding'
     if (value === 'materials around us') return 'material-sorter'
     if (value === 'solids/liquids/gases') return 'state-sorter'
     if (value === 'states of matter') return 'particle-state-simulator'

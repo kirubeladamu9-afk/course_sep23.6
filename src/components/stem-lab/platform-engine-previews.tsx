@@ -79,6 +79,7 @@ import AtomBuilderActivity from './atom-builder-activity'
 import ElementCompoundSorterActivity from './element-compound-sorter-activity'
 import ReactionSimulatorActivity from './reaction-simulator-activity'
 import PeriodicTableActivity from './periodic-table-activity'
+import ChemicalBondingActivity from './chemical-bonding-activity'
 import MaterialsPropertiesActivity from './materials-properties-activity'
 import { type MathTopic } from '@/components/admin/stem-curriculum'
 
@@ -830,6 +831,7 @@ export const PlatformEnginePreview: FC<{ engineId: PlatformEngineId; onComplete?
   if (engineId === 'element-compound-sorter' || topicTitle === 'Elements & Compounds') return <ElementCompoundSorterActivity onComplete={onComplete} />
   if (engineId === 'reaction-simulator' || topicTitle === 'Chemical Reactions') return <ReactionSimulatorActivity onComplete={onComplete} />
   if (engineId === 'periodic-table' || topicTitle === 'Periodic Table') return <PeriodicTableActivity onComplete={onComplete} />
+  if (engineId === 'chemical-bonding' || topicTitle === 'Chemical Bonding') return <ChemicalBondingActivity onComplete={onComplete} />
   if (engineId === 'materials-properties' || topicTitle === 'Properties of Materials' || topicTitle === 'Mixing Materials') return <MaterialsPropertiesActivity onComplete={onComplete} />
   if (topicTitle === 'Electromagnetic Induction') return <FaradaySimulation onComplete={onComplete} />
   if (topicTitle === 'Pendulum Experiment') return <PendulumSimulation onComplete={onComplete} />

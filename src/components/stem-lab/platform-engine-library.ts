@@ -49,6 +49,7 @@ export type PlatformEngineId =
   | 'floating-sinking'
   | 'virtual-lab'
   | 'molecule-atom'
+  | 'chemical-bonding'
   | 'biology-explorer'
   | 'microscope'
   | 'timeline'
@@ -104,6 +105,7 @@ export const PLATFORM_ENGINES: PlatformEngineDefinition[] = [
   { id: 'floating-sinking', name: 'Buoyancy Simulator', description: 'Discover why some objects float and others sink.', subjects: ['Physics'], examples: ['Water', 'Objects', 'Density'], interaction: 'Adjust mass and volume, then compare density with water as the object floats or sinks.' },
   { id: 'virtual-lab', name: 'Virtual Lab', description: 'Follow a safe, observable procedure with materials, measurements, and results.', subjects: ['Chemistry', 'Biology'], examples: ['Acids and bases', 'Mixing materials', 'Osmosis'], interaction: 'Set up, run, observe, and validate an experiment.' },
   { id: 'molecule-atom', name: 'Molecule / Atom Builder', description: 'Construct atoms and molecule structures from connected parts.', subjects: ['Chemistry'], examples: ['Atomic structure', 'Chemical bonding', 'Organic molecules'], interaction: 'Place particles or atoms and validate the target structure.' },
+  { id: 'chemical-bonding', name: 'Chemical Bonding Simulator', description: 'Explore covalent, ionic, and metallic bonding with live electron and energy models.', subjects: ['Chemistry'], examples: ['VSEPR geometry', 'Bond energy', 'Polarity and ions'], interaction: 'Select elements, test bonds, and inspect a physically inspired molecular model.' },
   { id: 'biology-explorer', name: 'Biology Explorer', description: 'Explore labeled structures and reveal connected biological processes.', subjects: ['Biology'], examples: ['Plant parts', 'Cell organelles', 'Human body systems'], interaction: 'Select hotspots to reveal explanations and relationships.' },
   { id: 'microscope', name: 'Virtual Microscope', description: 'Zoom into specimens and identify structures at increasing magnification.', subjects: ['Biology'], examples: ['Plant cells', 'Animal cells', 'Specimens'], interaction: 'Adjust magnification and inspect labeled structures.' },
   { id: 'timeline', name: 'Timeline / Lifecycle', description: 'Arrange stages and reason about sequence, change, and cause.', subjects: ['Biology', 'Physics'], examples: ['Life cycles', 'Mitosis', 'Historical processes'], interaction: 'Reorder stages and validate the sequence.' },
