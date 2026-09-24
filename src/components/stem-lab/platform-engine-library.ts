@@ -5,6 +5,7 @@ export type PlatformEngineId =
   | 'solution-builder'
   | 'acid-base-lab'
   | 'water-properties-lab'
+  | 'atom-builder'
   | 'materials-properties'
   | 'drag-drop'
   | 'living-or-not'
@@ -111,6 +112,7 @@ export const PLATFORM_ENGINES: PlatformEngineDefinition[] = [
   { id: 'solution-builder', name: 'Solution Builder', description: 'Explore how solutes dissolve into solvents.', subjects: ['Chemistry'], examples: ['Solutes and solvents', 'Dissolving particles', 'Saturation'], interaction: 'Add a solute, stir the water, and validate a dissolving prediction.' },
   { id: 'acid-base-lab', name: 'Acid-Base Lab', description: 'Explore how acids and bases react together.', subjects: ['Chemistry'], examples: ['pH and indicators', 'Neutralization', 'Acid-base reactions'], interaction: 'Mix samples, read the live pH, and adjust the neutralization.' },
   { id: 'water-properties-lab', name: 'Water Properties Lab', description: 'Explore the properties and behavior of water.', subjects: ['Chemistry'], examples: ['Surface tension', 'Solvent ability', 'Cohesion'], interaction: 'Test water with objects, solutes, and droplets.' },
+  { id: 'atom-builder', name: 'Atom Builder', description: 'Build an atom from protons, neutrons, and electrons.', subjects: ['Chemistry'], examples: ['Atomic number', 'Isotopes and ions', 'Electron shells'], interaction: 'Drag particles into the nucleus and electron shells.' },
   { id: 'materials-properties', name: 'Property Tester + Mixing Lab', description: "Compare materials by their physical properties, and explore what happens when they're mixed.", subjects: ['Chemistry'], examples: ['Flexibility, hardness, and shininess', 'Dissolving and mixtures', 'Layer separation'], interaction: 'Test material properties, then combine substances and predict the outcome.' },
 ]
 

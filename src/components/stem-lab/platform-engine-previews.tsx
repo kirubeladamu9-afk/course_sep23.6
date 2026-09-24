@@ -75,6 +75,7 @@ import ParticleStateSimulator from './particle-state-simulator'
 import SolutionBuilderActivity from './solution-builder-activity'
 import AcidBaseLabActivity from './acid-base-lab-activity'
 import WaterPropertiesLabActivity from './water-properties-lab-activity'
+import AtomBuilderActivity from './atom-builder-activity'
 import MaterialsPropertiesActivity from './materials-properties-activity'
 import { type MathTopic } from '@/components/admin/stem-curriculum'
 
@@ -822,6 +823,7 @@ export const PlatformEnginePreview: FC<{ engineId: PlatformEngineId; onComplete?
   if (engineId === 'solution-builder' || topicTitle === 'Solutions' || topicTitle === 'Dissolving') return <SolutionBuilderActivity onComplete={onComplete} />
   if (engineId === 'acid-base-lab' || topicTitle === 'Acids & Bases') return <AcidBaseLabActivity onComplete={onComplete} />
   if (engineId === 'water-properties-lab' || topicTitle === 'Water Chemistry') return <WaterPropertiesLabActivity onComplete={onComplete} />
+  if (engineId === 'atom-builder' || topicTitle === 'Atomic Structure') return <AtomBuilderActivity onComplete={onComplete} />
   if (engineId === 'materials-properties' || topicTitle === 'Properties of Materials' || topicTitle === 'Mixing Materials') return <MaterialsPropertiesActivity onComplete={onComplete} />
   if (topicTitle === 'Electromagnetic Induction') return <FaradaySimulation onComplete={onComplete} />
   if (topicTitle === 'Pendulum Experiment') return <PendulumSimulation onComplete={onComplete} />
