@@ -114,6 +114,8 @@ export const engineForTopic = (subject: string, topic: string): PlatformEngineId
     return 'physics'
   }
   if (subject === 'Chemistry') {
+    if (value === 'materials around us') return 'material-sorter'
+    if (value === 'solids/liquids/gases') return 'state-sorter'
     if (/atom|molecule|periodic|bond|organic|hydrocarbon|alcohol|aldehyde|polymer/.test(value)) return 'molecule-atom'
     if (/equation|formula|stoichiometry|redox|oxidation/.test(value)) return 'equation-balance'
     if (/lab|acid|base|solution|mix|dissolv|separation|indicator|electrochemistry/.test(value)) return 'virtual-lab'

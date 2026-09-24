@@ -69,6 +69,8 @@ import HumanBodyPartsActivity from './human-body-parts-activity'
 import SenseChallengeActivity from './sense-challenge-activity'
 import AnimalSpotterActivity from './animal-spotter-activity'
 import HealthyPlateActivity from './healthy-plate-activity'
+import MaterialSorterActivity from './material-sorter-activity'
+import StateSorterActivity from './state-sorter-activity'
 import { type MathTopic } from '@/components/admin/stem-curriculum'
 
 export type EnginePreviewProps = { onComplete?: () => void }
@@ -809,6 +811,8 @@ const MathActivityEngine: FC<{ topic: MathTopic; onComplete?: () => void }> = ({
 
 export const PlatformEnginePreview: FC<{ engineId: PlatformEngineId; onComplete?: () => void; mathTopic?: MathTopic; topicTitle?: string }> = ({ engineId, onComplete, mathTopic, topicTitle }) => {
   if (mathTopic) return <MathActivityEngine topic={mathTopic} onComplete={onComplete} />
+  if (engineId === 'material-sorter' || topicTitle === 'Materials Around Us') return <MaterialSorterActivity onComplete={onComplete} />
+  if (engineId === 'state-sorter' || topicTitle === 'Solids/Liquids/Gases') return <StateSorterActivity onComplete={onComplete} />
   if (topicTitle === 'Electromagnetic Induction') return <FaradaySimulation onComplete={onComplete} />
   if (topicTitle === 'Pendulum Experiment') return <PendulumSimulation onComplete={onComplete} />
   if (topicTitle === 'Forces & Motion') return <ForceMotionLabActivity onComplete={onComplete} />

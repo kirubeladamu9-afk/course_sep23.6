@@ -1,4 +1,6 @@
 export type PlatformEngineId =
+  | 'material-sorter'
+  | 'state-sorter'
   | 'drag-drop'
   | 'living-or-not'
   | 'plant-labeling'
@@ -98,6 +100,8 @@ export const PLATFORM_ENGINES: PlatformEngineDefinition[] = [
   { id: 'timeline', name: 'Timeline / Lifecycle', description: 'Arrange stages and reason about sequence, change, and cause.', subjects: ['Biology', 'Physics'], examples: ['Life cycles', 'Mitosis', 'Historical processes'], interaction: 'Reorder stages and validate the sequence.' },
   { id: 'data-chart', name: 'Data / Chart Builder', description: 'Build charts from values and calculate statistics from the same data.', subjects: ['Math', 'Physics', 'Biology'], examples: ['Mean and median', 'Experimental probability', 'Population data'], interaction: 'Adjust values and read the live visualization.' },
   { id: 'prediction-experiment', name: 'Prediction → Experiment → Result', description: 'Wrap any engine in a prediction, test, observation, and explanation flow.', subjects: ['Math', 'Physics', 'Chemistry', 'Biology'], examples: ['Predict projectile range', 'Predict pH', 'Predict population change'], interaction: 'Choose a prediction, run the embedded engine, and compare outcomes.' },
+  { id: 'material-sorter', name: 'Material Sorter', description: 'Explore the everyday materials that make up our world.', subjects: ['Chemistry'], examples: ['Wood, metal, plastic, and glass', 'Everyday objects', 'Material classification'], interaction: 'Drag or tap objects into their matching material bins.' },
+  { id: 'state-sorter', name: 'State Sorter', description: 'Explore the three states of matter.', subjects: ['Chemistry'], examples: ['Solids, liquids, and gases', 'Particle behavior', 'Room-temperature substances'], interaction: 'Drag substances into simulated particle containers.' },
 ]
 
 export const getPlatformEngine = (id: PlatformEngineId) => PLATFORM_ENGINES.find((engine) => engine.id === id)

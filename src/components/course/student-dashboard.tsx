@@ -274,7 +274,7 @@ const mapEnrollmentCourse = (enrollment: MyEnrollment): DashboardCourse => ({
       title: lesson.title,
       type: lesson.type,
       duration: lesson.duration ? formatDuration(lesson.duration) : lesson.type === 'article' ? 'Article' : lesson.type === 'interactive' ? 'Interactive' : lesson.type === 'simulation' ? 'Simulation' : lesson.type === 'quiz' ? 'Quiz' : lesson.type === 'practice' ? 'Practice' : 'Video',
-      description: lesson.articleBody || (module.title === 'Mathematics' ? getMathTopic(lesson.title)?.description : undefined) || 'Work through this lesson at your own pace.',
+      description: lesson.articleBody || (module.title === 'Chemistry' && lesson.title === 'Materials Around Us' ? 'Explore the everyday materials that make up our world.' : module.title === 'Chemistry' && lesson.title === 'Solids/Liquids/Gases' ? 'Explore the three states of matter.' : module.title === 'Mathematics' ? getMathTopic(lesson.title)?.description : undefined) || 'Work through this lesson at your own pace.',
       videoUrl: lesson.videoUrl,
       thumbnailUrl: lesson.thumbnailUrl,
       baseImageUrl: lesson.baseImageUrl,
