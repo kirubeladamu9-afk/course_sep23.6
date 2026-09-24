@@ -34,7 +34,7 @@ const physicsTitles = [
 ]
 
 const chemistryTitles = [
-  'Materials Around Us', 'Solids/Liquids/Gases', 'Properties of Materials', 'Mixing Materials', 'Dissolving', 'Changes in Materials', 'Matter', 'States of Matter',
+  'Materials Around Us', 'Solids/Liquids/Gases', 'Properties of Materials', 'Dissolving', 'Changes in Materials', 'Matter', 'States of Matter',
   'Solutions', 'Separation Methods', 'Acids & Bases', 'Water Chemistry', 'Chemical Safety', 'Atomic Structure', 'Elements & Compounds', 'Chemical Reactions',
   'Indicators', 'Metals & Non-Metals', 'Periodic Table', 'Chemical Bonding', 'Chemical Formulae', 'Salts', 'Laboratory Techniques & Safety', 'Mole Concept',
   'Stoichiometry', 'Oxidation & Reduction', 'Organic Chemistry', 'Chemical Kinetics', 'Chemical Equilibrium', 'Solubility Equilibrium', 'Thermochemistry',
