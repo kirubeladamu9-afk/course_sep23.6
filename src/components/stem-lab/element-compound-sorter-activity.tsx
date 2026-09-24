@@ -26,7 +26,20 @@ const SUBSTANCE_POOL: Substance[] = [
 ]
 const shuffle = <T,>(items: T[]) => [...items].sort(() => Math.random() - .5)
 
-const MoleculeDiagram: FC<{ sample: Substance }> = ({ sample }) => <Box sx={{ position: 'relative', height: 70, minWidth: 125, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>{sample.atoms.map((item, index) => <Box key={`${item.symbol}-${index}`} sx={{ position: 'relative', zIndex: 1, width: item.size, height: item.size, mx: -.25, display: 'grid', placeItems: 'center', borderRadius: '50%', color: item.symbol === 'H' ? '#354052' : '#fff', fontSize: item.size < 25 ? 9 : 11, fontWeight: 800, background: `radial-gradient(circle at 30% 25%, #fff, ${item.color} 46%, #38445a)`, boxShadow: `0 0 8px ${item.color}99`, '&:after': index < sample.atoms.length - 1 ? { content: '""', position: 'absolute', zIndex: -1, left: '80%', top: '45%', width: 25, height: 5, backgroundColor: '#aab9c8' } : undefined }} />)}</Box>
+const geometryFor = (sample: Substance) => {
+  if (sample.id === 'ch4') return [[50, 50], [50, 12], [20, 58], [80, 58], [50, 88]]
+  if (sample.id === 'nh3') return [[50, 50], [50, 14], [27, 68], [73, 68]]
+  if (sample.id === 'h2o') return [[50, 50], [24, 28], [76, 28]]
+  if (sample.id === 'co2') return [[18, 50], [50, 50], [82, 50]]
+  if (sample.id === 'nacl') return [[30, 50], [70, 50]]
+  return sample.atoms.map((_, index) => [50 + (index - (sample.atoms.length - 1) / 2) * 22, 50])
+}
+
+const MoleculeDiagram: FC<{ sample: Substance }> = ({ sample }) => {
+  const positions = geometryFor(sample)
+  const bonds = sample.id === 'ch4' ? [1, 2, 3, 4] : sample.id === 'nh3' ? [1, 2, 3] : sample.id === 'h2o' ? [1, 2] : sample.atoms.length > 1 ? sample.atoms.slice(1).map((_, index) => index + 1) : []
+  return <Box sx={{ position: 'relative', height: 90, minWidth: 125 }}>{bonds.map((index) => <Box key={`bond-${index}`} sx={{ position: 'absolute', left: `${(positions[0][0] + positions[index][0]) / 2}%`, top: `${(positions[0][1] + positions[index][1]) / 2}%`, width: `${Math.hypot(positions[index][0] - positions[0][0], positions[index][1] - positions[0][1]) * .72}%`, height: 5, transform: `translate(-50%, -50%) rotate(${Math.atan2(positions[index][1] - positions[0][1], positions[index][0] - positions[0][0]) * 180 / Math.PI}deg)`, transformOrigin: 'center', backgroundColor: '#aab9c8', borderRadius: 4 }} />)}{sample.atoms.map((item, index) => <Box key={`${item.symbol}-${index}`} sx={{ position: 'absolute', left: `${positions[index][0]}%`, top: `${positions[index][1]}%`, zIndex: 1, width: item.size, height: item.size, transform: 'translate(-50%, -50%)', display: 'grid', placeItems: 'center', borderRadius: '50%', color: item.symbol === 'H' ? '#354052' : '#fff', fontSize: item.size < 25 ? 9 : 11, fontWeight: 800, background: `radial-gradient(circle at 30% 25%, #fff, ${item.color} 46%, #38445a)`, boxShadow: `0 0 8px ${item.color}99` }} />)}</Box>
+}
 
 const ElementCompoundSorterActivity: FC<{ onComplete?: () => void }> = ({ onComplete }) => {
   const [samples, setSamples] = useState<Substance[]>(() => shuffle(SUBSTANCE_POOL))
