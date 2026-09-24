@@ -4,6 +4,7 @@ export type PlatformEngineId =
   | 'particle-state-simulator'
   | 'solution-builder'
   | 'acid-base-lab'
+  | 'water-properties-lab'
   | 'materials-properties'
   | 'drag-drop'
   | 'living-or-not'
@@ -109,6 +110,7 @@ export const PLATFORM_ENGINES: PlatformEngineDefinition[] = [
   { id: 'particle-state-simulator', name: 'Particle State Simulator', description: 'Heat and cool water to observe real particle phase changes.', subjects: ['Chemistry', 'Physics'], examples: ['Melting and freezing', 'Boiling and condensation', 'Particle motion'], interaction: 'Drag the temperature slider and validate a target state.' },
   { id: 'solution-builder', name: 'Solution Builder', description: 'Explore how solutes dissolve into solvents.', subjects: ['Chemistry'], examples: ['Solutes and solvents', 'Dissolving particles', 'Saturation'], interaction: 'Add a solute, stir the water, and validate a dissolving prediction.' },
   { id: 'acid-base-lab', name: 'Acid-Base Lab', description: 'Explore how acids and bases react together.', subjects: ['Chemistry'], examples: ['pH and indicators', 'Neutralization', 'Acid-base reactions'], interaction: 'Mix samples, read the live pH, and adjust the neutralization.' },
+  { id: 'water-properties-lab', name: 'Water Properties Lab', description: 'Explore the properties and behavior of water.', subjects: ['Chemistry'], examples: ['Surface tension', 'Solvent ability', 'Cohesion'], interaction: 'Test water with objects, solutes, and droplets.' },
   { id: 'materials-properties', name: 'Property Tester + Mixing Lab', description: "Compare materials by their physical properties, and explore what happens when they're mixed.", subjects: ['Chemistry'], examples: ['Flexibility, hardness, and shininess', 'Dissolving and mixtures', 'Layer separation'], interaction: 'Test material properties, then combine substances and predict the outcome.' },
 ]
 
