@@ -77,6 +77,7 @@ import AcidBaseLabActivity from './acid-base-lab-activity'
 import WaterPropertiesLabActivity from './water-properties-lab-activity'
 import AtomBuilderActivity from './atom-builder-activity'
 import ElementCompoundSorterActivity from './element-compound-sorter-activity'
+import ReactionSimulatorActivity from './reaction-simulator-activity'
 import MaterialsPropertiesActivity from './materials-properties-activity'
 import { type MathTopic } from '@/components/admin/stem-curriculum'
 
@@ -826,6 +827,7 @@ export const PlatformEnginePreview: FC<{ engineId: PlatformEngineId; onComplete?
   if (engineId === 'water-properties-lab' || topicTitle === 'Water Chemistry') return <WaterPropertiesLabActivity onComplete={onComplete} />
   if (engineId === 'atom-builder' || topicTitle === 'Atomic Structure') return <AtomBuilderActivity onComplete={onComplete} />
   if (engineId === 'element-compound-sorter' || topicTitle === 'Elements & Compounds') return <ElementCompoundSorterActivity onComplete={onComplete} />
+  if (engineId === 'reaction-simulator' || topicTitle === 'Chemical Reactions') return <ReactionSimulatorActivity onComplete={onComplete} />
   if (engineId === 'materials-properties' || topicTitle === 'Properties of Materials' || topicTitle === 'Mixing Materials') return <MaterialsPropertiesActivity onComplete={onComplete} />
   if (topicTitle === 'Electromagnetic Induction') return <FaradaySimulation onComplete={onComplete} />
   if (topicTitle === 'Pendulum Experiment') return <PendulumSimulation onComplete={onComplete} />
