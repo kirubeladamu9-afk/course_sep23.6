@@ -17,7 +17,7 @@ const SUBSTANCE_POOL: Substance[] = [
   { id: 'fe', name: 'Iron', formula: 'Fe', zone: 'Element', atoms: [atom('Fe', '#8795a5', 38)] },
   { id: 'au', name: 'Gold', formula: 'Au', zone: 'Element', atoms: [atom('Au', '#e8b744', 38)] },
   { id: 'he', name: 'Helium', formula: 'He', zone: 'Element', atoms: [atom('He', '#bd83dc', 38)] },
-  { id: 'h2o', name: 'Water', formula: 'H₂O', zone: 'Compound', atoms: [atom('H', '#f4f6f8', 22), atom('O', '#ef785d', 34), atom('H', '#f4f6f8', 22)] },
+  { id: 'h2o', name: 'Water', formula: 'H₂O', zone: 'Compound', atoms: [atom('O', '#ef785d', 34), atom('H', '#f4f6f8', 22), atom('H', '#f4f6f8', 22)] },
   { id: 'co2', name: 'Carbon dioxide', formula: 'CO₂', zone: 'Compound', atoms: [atom('O', '#ef785d', 28), atom('C', '#4e5968', 34), atom('O', '#ef785d', 28)] },
   { id: 'nacl', name: 'Sodium chloride', formula: 'NaCl', zone: 'Compound', atoms: [atom('Na', '#a9b9cb', 32), atom('Cl', '#82c878', 34)] },
   { id: 'ch4', name: 'Methane', formula: 'CH₄', zone: 'Compound', atoms: [atom('C', '#4e5968', 34), atom('H', '#f4f6f8', 20), atom('H', '#f4f6f8', 20), atom('H', '#f4f6f8', 20), atom('H', '#f4f6f8', 20)] },
