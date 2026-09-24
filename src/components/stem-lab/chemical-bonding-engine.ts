@@ -81,6 +81,13 @@ export const BOND_REFERENCES: Record<string, { order: number; lengthPm: number; 
   'N-N': { order: 3, lengthPm: 110, energyKjMol: 945 },
   'O-O': { order: 2, lengthPm: 121, energyKjMol: 498 },
   'C-C': { order: 1, lengthPm: 154, energyKjMol: 347 },
+  // Ionic nearest-neighbor distances: CRC Handbook crystal-structure tables; used for the teaching lattice presets.
+  'F-Na': { order: 1, lengthPm: 231, energyKjMol: 910 },
+  'Cl-Na': { order: 1, lengthPm: 282, energyKjMol: 787 },
+  'Mg-F': { order: 1, lengthPm: 200, energyKjMol: 1900 },
+  'Cl-Mg': { order: 1, lengthPm: 257, energyKjMol: 2500 },
+  'Mg-O': { order: 1, lengthPm: 210, energyKjMol: 3900 },
+  'Na-O': { order: 1, lengthPm: 240, energyKjMol: 1600 },
 }
 
 // NIST CCCBDB equilibrium angles: water 104.5°, ammonia 107.0°, methane 109.5°.
@@ -95,7 +102,7 @@ const LJ_CUTOFF_PM = 900
 // Coulomb constant 138.935456 kJ mol−1 nm e−2 from CODATA 2018, converted from nm to pm.
 const COULOMB_KJ_PM = 138935.456
 // SPC/E water partial charges: Jorgensen et al., J. Chem. Phys. 1994, 100, 7164.
-const PARTIAL_CHARGES: Record<string, number> = { H: 0.417, O: -0.834, C: 0, N: 0, F: 0, Na: 1, Mg: 2, Cl: -1 }
+const PARTIAL_CHARGES: Record<string, number> = { H: 0.417, O: -0.834, C: 0, N: 0, F: -1, Na: 1, Mg: 2, Cl: -1 }
 // CODATA 2018 Boltzmann constant in kJ mol−1 K−1.
 const BOLTZMANN_KJ_MOL_K = 0.008314462618
 // Requested integrator timestep: 0.5 fs, within the sub-femtosecond range used for covalent vibrations.
@@ -168,14 +175,14 @@ export const classifyBond = (a: string, b: string, mode: BondMode) => {
   const left = element(a)
   const right = element(b)
   if (mode === 'Metallic' || (left.metal && right.metal)) return 'metallic' as const
-  if (Math.abs(left.electronegativity - right.electronegativity) > 1.7) return 'ionic' as const
+  if (left.metal !== right.metal) return 'ionic' as const
   return 'covalent' as const
 }
 
 export const moleculeAngle = (a: string, b: string, c: string) => {
   const symbols = [a, b, c].sort().join('')
   if (symbols === 'HHO') return TARGET_ANGLES_DEG.H2O
-  if (symbols === 'HNN') return TARGET_ANGLES_DEG.NH3
+  if (symbols === 'HHN') return TARGET_ANGLES_DEG.NH3
   if (symbols === 'CHH') return TARGET_ANGLES_DEG.CH4
   if (symbols === 'COO') return TARGET_ANGLES_DEG.CO2
   return null
@@ -198,13 +205,19 @@ export const createMolecule = (symbols: string[]): { atoms: EngineAtom[]; angleT
     const radial = Math.sqrt(1 - z * z)
     positions = [vec(0, 0, 0), scale(vec(radial, 0, z), radius), scale(rotate(radial, (2 * Math.PI) / 3, z), radius), scale(rotate(radial, (4 * Math.PI) / 3, z), radius)]
     angleTargetDeg = TARGET_ANGLES_DEG.NH3
-  } else if (formula === 'CHHHH') {
-    const radius = 109
+  } else if (formula === 'CHHHH' || formula === 'CFFFF' || formula === 'CClClClCl') {
+    const radius = formula === 'CHHHH' ? 109 : formula === 'CFFFF' ? referenceFor('C', 'F').lengthPm : referenceFor('C', 'Cl').lengthPm
     const tetrahedral = [vec(1, 1, 1), vec(1, -1, -1), vec(-1, 1, -1), vec(-1, -1, 1)].map((position) => scale(unit(position), radius))
     positions = [vec(0, 0, 0), ...tetrahedral]
     angleTargetDeg = TARGET_ANGLES_DEG.CH4
   } else if (formula === 'COO') {
     positions = [vec(0, 0, 0), vec(-116, 0, 0), vec(116, 0, 0)]
+    angleTargetDeg = TARGET_ANGLES_DEG.CO2
+  } else if (formula === 'NaNaO' || formula === 'FFMg' || formula === 'ClClMg') {
+    const center = formula === 'NaNaO' ? 'O' : 'Mg'
+    const outer = formula === 'NaNaO' ? 'Na' : formula === 'FFMg' ? 'F' : 'Cl'
+    const radius = referenceFor(center, outer).lengthPm
+    positions = [vec(0, 0, 0), vec(-radius, 0, 0), vec(radius, 0, 0)]
     angleTargetDeg = TARGET_ANGLES_DEG.CO2
   } else {
     const first = element(symbols[0] ?? 'H')
@@ -212,7 +225,7 @@ export const createMolecule = (symbols: string[]): { atoms: EngineAtom[]; angleT
     const distance = referenceFor(first.symbol, second.symbol).lengthPm
     positions = symbols.map((_, index) => vec((index - (symbols.length - 1) / 2) * distance, 0, 0))
   }
-  const templateSymbols = formula === 'HHO' ? ['O', 'H', 'H'] : formula === 'HHHN' ? ['N', 'H', 'H', 'H'] : formula === 'CHHHH' ? ['C', 'H', 'H', 'H', 'H'] : formula === 'COO' ? ['C', 'O', 'O'] : symbols
+  const templateSymbols = formula === 'HHO' ? ['O', 'H', 'H'] : formula === 'HHHN' ? ['N', 'H', 'H', 'H'] : formula === 'CHHHH' ? ['C', 'H', 'H', 'H', 'H'] : formula === 'CFFFF' ? ['C', 'F', 'F', 'F', 'F'] : formula === 'CClClClCl' ? ['C', 'Cl', 'Cl', 'Cl', 'Cl'] : formula === 'COO' ? ['C', 'O', 'O'] : formula === 'NaNaO' ? ['O', 'Na', 'Na'] : formula === 'FFMg' ? ['Mg', 'F', 'F'] : formula === 'ClClMg' ? ['Mg', 'Cl', 'Cl'] : symbols
   const usedTemplateIndexes = new Set<number>()
   const atoms = symbols.map((symbol, index) => {
     const templateIndex = templateSymbols.findIndex((candidate, candidateIndex) => candidate === symbol && !usedTemplateIndexes.has(candidateIndex))

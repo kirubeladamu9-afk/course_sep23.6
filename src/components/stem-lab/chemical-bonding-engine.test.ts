@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BOND_REFERENCES, ChemicalBondEngine, lennardJonesForceMagnitude, lennardJonesPotential, morseForceMagnitude, morsePotential, shiftedCoulombPotential } from './chemical-bonding-engine'
+import { BOND_REFERENCES, ChemicalBondEngine, classifyBond, lennardJonesForceMagnitude, lennardJonesPotential, morseForceMagnitude, morsePotential, shiftedCoulombPotential } from './chemical-bonding-engine'
 
 const numericalDerivative = (energy: (distancePm: number) => number, distancePm: number) => {
   const stepPm = 0.001
@@ -47,11 +47,33 @@ describe('chemical bonding equilibrium references', () => {
     [['O', 'H', 'H'], 104.5],
     [['N', 'H', 'H', 'H'], 107],
     [['C', 'H', 'H', 'H', 'H'], 109.5],
+    [['C', 'F', 'F', 'F', 'F'], 109.5],
+    [['C', 'Cl', 'Cl', 'Cl', 'Cl'], 109.5],
     [['C', 'O', 'O'], 180],
   ] as const)('preserves the %s equilibrium angle', (symbols, target) => {
     const engine = new ChemicalBondEngine([...symbols])
     engine.thermostatEnabled = false
     expect(engine.minimize(260).angleDeg).toBeCloseTo(target, 0)
+  })
+})
+
+describe('chemical bonding classification and stoichiometry', () => {
+  it.each([
+    [['H', 'O'], 'covalent'], [['H', 'N'], 'covalent'], [['H', 'F'], 'covalent'], [['H', 'Cl'], 'covalent'],
+    [['C', 'H'], 'covalent'], [['C', 'O'], 'covalent'], [['C', 'N'], 'covalent'], [['C', 'F'], 'covalent'], [['C', 'Cl'], 'covalent'],
+    [['H', 'H'], 'covalent'], [['N', 'N'], 'covalent'], [['O', 'O'], 'covalent'], [['F', 'F'], 'covalent'], [['Cl', 'Cl'], 'covalent'],
+    [['Na', 'F'], 'ionic'], [['Na', 'Cl'], 'ionic'], [['Na', 'O'], 'ionic'], [['Na', 'N'], 'ionic'],
+    [['Mg', 'F'], 'ionic'], [['Mg', 'Cl'], 'ionic'], [['Mg', 'O'], 'ionic'], [['Mg', 'N'], 'ionic'],
+    [['Na', 'Na'], 'metallic'], [['Mg', 'Mg'], 'metallic'], [['Na', 'Mg'], 'metallic'],
+  ] as const)('classifies %s as %s', ([left, right], expected) => {
+    expect(classifyBond(left, right, 'Covalent')).toBe(expected)
+  })
+
+  it.each([
+    [['C', 'F', 'F', 'F', 'F'], 5], [['C', 'Cl', 'Cl', 'Cl', 'Cl'], 5],
+    [['O', 'Na', 'Na'], 3], [['Mg', 'Cl', 'Cl'], 3], [['Mg', 'F', 'F'], 3],
+  ] as const)('builds the requested %s composition with the expected atom count', (symbols, count) => {
+    expect(new ChemicalBondEngine([...symbols]).snapshot().atoms).toHaveLength(count)
   })
 })
 
