@@ -8,6 +8,7 @@ export type PlatformEngineId =
   | 'atom-builder'
   | 'element-compound-sorter'
   | 'reaction-simulator'
+  | 'periodic-table'
   | 'materials-properties'
   | 'drag-drop'
   | 'living-or-not'
@@ -117,6 +118,7 @@ export const PLATFORM_ENGINES: PlatformEngineDefinition[] = [
   { id: 'atom-builder', name: 'Atom Builder', description: 'Build an atom from protons, neutrons, and electrons.', subjects: ['Chemistry'], examples: ['Atomic number', 'Isotopes and ions', 'Electron shells'], interaction: 'Drag particles into the nucleus and electron shells.' },
   { id: 'element-compound-sorter', name: 'Element / Compound Sorter', description: 'Explore the difference between elements and compounds.', subjects: ['Chemistry'], examples: ['Elements and compounds', 'Chemical formulas', 'Atom composition'], interaction: 'Sort real substances by their atom composition.' },
   { id: 'reaction-simulator', name: 'Reaction Simulator', description: 'Mix substances and observe a reaction.', subjects: ['Chemistry'], examples: ['Balanced equations', 'Limiting reagents', 'Products and leftovers'], interaction: 'Add reactants in stoichiometric ratios and observe products.' },
+  { id: 'periodic-table', name: 'Periodic Table Explorer', description: 'Explore real element data, electron shells, categories, and uses.', subjects: ['Chemistry'], examples: ['Atomic number', 'Element categories', 'Electron shells'], interaction: 'Search, filter, inspect, and identify elements.' },
   { id: 'materials-properties', name: 'Property Tester + Mixing Lab', description: "Compare materials by their physical properties, and explore what happens when they're mixed.", subjects: ['Chemistry'], examples: ['Flexibility, hardness, and shininess', 'Dissolving and mixtures', 'Layer separation'], interaction: 'Test material properties, then combine substances and predict the outcome.' },
 ]
 

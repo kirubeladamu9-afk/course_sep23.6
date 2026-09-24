@@ -123,6 +123,7 @@ export const engineForTopic = (subject: string, topic: string): PlatformEngineId
     if (value === 'atomic structure') return 'atom-builder'
     if (value === 'elements & compounds') return 'element-compound-sorter'
     if (value === 'chemical reactions') return 'reaction-simulator'
+    if (value === 'periodic table') return 'periodic-table'
     if (value === 'properties of materials') return 'materials-properties'
     if (/atom|molecule|periodic|bond|organic|hydrocarbon|alcohol|aldehyde|polymer/.test(value)) return 'molecule-atom'
     if (/equation|formula|stoichiometry|redox|oxidation/.test(value)) return 'equation-balance'
