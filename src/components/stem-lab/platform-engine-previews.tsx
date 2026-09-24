@@ -72,6 +72,7 @@ import HealthyPlateActivity from './healthy-plate-activity'
 import MaterialSorterActivity from './material-sorter-activity'
 import StateSorterActivity from './state-sorter-activity'
 import ParticleStateSimulator from './particle-state-simulator'
+import SolutionBuilderActivity from './solution-builder-activity'
 import MaterialsPropertiesActivity from './materials-properties-activity'
 import { type MathTopic } from '@/components/admin/stem-curriculum'
 
@@ -816,6 +817,7 @@ export const PlatformEnginePreview: FC<{ engineId: PlatformEngineId; onComplete?
   if (engineId === 'material-sorter' || topicTitle === 'Materials Around Us') return <MaterialSorterActivity onComplete={onComplete} />
   if (engineId === 'state-sorter' || topicTitle === 'Solids/Liquids/Gases') return <StateSorterActivity onComplete={onComplete} />
   if (engineId === 'particle-state-simulator' || topicTitle === 'States of Matter' || topicTitle === 'Heat & Cold') return <ParticleStateSimulator onComplete={onComplete} subjectLabel={topicTitle === 'Heat & Cold' ? 'Physics' : 'Chemistry'} />
+  if (engineId === 'solution-builder' || topicTitle === 'Solutions' || topicTitle === 'Dissolving') return <SolutionBuilderActivity onComplete={onComplete} />
   if (engineId === 'materials-properties' || topicTitle === 'Properties of Materials' || topicTitle === 'Mixing Materials') return <MaterialsPropertiesActivity onComplete={onComplete} />
   if (topicTitle === 'Electromagnetic Induction') return <FaradaySimulation onComplete={onComplete} />
   if (topicTitle === 'Pendulum Experiment') return <PendulumSimulation onComplete={onComplete} />

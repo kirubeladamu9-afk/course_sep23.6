@@ -117,10 +117,11 @@ export const engineForTopic = (subject: string, topic: string): PlatformEngineId
     if (value === 'materials around us') return 'material-sorter'
     if (value === 'solids/liquids/gases') return 'state-sorter'
     if (value === 'states of matter') return 'particle-state-simulator'
+    if (value === 'dissolving' || value === 'solutions') return 'solution-builder'
     if (value === 'properties of materials') return 'materials-properties'
     if (/atom|molecule|periodic|bond|organic|hydrocarbon|alcohol|aldehyde|polymer/.test(value)) return 'molecule-atom'
     if (/equation|formula|stoichiometry|redox|oxidation/.test(value)) return 'equation-balance'
-    if (/lab|acid|base|solution|mix|dissolv|separation|indicator|electrochemistry/.test(value)) return 'virtual-lab'
+    if (value === 'acids & bases') return 'virtual-lab'
     return 'simulation'
   }
   if (subject === 'Biology' && value === 'living & non-living things') return 'living-or-not'
